@@ -131,6 +131,13 @@ jobs:
             echo "$app" >> sites/apps.txt
           done
 
+      - name: Frappe's own assets
+        # emails (a new student's welcome email, on enrolment) are rendered with Frappe's bundled CSS;
+        # the other apps' frontends are not needed by the tests and stay unbuilt
+        run: |
+          cd "$BENCH/apps/frappe" && yarn install --frozen-lockfile --silent
+          cd "$BENCH" && bench build --app frappe
+
       - name: Site
         run: |
           cd "$BENCH"
