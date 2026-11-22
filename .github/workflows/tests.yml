@@ -1,0 +1,119 @@
+# Builds a Frappe 16 bench (ERPNext, HRMS, Education + EduCore's apps), loads the demo university and runs
+# both apps' tests. The demo data is what most tests check against; without it they skip.
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  SITE: educore.localhost
+  DB_ROOT_PASSWORD: root
+  BENCH: /home/runner/frappe-bench
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    services:
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: System packages
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libmariadb-dev pkg-config mariadb-client
+
+      - name: Database character set
+        # Frappe needs utf8mb4 with the unicode collation, as the dev stack's mariadb command sets
+        run: |
+          mariadb -h 127.0.0.1 -uroot -p"$DB_ROOT_PASSWORD" -e "
+            SET GLOBAL character_set_server = 'utf8mb4';
+            SET GLOBAL collation_server = 'utf8mb4_unicode_ci';"
+
+      - name: Cache pip and yarn
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/uv
+            ~/.cache/yarn
+          key: bench-v16-${{ runner.os }}-${{ hashFiles('apps/*/pyproject.toml') }}
+          restore-keys: bench-v16-${{ runner.os }}-
+
+      - name: Bench with Frappe, ERPNext, HRMS and Education (version-16)
+        run: |
+          pip install --quiet uv frappe-bench
+          bench init --skip-redis-config-generation --skip-assets --no-backups \
+            --frappe-branch version-16 --python "$(which python)" "$BENCH"
+          cd "$BENCH"
+          bench set-mariadb-host 127.0.0.1
+          bench set-redis-cache-host redis://127.0.0.1:6379
+          bench set-redis-queue-host redis://127.0.0.1:6379
+          bench set-redis-socketio-host redis://127.0.0.1:6379
+          for app in erpnext hrms education; do
+            bench get-app --skip-assets --branch version-16 "$app"
+          done
+
+      - name: EduCore's apps from this checkout
+        # linked as in docker/frappe/init.sh: apps.txt lacks a final newline, so add one first
+        run: |
+          cd "$BENCH"
+          for app in educore_theme educore; do
+            ln -s "$GITHUB_WORKSPACE/apps/$app" "apps/$app"
+            uv pip install --quiet -e "apps/$app" --python env/bin/python
+            sed -i -e '$a\' sites/apps.txt
+            echo "$app" >> sites/apps.txt
+          done
+
+      - name: Site
+        run: |
+          cd "$BENCH"
+          bench new-site "$SITE" --mariadb-root-password "$DB_ROOT_PASSWORD" --admin-password admin --no-mariadb-socket
+          bench --site "$SITE" install-app erpnext hrms education educore_theme educore
+          bench --site "$SITE" set-config allow_tests true
+
+      - name: Demo university, users and students
+        run: |
+          cd "$BENCH"
+          bench --site "$SITE" execute educore.setup.demo.create_demo_university
+          bench --site "$SITE" execute educore.access.demo_users.create
+          bench --site "$SITE" execute educore.access.test_users.create
+          bench --site "$SITE" execute educore.setup.demo_students.create
+
+      - name: Tests
+        run: |
+          cd "$BENCH"
+          bench --site "$SITE" run-tests --app educore_theme
+          bench --site "$SITE" run-tests --app educore
