@@ -486,7 +486,7 @@ const statusText = computed(() => applicationLabel(app.value?.status ?? "Draft")
           </ul>
           <p class="points">Pathway: <strong>{{ app.pathway }}</strong><template v-if="app.international"> · international</template></p>
           <p v-if="app.fee.amount" class="points">
-            Application fee: <strong>{{ app.fee.status === 'Unpaid' ? 'not received yet' : app.fee.status.toLowerCase() }}</strong>
+            Application fee: <strong>{{ app.fee.status }}</strong>
           </p>
           <p v-if="app.points !== null && usesResults" class="points">
             Your points: <strong>{{ app.points }}</strong>

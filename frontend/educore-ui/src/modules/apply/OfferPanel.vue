@@ -101,7 +101,7 @@ const SEVERITY = { "Awaiting response": "warn", Accepted: "success", Declined: "
         for the {{ offer.academic_year }} academic year<template v-if="offer.starts_on">, starting on {{ formatDate(offer.starts_on) }}</template>.
       </p>
       <p v-if="offer.conditions">This offer is subject to the following conditions: {{ offer.conditions }}</p>
-      <p v-if="offer.annual_fees">The fees for the first year are {{ formatMoney(offer.annual_fees) }}, invoiced on registration.</p>
+      <p v-if="offer.annual_fees">First-year fees: {{ formatMoney(offer.annual_fees) }}.</p>
       <p v-if="offer.deadline">Please accept or decline this offer in the applicant portal by {{ formatDate(offer.deadline) }}.</p>
       <p>Yours sincerely,<br />Admissions Office<br />{{ offer.university }}</p>
     </section>

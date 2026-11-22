@@ -53,7 +53,7 @@ test("an applicant sees how to pay, with their application number as the referen
   await signIn(page, "online.applicant");
   await expect(page.getByText("Submitted", { exact: true })).toBeVisible();
   await expect(page.getByText("Application fee N$ 150.00")).toBeVisible();
-  await expect(page.getByText("Not received yet")).toBeVisible();
+  await expect(page.getByText("Unpaid", { exact: true })).toBeVisible();
   await expect(page.locator(".reference")).toHaveText(/^EDU-APP-\d{4}-\d{5}$/);
   await page.screenshot({ path: "e2e/results/applicant-fee.png", fullPage: true });
 });
