@@ -72,7 +72,7 @@ const hasAny = computed(() => Object.keys(s.value).length > 0);
           to="/admissions"
           action="View offers"
         />
-        <StatTile v-if="s.enrolment" label="Waiting to enrol" :value="s.enrolment.waiting" :hint="`${s.enrolment.enrolled} enrolled`" to="/enrolment" action="Enrol" />
+        <StatTile v-if="s.enrolment" label="Waiting to register" :value="s.enrolment.waiting" :hint="`${s.enrolment.enrolled} registered`" to="/enrolment" action="Register" />
         <StatTile
           v-if="s.registration?.academic_year"
           label="Registrations to approve"

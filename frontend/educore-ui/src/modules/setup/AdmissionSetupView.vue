@@ -40,10 +40,10 @@ type Tab = "rules" | "pathways" | "documents" | "programmes" | "points";
 const tab = ref<Tab>("rules");
 const tabs = computed(() => [
   { label: "Rules", value: "rules" as Tab },
-  { label: "Pathways", value: "pathways" as Tab, count: setup.value?.pathways.length },
+  { label: "Entry pathways", value: "pathways" as Tab, count: setup.value?.pathways.length },
   { label: "Documents", value: "documents" as Tab, count: setup.value?.documents.length },
   { label: "Programmes", value: "programmes" as Tab, count: setup.value?.programmes.length },
-  { label: "Points scale", value: "points" as Tab },
+  { label: "Admission point scale", value: "points" as Tab },
 ]);
 
 onMounted(async () => {
@@ -118,7 +118,7 @@ const levelRows = computed(() => scale.value.filter((r) => r.level === scaleLeve
 const addGrade = () => scale.value.push({ level: scaleLevel.value, grade: "", points: 0 });
 const removeGrade = (row: ScaleRow) => scale.value.splice(scale.value.indexOf(row), 1);
 async function onSaveScale() {
-  if (await run(() => savePointsScale(scale.value.filter((r) => r.grade.trim())), "Points scale saved")) resetScale();
+  if (await run(() => savePointsScale(scale.value.filter((r) => r.grade.trim())), "Admission point scale saved")) resetScale();
 }
 </script>
 
@@ -159,7 +159,7 @@ async function onSaveScale() {
     <!-- the list, and the selected item's editor docked beside it -->
     <SplitView v-else v-model:selected="selected" :items="items" item-key="name" :list-label="tab" placeholder="Select an item to edit it">
       <template v-if="tab !== 'programmes'" #filters>
-        <EcButton :label="tab === 'pathways' ? 'Add a pathway' : 'Add a document'" :icon="Plus" size="sm" :disabled="selected === NEW" @click="selected = NEW" />
+        <EcButton :label="tab === 'pathways' ? 'Add an entry pathway' : 'Add a document'" :icon="Plus" size="sm" :disabled="selected === NEW" @click="selected = NEW" />
       </template>
 
       <template #item="{ item }">

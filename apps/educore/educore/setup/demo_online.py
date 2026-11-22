@@ -93,7 +93,7 @@ APPLICATIONS = {
 		"Festus",
 		"Nangolo",
 		{
-			"pathway": "Mature age entry",
+			"pathway": "Mature Age Entry",
 			"personal": {"date_of_birth": "1990-07-21", "gender": "Male", "nationality": "Namibian", "city": "Keetmanshoop"},
 			"employment": [
 				{"employer": "Demo Retail Group", "position": "Store Manager", "from_date": "2016-01-11", "duties": "Staff, stock, cash-up"},

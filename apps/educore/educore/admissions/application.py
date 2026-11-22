@@ -157,13 +157,18 @@ def _assess_prior(doc, program) -> tuple[str, str]:
 
 
 def _assess_mature(doc) -> tuple[str, str]:
-	"""Mature age entry: the pathway's minimum age is a rule; the experience is a person's judgement"""
+	"""Mature Age Entry and RPL: the minimum age and years of work are rules; the rest is the examination and a
+	person's judgement"""
 	pathway = pathways.of(doc)
 	age = pathways.age_on_intake(doc)
 	if pathway and pathway.min_age and age is not None and age < pathway.min_age:
-		return FAILS, _("Aged {0} on 1 January; mature age entry requires a minimum age of {1}").format(age, pathway.min_age)
-	return REVIEW, _("{0} years of work experience. Subject to assessment; an entry test or interview may be required.").format(
-		pathways.work_years(doc)
+		return FAILS, _("Aged {0} at the start of the academic year; {1} requires {2}").format(age, pathway.name, pathway.min_age)
+	needed = flt(pathway.get("min_work_years")) if pathway else 0
+	worked = pathways.work_years(doc)
+	if needed and worked < needed:
+		return FAILS, _("{0} years of work; {1} requires {2}").format(worked, pathway.name, _pct(needed))
+	return REVIEW, _("{0} years of work experience; subject to the {1} assessment.").format(
+		worked, pathway.name if pathway else _("entry")
 	)
 
 
@@ -307,7 +312,7 @@ def _evidence_gaps(doc, pathway) -> list[str]:
 		age = pathways.age_on_intake(doc)
 		if age is not None and age < pathway.min_age:
 			gaps.append(
-				_("{0} requires applicants to be aged {1} or older on 1 January. Please select another pathway.").format(
+				_("{0} requires applicants to be aged {1} or older at the start of the academic year. Please select another pathway.").format(
 					pathway.name, pathway.min_age
 				)
 			)

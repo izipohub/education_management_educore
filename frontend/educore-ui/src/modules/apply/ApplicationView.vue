@@ -476,12 +476,12 @@ async function submit() {
           <ul v-else>
             <li v-for="gap in app.missing" :key="gap">{{ gap }}</li>
           </ul>
-          <p class="points">Pathway: <strong>{{ app.pathway }}</strong><template v-if="app.international"> · international</template></p>
+          <p class="points">Entry pathway: <strong>{{ app.pathway }}</strong><template v-if="app.international"> · international</template></p>
           <p v-if="app.fee.amount" class="points">
             Application fee: <strong>{{ app.fee.status }}</strong>
           </p>
           <p v-if="app.points !== null && usesResults" class="points">
-            Your points: <strong>{{ app.points }}</strong>
+            Admission points: <strong>{{ app.points }}</strong>
             <span class="sub"> (best {{ options?.best_subjects }} subjects)</span>
           </p>
         </aside>
@@ -507,7 +507,7 @@ async function submit() {
             </div>
             <div class="grid">
               <div class="field">
-                <label id="pathway-label" for="pathway">Pathway</label>
+                <label id="pathway-label" for="pathway">Entry pathway</label>
                 <Select v-model="personal.pathway" input-id="pathway" aria-labelledby="pathway-label" :options="options?.pathways ?? []" option-label="name" option-value="name" fluid />
                 <small class="sub">{{ pathwayByName.get(personal.pathway)?.description }}</small>
               </div>
@@ -555,7 +555,7 @@ async function submit() {
                 </div>
               </div>
               <h2>Results</h2>
-              <p class="sub">Every subject on your latest NSSC statement. Your points are the best {{ options?.best_subjects }} subjects.</p>
+              <p class="sub">Every subject on your latest NSSC statement. Your admission points are the best {{ options?.best_subjects }} subjects.</p>
               <div v-for="(result, index) in results" :key="index" class="result">
                 <Select v-model="result.subject" :options="options?.subjects ?? []" placeholder="Subject" filter :aria-label="`Subject ${index + 1}`" class="subject" />
                 <Select v-model="result.level" :options="levels" :aria-label="`Level ${index + 1}`" @change="result.grade = ''" />

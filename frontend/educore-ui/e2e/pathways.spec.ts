@@ -66,7 +66,7 @@ test("a new applicant chooses how they are applying", async ({ page }) => {
   );
   await signIn(page, "applicant");
   await expect(page.getByRole("heading", { name: "Start your application" })).toBeVisible();
-  for (const name of ["School leaver", "Mature age entry", "Advanced standing / transfer", "Resumption of studies", "Postgraduate"]) {
+  for (const name of ["School leaver", "Mature Age Entry", "Recognition of Prior Learning", "Credit transfer", "Re-admission", "Postgraduate"]) {
     await expect(page.getByRole("radio", { name: new RegExp(`^${name.replace("/", "\\/")}`) })).toBeVisible();
   }
   await expect(page.getByRole("radio", { name: /^School leaver/ })).toBeChecked();

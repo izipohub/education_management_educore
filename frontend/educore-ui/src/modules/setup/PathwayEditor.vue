@@ -22,6 +22,7 @@ const blank = (): Partial<Pathway> & { pathway_name: string } => ({
   level: "Undergraduate",
   evidence: props.setup.choices.evidence[0],
   min_age: 0,
+  min_work_years: 0,
   referees_required: 0,
   sort_order: 60,
   active: 1,
@@ -51,14 +52,14 @@ function save() {
 
 <template>
   <DetailPane
-    :title="isNew ? 'New pathway' : form.pathway_name"
-    :subtitle="existing ? `Used by ${existing.applications} ${existing.applications === 1 ? 'application' : 'applications'}` : 'A route into the university'"
+    :title="isNew ? 'New entry pathway' : form.pathway_name"
+    :subtitle="existing ? `Used by ${existing.applications} ${existing.applications === 1 ? 'application' : 'applications'}` : 'A way into the university'"
   >
     <template #tags>
       <label class="switch"><ToggleSwitch v-model="open" input-id="pw-open" /> <span>Open</span></label>
     </template>
 
-    <DetailSection title="Route">
+    <DetailSection title="Entry">
       <div class="grid">
         <EcField v-if="isNew" label="Name" for="pw-name"><InputText id="pw-name" v-model="form.pathway_name" fluid /></EcField>
         <EcField label="Level">
@@ -67,8 +68,11 @@ function save() {
         <EcField label="Judged on" for="pw-evidence" label-id="pw-evidence-label">
           <Select v-model="form.evidence" input-id="pw-evidence" aria-labelledby="pw-evidence-label" :options="setup.choices.evidence" fluid />
         </EcField>
-        <EcField label="Minimum age" for="pw-age" hint="On 1 January of the intake's year. 0: none">
+        <EcField label="Minimum age" for="pw-age" hint="On the first day of the academic year. 0: none">
           <InputNumber v-model="form.min_age" input-id="pw-age" :min="0" :max="99" fluid />
+        </EcField>
+        <EcField label="Minimum years of work" for="pw-work" hint="Relevant experience. 0: none">
+          <InputNumber v-model="form.min_work_years" input-id="pw-work" :min="0" :max="40" :max-fraction-digits="1" fluid />
         </EcField>
         <EcField label="Referees" for="pw-ref">
           <InputNumber v-model="form.referees_required" input-id="pw-ref" :min="0" :max="5" fluid />

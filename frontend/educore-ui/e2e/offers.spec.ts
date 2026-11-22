@@ -49,14 +49,14 @@ test("admissions sees the offer awaiting a response", async ({ page }) => {
 
 test("the registry enrols an online applicant only once they accept", async ({ page }) => {
   await signIn(page, "registry-officer.whk");
-  await page.getByRole("link", { name: "Enrolment" }).click();
+  await page.getByRole("link", { name: "First-year registration" }).click();
   await expect(listItem(page, "Tomas Iipinge").getByText("Pending", { exact: true })).toBeVisible();
   await openRecord(page, "Tomas Iipinge");
   await expect(pane(page).getByText(/Waiting for the applicant to accept/)).toBeVisible();
-  await expect(pane(page).getByRole("button", { name: "Enrol" })).toHaveCount(0);
+  await expect(pane(page).getByRole("button", { name: "Register" })).toHaveCount(0);
   // paper offers are enrolled as before
   await openRecord(page, "Maria Kandjii");
-  await expect(pane(page).getByRole("button", { name: "Enrol", exact: true })).toBeVisible();
+  await expect(pane(page).getByRole("button", { name: "Register", exact: true })).toBeVisible();
   await page.screenshot({ path: "e2e/results/offer-registry.png" });
 });
 

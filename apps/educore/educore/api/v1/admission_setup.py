@@ -43,7 +43,7 @@ LIMITS = {
 	"best_subjects": (1, 12),
 }
 
-PATHWAY_FIELDS = ("level", "evidence", "min_age", "referees_required", "sort_order", "active", "description")
+PATHWAY_FIELDS = ("level", "evidence", "min_age", "min_work_years", "referees_required", "sort_order", "active", "description")
 DOCUMENT_FIELDS = ("required_for", "must_be_certified", "description", "active")
 LEVELS = ("Undergraduate", "Postgraduate")
 SCHOOL_LEVELS = ("NSSCO", "NSSCAS", "NSSCH")
@@ -223,7 +223,11 @@ def save_pathway(data: dict | str, name: str | None = None) -> dict:
 	for field in PATHWAY_FIELDS:
 		if field in data:
 			value = data[field]
-			if field in ("min_age", "referees_required", "sort_order"):
+			if field == "min_work_years":
+				value = flt(value, 1)
+				if value < 0:
+					frappe.throw(_("Years of work cannot be negative"))
+			elif field in ("min_age", "referees_required", "sort_order"):
 				value = cint(value)
 				if value < 0:
 					frappe.throw(_("{0} cannot be negative").format(field.replace("_", " ")))

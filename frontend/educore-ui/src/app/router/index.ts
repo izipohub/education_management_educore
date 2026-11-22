@@ -62,7 +62,7 @@ export const router = createRouter({
           path: "registrations",
           name: "registrations",
           component: () => import("@/modules/registration/RegistrationsView.vue"),
-          meta: { fill: true, title: "Registrations", roles: ["Faculty Officer", "Registrar"] },
+          meta: { fill: true, title: "Registration approvals", roles: ["Faculty Officer", "Registrar"] },
         },
         {
           path: "admission-setup",
@@ -74,7 +74,7 @@ export const router = createRouter({
           path: "enrolment",
           name: "enrolment",
           component: () => import("@/modules/registry/EnrolmentView.vue"),
-          meta: { fill: true, title: "Enrolment", roles: ["Registry Officer", "Registrar"] },
+          meta: { fill: true, title: "First-year registration", roles: ["Registry Officer", "Registrar"] },
         },
       ],
     },

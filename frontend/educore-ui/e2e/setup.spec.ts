@@ -33,16 +33,16 @@ test("the registrar sets the admission rules", async ({ page }) => {
   await page.screenshot({ path: "e2e/results/setup-rules.png", fullPage: true });
 
   // pathways: one line each, the editor docked beside the list (nothing saved)
-  await page.getByRole("tab", { name: /^Pathways/ }).click();
-  await expect(listItem(page, "Mature age entry").getByText(/from age 23/)).toBeVisible();
-  await openRecord(page, "Mature age entry");
-  await expect(pane(page).getByLabel("Minimum age")).toHaveValue("23");
+  await page.getByRole("tab", { name: /^Entry pathways/ }).click();
+  await expect(listItem(page, "Mature Age Entry").getByText(/from age 25/)).toBeVisible();
+  await openRecord(page, "Mature Age Entry");
+  await expect(pane(page).getByLabel("Minimum age")).toHaveValue("25");
   await page.screenshot({ path: "e2e/results/setup-pathway.png" });
 
   await page.getByRole("tab", { name: /^Programmes/ }).click();
   await expect(listItem(page, "Master of Business Administration").getByText(/NQF 7, 60%/)).toBeVisible();
 
-  await page.getByRole("tab", { name: "Points scale" }).click();
+  await page.getByRole("tab", { name: "Admission point scale" }).click();
   await expect(page.getByLabel("Grade 1", { exact: true })).toHaveValue("A*");
 });
 

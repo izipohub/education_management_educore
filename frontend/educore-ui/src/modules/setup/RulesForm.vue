@@ -35,9 +35,9 @@ const notify = flag("notify_applicants");
       <h2>Applications</h2>
       <div class="grid">
         <div class="field">
-          <label id="home-label" for="home">Home country</label>
+          <label id="home-label" for="home">Local applicants are citizens of</label>
           <Select v-model="form.home_country" input-id="home" aria-labelledby="home-label" :options="countries" filter fluid />
-          <small class="sub">Applicants from elsewhere are international.</small>
+          <small class="sub">And permanent residents; everyone else applies as an international applicant.</small>
         </div>
         <div class="field">
           <label for="choices">Programme choices allowed</label>
@@ -64,7 +64,7 @@ const notify = flag("notify_applicants");
         </div>
       </div>
       <div class="switches">
-        <label class="switch"><ToggleSwitch v-model="needsAcceptance" input-id="needs-acceptance" /> <span>Enrol online applicants only once they accept</span></label>
+        <label class="switch"><ToggleSwitch v-model="needsAcceptance" input-id="needs-acceptance" /> <span>Register online applicants only once they accept</span></label>
         <label class="switch"><ToggleSwitch v-model="notify" input-id="notify" /> <span>Email applicants</span></label>
       </div>
     </section>
@@ -73,7 +73,7 @@ const notify = flag("notify_applicants");
       <h2>Application fee</h2>
       <div class="grid">
         <div class="field">
-          <label for="fee-home">Home applicants (N$)</label>
+          <label for="fee-home">Local applicants (N$)</label>
           <InputNumber v-model="form.fee_namibian" input-id="fee-home" :min="0" :min-fraction-digits="2" fluid />
         </div>
         <div class="field">
@@ -88,7 +88,7 @@ const notify = flag("notify_applicants");
     </section>
 
     <section class="card group">
-      <h2>Documents and points</h2>
+      <h2>Documents and admission points</h2>
       <div class="grid">
         <div class="field">
           <label for="cert">Certified copies valid for (months)</label>
@@ -100,7 +100,7 @@ const notify = flag("notify_applicants");
           <InputNumber v-model="form.max_file_size_mb" input-id="size" :min="1" :max="50" fluid />
         </div>
         <div class="field">
-          <label for="best">Subjects counted for points</label>
+          <label for="best">Subjects counted for admission points</label>
           <InputNumber v-model="form.best_subjects" input-id="best" :min="1" :max="12" fluid />
         </div>
       </div>

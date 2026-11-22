@@ -32,8 +32,8 @@ const loadError = ref("");
 const selected = ref<string | null>(null);
 
 const viewOptions = computed(() => [
-  { label: "To enrol", count: page.value?.waiting.length ?? 0, value: "waiting" as View },
-  { label: "Enrolled", count: page.value?.enrolled.length ?? 0, value: "enrolled" as View },
+  { label: "To register", count: page.value?.waiting.length ?? 0, value: "waiting" as View },
+  { label: "Registered", count: page.value?.enrolled.length ?? 0, value: "enrolled" as View },
 ]);
 const items = computed(() => ((view.value === "waiting" ? page.value?.waiting : page.value?.enrolled) ?? []) as unknown as Record<string, unknown>[]);
 const offer = computed(() => (view.value === "waiting" ? (page.value?.waiting.find((o) => o.name === selected.value) ?? null) : null));
@@ -105,7 +105,7 @@ async function confirmEnrol() {
   try {
     const result = await enrol(o.name, email.value.trim(), toIsoDate(enrollmentDay.value!));
     const fees = result.invoice ? `, invoiced ${formatMoney(result.invoice.grand_total)}` : ", not invoiced (no fees set)";
-    toast.add({ severity: "success", summary: `${o.applicant} enrolled`, detail: `Student ${result.student}${fees}`, life: 6000 });
+    toast.add({ severity: "success", summary: `${o.applicant} registered`, detail: `Student ${result.student}${fees}`, life: 6000 });
     await load();
   } catch (error) {
     // kept beside the form, so the officer can correct the email and try again
@@ -119,7 +119,7 @@ const invoiceSeverity = (status: string) => (status === "Paid" ? "success" : sta
 </script>
 
 <template>
-  <PageHeader title="Enrolment" subtitle="Admitted applicants on your campuses. Enrolling creates the student, their login and the year's fees.">
+  <PageHeader title="First-year registration" subtitle="Admitted applicants on your campuses. Registering creates the student, their login and the year's fees.">
     <template #actions>
       <Select v-model="academicYear" :options="page?.academic_years ?? []" placeholder="Year" aria-label="Academic year" class="year" size="small" />
     </template>
@@ -134,7 +134,7 @@ const invoiceSeverity = (status: string) => (status === "Paid" ? "success" : sta
     item-key="name"
     :loading="loading"
     list-label="Applicants"
-    :empty-title="view === 'waiting' ? 'Nobody waiting to enrol' : 'Nobody enrolled yet'"
+    :empty-title="view === 'waiting' ? 'Nobody waiting to register' : 'Nobody registered yet'"
     placeholder="Select an applicant"
   >
     <template #filters>
@@ -174,12 +174,12 @@ const invoiceSeverity = (status: string) => (status === "Paid" ? "success" : sta
           <p class="ec-muted">{{ offer.offering }} · {{ offer.campus }} · {{ offer.mode_of_study }} · {{ offer.academic_year }}</p>
         </DetailSection>
         <DetailSection title="Fees" :summary="offer.fees !== null ? formatMoney(offer.fees) : 'No fees set for this offering'" />
-        <DetailSection v-if="page?.can_enrol && !offer.needs_acceptance" title="Enrol">
+        <DetailSection v-if="page?.can_enrol && !offer.needs_acceptance" title="Register">
           <div class="form">
             <EcField label="Student's email (their login)" for="enrol-email" :error="email && !EMAIL.test(email.trim()) ? 'Not a valid email address' : undefined">
               <InputText id="enrol-email" v-model="email" type="email" autocomplete="off" fluid :invalid="Boolean(email) && !EMAIL.test(email.trim())" />
             </EcField>
-            <EcField label="Enrolled from" for="enrol-date">
+            <EcField label="Registered from" for="enrol-date">
               <DatePicker v-model="enrollmentDay" input-id="enrol-date" date-format="dd-mm-yy" show-icon fluid />
             </EcField>
           </div>
@@ -187,7 +187,7 @@ const invoiceSeverity = (status: string) => (status === "Paid" ? "success" : sta
         </DetailSection>
 
         <template v-if="page?.can_enrol && !offer.needs_acceptance" #actions>
-          <EcButton label="Enrol" variant="primary" :loading="saving" :disabled="!canEnrol" @click="confirmEnrol" />
+          <EcButton label="Register" variant="primary" :loading="saving" :disabled="!canEnrol" @click="confirmEnrol" />
         </template>
       </DetailPane>
 
@@ -198,7 +198,7 @@ const invoiceSeverity = (status: string) => (status === "Paid" ? "success" : sta
         <DetailSection title="Programme" :summary="enrolled.program">
           <p class="ec-muted">{{ enrolled.offering }} · {{ enrolled.campus }} · {{ enrolled.academic_year }}</p>
         </DetailSection>
-        <DetailSection title="Enrolled from" :summary="formatDate(enrolled.enrollment_date)" />
+        <DetailSection title="Registered from" :summary="formatDate(enrolled.enrollment_date)" />
         <DetailSection title="Fees">
           <template #summary>
             <template v-if="enrolled.invoice">

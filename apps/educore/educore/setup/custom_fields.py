@@ -418,7 +418,7 @@ CUSTOM_FIELDS = {
 			"label": "Previous Student Number Here",
 			"fieldtype": "Data",
 			"insert_after": "educore_prior_qualifications",
-			"description": "Resumption of studies: the student number they studied under.",
+			"description": "Re-admission: the student number they studied under.",
 		},
 		{
 			"fieldname": "educore_employment",

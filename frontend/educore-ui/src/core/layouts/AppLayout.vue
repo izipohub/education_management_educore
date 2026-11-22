@@ -44,8 +44,8 @@ const NAV: NavItem[] = [
   { label: "Registration", icon: ClipboardCheck, to: "/registration", roles: ["Student"] },
   { label: "My teaching", icon: GraduationCap, to: "/my-teaching", roles: ["Lecturer"] },
   { label: "Admissions", icon: UserPlus, to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
-  { label: "Enrolment", icon: UserCheck, to: "/enrolment", roles: ["Registry Officer", "Registrar"] },
-  { label: "Registrations", icon: ListChecks, to: "/registrations", roles: ["Faculty Officer", "Registrar"] },
+  { label: "First-year registration", icon: UserCheck, to: "/enrolment", roles: ["Registry Officer", "Registrar"] },
+  { label: "Registration approvals", icon: ListChecks, to: "/registrations", roles: ["Faculty Officer", "Registrar"] },
   { label: "Admission setup", icon: Settings, to: "/admission-setup", roles: ["Registrar", "System Manager"] },
 ];
 

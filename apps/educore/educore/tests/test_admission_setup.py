@@ -59,19 +59,19 @@ class TestAdmissionSetup(IntegrationTestCase):
 		self.assertRaises(frappe.ValidationError, api.save_points_scale, rows + [{"level": "NSSCO", "grade": "a", "points": 1}])
 
 	def test_a_pathway_is_changed_and_a_new_one_added(self):
-		data = api.save_pathway({"min_age": 25, "referees_required": 1}, name="Mature age entry")
-		mature = next(p for p in data["pathways"] if p["name"] == "Mature age entry")
+		data = api.save_pathway({"min_age": 25, "referees_required": 1}, name="Mature Age Entry")
+		mature = next(p for p in data["pathways"] if p["name"] == "Mature Age Entry")
 		self.assertEqual((mature["min_age"], mature["referees_required"]), (25, 1))
 
 		data = api.save_pathway(
 			{
-				"pathway_name": "Recognition of prior learning",
+				"pathway_name": "Foundation programme",
 				"level": "Undergraduate",
 				"evidence": "Work experience",
 				"documents": [{"document_type": "Curriculum Vitae", "applies_to": "Everyone", "required": True}],
 			}
 		)
-		rpl = next(p for p in data["pathways"] if p["name"] == "Recognition of prior learning")
+		rpl = next(p for p in data["pathways"] if p["name"] == "Foundation programme")
 		self.assertEqual(rpl["documents"][0]["document_type"], "Curriculum Vitae")
 		self.assertRaises(frappe.ValidationError, api.save_pathway, {"evidence": "Astrology"}, name="Postgraduate")
 

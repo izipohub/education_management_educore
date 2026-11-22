@@ -9,6 +9,7 @@
   "evidence",
   "column_break_pathway",
   "min_age",
+  "min_work_years",
   "referees_required",
   "sort_order",
   "active",
@@ -51,7 +52,13 @@
    "fieldname": "min_age",
    "fieldtype": "Int",
    "label": "Minimum Age",
-   "description": "On 1 January of the intake's year. 0: none."
+   "description": "On the first day of the academic year applied for. 0: none."
+  },
+  {
+   "fieldname": "min_work_years",
+   "fieldtype": "Float",
+   "label": "Minimum Years of Work",
+   "description": "Relevant work experience, e.g. 5 for Mature Age Entry. 0: none."
   },
   {
    "fieldname": "referees_required",
@@ -137,7 +144,7 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "description": "A route into the university: who it is for, the evidence it needs and its documents.",
+ "description": "An entry pathway into the university (school leaver, Mature Age Entry, Recognition of Prior Learning, credit transfer, re-admission, postgraduate): who it is for, the evidence it needs and its documents.",
  "autoname": "field:pathway_name",
  "naming_rule": "By fieldname",
  "track_changes": 1

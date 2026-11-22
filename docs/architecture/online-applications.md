@@ -126,7 +126,7 @@ Decided 2026-11-22 by the product owner:
 | 3 | Card payment gateway | **DPO** (holds a payment facilitator licence in Namibia). The university opens a DPO merchant account; API tokens and NAD settlement terms come from DPO at onboarding |
 | 4 | Number of choices per application | **3, ranked** (Admission Settings: the university can change it) |
 | 7 | Pathways | **All online**: school leaver, mature age entry, advanced standing / transfer, resumption of studies (undergraduate); postgraduate. International is the applicant's status, on any pathway |
-| 11 | Mature age entry | **From 23** (on 1 January of the intake's year), set on the pathway |
+| 11 | Mature Age Entry | **From 25** on the first day of the academic year, with **5 years** of relevant work experience (UNAM's rule; was 23 until 2026-11-23), set on the pathway |
 | 12 | Postgraduate eligibility | **Automatic check** of the prior qualification's NQF level and average against the programme's minimums; anything unusual (foreign, NQF or average missing) is "Needs review" |
 
 Still open:
@@ -155,15 +155,16 @@ goes live it needs the **school register** from the Ministry's EMIS unit and DNE
 ## 6. Pathways (built)
 
 Each university decides its own admission rules; EduCore reads them from settings and never fixes them in code.
-Five pathways are installed once, as a starting point (`educore.admissions.pathways.ensure_defaults`), and are then
+Six entry pathways (names as in docs/architecture/terminology.md) are installed once, as a starting point (`educore.admissions.pathways.ensure_defaults`), and are then
 the university's to change, add to or close:
 
 | Pathway | Level | Judged on | Eligibility | Asks for |
 |---|---|---|---|---|
 | School leaver | Undergraduate | School results | Points and subject requirements (international: Needs review) | School, NSSC results; foreign school certificate and NQA evaluation if international |
-| Mature age entry | Undergraduate | Work experience | Minimum age is a rule (23); otherwise Needs review (test or interview) | Jobs; CV, proof of employment, motivation letter |
-| Advanced standing / transfer | Undergraduate | Studies elsewhere | Needs review: the faculty decides credits | School results and studies after school; academic record, course outlines |
-| Resumption of studies | Undergraduate | Studies here | Needs review: standing, exclusion, fees; the earlier student record is found | Previous student number |
+| Mature Age Entry | Undergraduate | Work experience | Minimum age (25) and years of work (5) are rules; otherwise Needs review (the MAE examination) | Jobs; CV, proof of employment, motivation letter |
+| Recognition of Prior Learning | Undergraduate | Work experience | Needs review: learning assessed against the programme | RPL portfolio, CV |
+| Credit transfer | Undergraduate | Studies elsewhere | Needs review: the faculty decides credits (admission with advanced standing) | School results and studies after school; academic record, course outlines |
+| Re-admission | Undergraduate | Studies here | Needs review: standing, exclusion, fees; the earlier student record is found | Previous student number |
 | Postgraduate | Postgraduate | Prior qualification | Programme's minimum NQF level and average | Qualifications, 2 referees; degree certificate, academic record, CV, motivation letter |
 
 The Registrar sets all of it in the Vue app's **Admission setup** screen (`/admission-setup`,

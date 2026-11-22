@@ -1,4 +1,5 @@
-"""Application pathways: the routes into the university (docs/architecture/online-applications.md, "Pathways").
+"""Entry pathways: the routes into the university (docs/architecture/online-applications.md, "Pathways"; the names
+follow Namibian practice, docs/architecture/terminology.md).
 
 A pathway (Admission Pathway) says who it is for, its level (undergraduate or postgraduate), what eligibility is
 judged on (its evidence), a minimum age, how many referees and which documents. Every one of those is the
@@ -30,6 +31,7 @@ DEFAULT_DOCUMENTS = {
 	"Academic Record": ("The full academic record (transcript) of your studies after school.", 1),
 	"Degree or Diploma Certificate": ("The certificate of your highest qualification.", 1),
 	"Course Outlines": ("The outlines of the courses you passed, for the faculty to decide credits.", 0),
+	"RPL Portfolio": ("Evidence of what you have learnt through work and life: certificates, testimonials, samples of work.", 0),
 }
 
 #: name: settings and documents ((document, asked of, required), ...)
@@ -44,13 +46,14 @@ DEFAULT_PATHWAYS = {
 			("NQA Evaluation of Foreign Qualifications", "International applicants", 1),
 		),
 	},
-	"Mature age entry": {
+	"Mature Age Entry": {
 		"level": UNDERGRADUATE,
 		"evidence": WORK_EXPERIENCE,
-		"min_age": 23,
+		"min_age": 25,
+		"min_work_years": 5,
 		"sort_order": 20,
 		"description": "Your school results do not meet the requirements, but your work experience does. "
-		"An entry test or interview may be required.",
+		"You write the Mature Age Entry examination.",
 		"documents": (
 			("Curriculum Vitae", "Everyone", 1),
 			("Proof of Employment", "Everyone", 1),
@@ -58,11 +61,23 @@ DEFAULT_PATHWAYS = {
 			("NSSC Statement of Results or Certificate", "Home applicants", 0),
 		),
 	},
-	"Advanced standing / transfer": {
+	"Recognition of Prior Learning": {
+		"level": UNDERGRADUATE,
+		"evidence": WORK_EXPERIENCE,
+		"sort_order": 25,
+		"description": "What you have learnt through work and life is assessed against the programme's requirements.",
+		"documents": (
+			("RPL Portfolio", "Everyone", 1),
+			("Curriculum Vitae", "Everyone", 1),
+			("Proof of Employment", "Everyone", 0),
+		),
+	},
+	"Credit transfer": {
 		"level": UNDERGRADUATE,
 		"evidence": STUDIES_ELSEWHERE,
 		"sort_order": 30,
-		"description": "You studied at another university or college and want credit for the courses you passed.",
+		"description": "You studied at another accredited institution and want credit for the courses you passed "
+		"(admission with advanced standing).",
 		"documents": (
 			("Academic Record", "Everyone", 1),
 			("Course Outlines", "Everyone", 0),
@@ -71,7 +86,7 @@ DEFAULT_PATHWAYS = {
 			("NQA Evaluation of Foreign Qualifications", "International applicants", 0),
 		),
 	},
-	"Resumption of studies": {
+	"Re-admission": {
 		"level": UNDERGRADUATE,
 		"evidence": STUDIES_HERE,
 		"sort_order": 40,
@@ -143,6 +158,7 @@ def ensure_defaults():
 				"level": spec["level"],
 				"evidence": spec["evidence"],
 				"min_age": spec.get("min_age", 0),
+				"min_work_years": spec.get("min_work_years", 0),
 				"referees_required": spec.get("referees_required", 0),
 				"sort_order": spec["sort_order"],
 				"description": spec.get("description"),
@@ -188,13 +204,13 @@ def is_international(doc) -> bool:
 
 
 def age_on_intake(doc) -> int | None:
-	"""Age in whole years on 1 January of the intake's academic year"""
+	"""Age in whole years on the first day of the academic year applied for (as UNAM measures Mature Age Entry)"""
 	if not doc.get("date_of_birth") or not doc.get("academic_year"):
 		return None
 	start = frappe.db.get_value("Academic Year", doc.academic_year, "year_start_date")
 	if not start:
 		return None
-	birth, on = getdate(doc.date_of_birth), getdate(f"{getdate(start).year}-01-01")
+	birth, on = getdate(doc.date_of_birth), getdate(start)
 	return on.year - birth.year - ((on.month, on.day) < (birth.month, birth.day))
 
 
@@ -242,6 +258,7 @@ def active() -> list[dict]:
 				"level": pathway.level,
 				"evidence": pathway.evidence,
 				"min_age": pathway.min_age or 0,
+				"min_work_years": pathway.get("min_work_years") or 0,
 				"referees_required": pathway.referees_required or 0,
 				"description": pathway.description,
 				"documents": [

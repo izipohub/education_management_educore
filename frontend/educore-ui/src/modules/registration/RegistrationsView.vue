@@ -68,7 +68,7 @@ const sendBack = (row: QueueRow) => note.value.trim() && run(() => returnRegistr
 
 <template>
   <PageHeader
-    :title="page?.academic_year ? `Registrations ${page.academic_year}` : 'Registrations'"
+    :title="page?.academic_year ? `Registration approvals ${page.academic_year}` : 'Registration approvals'"
     subtitle="Returning students in your faculty and campus. Approving registers the student and invoices the year."
   >
     <EcTabs v-model="status" :tabs="tabs" label="Status" class="tabs" />

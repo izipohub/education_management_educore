@@ -64,7 +64,7 @@ class TestPathways(IntegrationTestCase):
 	def test_the_open_routes_are_listed_in_the_universitys_order(self):
 		listed = [p["name"] for p in apply.options()["pathways"]]
 		self.assertEqual(listed[0], "School leaver")
-		for name in ("Mature age entry", "Advanced standing / transfer", "Resumption of studies", "Postgraduate"):
+		for name in ("Mature Age Entry", "Recognition of Prior Learning", "Credit transfer", "Re-admission", "Postgraduate"):
 			self.assertIn(name, listed)
 
 	def test_a_new_draft_starts_on_the_first_route(self):
@@ -138,14 +138,14 @@ class TestPathways(IntegrationTestCase):
 	def test_mature_age_entry_needs_the_minimum_age(self):
 		self._as_new_applicant()
 		young = {**ADULT, "date_of_birth": "2006-06-01"}  # 20 on 1 January 2027
-		data = apply.save({"intake": "2027 Intake", "personal": young, "pathway": "Mature age entry", "choices": ["BBA-WHK-FT"]})
-		self.assertTrue(any("aged 23 or older" in gap for gap in data["missing"]))
+		data = apply.save({"intake": "2027 Intake", "personal": young, "pathway": "Mature Age Entry", "choices": ["BBA-WHK-FT"]})
+		self.assertTrue(any("aged 25 or older" in gap for gap in data["missing"]))
 		self.assertEqual(data["choices"][0]["eligibility"], rules.FAILS)
 
 	def test_mature_age_entry_is_decided_by_a_person(self):
 		self._as_new_applicant()
 		data = self._save(
-			pathway="Mature age entry",
+			pathway="Mature Age Entry",
 			employment=[{"employer": "Demo Co", "position": "Supervisor", "from_date": "2015-01-01", "to_date": "2024-12-31"}],
 			choices=["BBA-WHK-FT"],
 		)
@@ -153,10 +153,20 @@ class TestPathways(IntegrationTestCase):
 		self.assertEqual(data["work_years"], 10.0)
 		self.assertFalse(any("aged" in gap for gap in data["missing"]))
 
-	def test_the_minimum_age_is_the_universitys(self):
-		self._setting("Admission Pathway", "Mature age entry", "min_age", 40)
+	def test_mature_age_entry_needs_the_years_of_work(self):
 		self._as_new_applicant()
-		data = self._save(pathway="Mature age entry", choices=["BBA-WHK-FT"])  # 36 on 1 January 2027
+		data = self._save(
+			pathway="Mature Age Entry",
+			employment=[{"employer": "Demo Co", "position": "Clerk", "from_date": "2023-01-01", "to_date": "2024-12-31"}],
+			choices=["BBA-WHK-FT"],
+		)
+		self.assertEqual(data["choices"][0]["eligibility"], rules.FAILS)
+		self.assertIn("requires 5", data["choices"][0]["eligibility_note"])
+
+	def test_the_minimum_age_is_the_universitys(self):
+		self._setting("Admission Pathway", "Mature Age Entry", "min_age", 40)
+		self._as_new_applicant()
+		data = self._save(pathway="Mature Age Entry", choices=["BBA-WHK-FT"])  # 36 on 1 January 2027
 		self.assertTrue(any("aged 40 or older" in gap for gap in data["missing"]))
 
 	# --- resumption and advanced standing --------------------------------------------------------------
@@ -164,7 +174,7 @@ class TestPathways(IntegrationTestCase):
 	def test_resumption_finds_the_previous_student(self):
 		student = frappe.get_all("Student", fields=["name", "student_name"], limit=1)[0]
 		self._as_new_applicant()
-		data = self._save(pathway="Resumption of studies", choices=["BBA-WHK-FT"])
+		data = self._save(pathway="Re-admission", choices=["BBA-WHK-FT"])
 		self.assertIn("Your previous student number", data["missing"])
 		data = self._save(previous_student_number=student.name)
 		self.assertEqual(data["choices"][0]["eligibility"], rules.REVIEW)
@@ -172,7 +182,7 @@ class TestPathways(IntegrationTestCase):
 
 	def test_advanced_standing_needs_school_and_later_studies(self):
 		self._as_new_applicant()
-		data = self._save(pathway="Advanced standing / transfer", choices=["BBA-WHK-FT"])
+		data = self._save(pathway="Credit transfer", choices=["BBA-WHK-FT"])
 		for gap in ("Your studies after school", "Your school results"):
 			self.assertIn(gap, data["missing"])
 		self.assertIn("Academic Record", {d["document_type"] for d in data["documents"] if d["required"]})

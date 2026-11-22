@@ -37,7 +37,7 @@ test("a student who owes fees sees what blocks them", async ({ page }) => {
 
 test("the faculty officer sees the submitted registrations of their faculty and campus", async ({ page }) => {
   await signIn(page, "faculty-officer.fst.osh");
-  await page.getByRole("link", { name: "Registrations" }).click();
+  await page.getByRole("link", { name: "Registration approvals" }).click();
   await expect(listItem(page, "Martha Shilongo").getByText("Year 2 · 32 credits")).toBeVisible();
   await openRecord(page, "Martha Shilongo");
   await expect(pane(page).getByText("Data Structures and Algorithms")).toBeVisible();

@@ -37,6 +37,7 @@ export interface Pathway {
   level: "Undergraduate" | "Postgraduate";
   evidence: string;
   min_age: number;
+  min_work_years: number;
   referees_required: number;
   sort_order: number;
   active: 0 | 1;
