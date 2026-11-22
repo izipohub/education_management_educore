@@ -58,12 +58,18 @@ functions. It is not just a student information system.
 
   Primary frontend                    Vue 3
 
-  Frontend coverage                   Vue for **all** university-facing
-                                      EduCore interfaces
+  Frontend coverage                   Vue for students, applicants,
+                                      sponsors, academics, academic
+                                      administration, front-desk finance,
+                                      staff self-service and management
+                                      (see 3.1)
 
-  Frappe Desk                         Not the normal university
-                                      interface; retain only for
-                                      restricted technical maintenance
+  Frappe Desk                         For specialist back-office work
+                                      ERPNext already does well (finance,
+                                      payroll/HR administration,
+                                      procurement, stores, assets) and
+                                      technical administration; branded
+                                      and trimmed (see 3.1)
 
   LMS                                 Moodle
 
@@ -206,18 +212,49 @@ academic record.
 
 ------------------------------------------------------------------------
 
-## 3. Frontend architecture --- Vue for all university users
+## 3. Frontend architecture --- Vue app and back-office Desk
 
-### 3.1 Confirmed decision
+### 3.1 Confirmed decision (revised 2026-11-22)
 
-All university-facing EduCore experiences must use Vue. This includes
-students, lecturers, registrars, finance staff, HR staff, procurement
-staff, campus teams and management.
+EduCore has two user interfaces, split by who the user is. The earlier
+decision ("Vue for all university-facing interfaces") was revised by the
+product owner: rebuilding ERPNext's mature finance, payroll, procurement
+and stock screens in Vue would take years and fall behind every upstream
+release.
 
-Frappe Desk is not the normal operational UI and must not be used as a
-shortcut for unfinished EduCore screens. It may remain available to
-authorised developers and technical operators for framework maintenance,
-debugging and restricted technical administration.
+**Vue app** --- high-volume, university-specific work by non-specialists:
+
+-   Students, applicants, sponsors and guardians.
+-   Lecturers, heads of department and deans.
+-   Admissions, registry, faculty and examinations officers.
+-   Cashiers and the student fees front desk.
+-   Every staff member's self-service (leave, payslips, requests).
+-   Management dashboards and campus-operations requests.
+
+**Frappe Desk** --- specialist back-office work that ERPNext, HRMS and
+Education already do well, by a small number of trained staff:
+
+-   Finance: general ledger, journals, bank reconciliation, financial
+    reports, period closing.
+-   Payroll and HR administration.
+-   Procurement, stores and asset management.
+-   ICT / technical administration.
+
+Rules:
+
+-   Desk access is deliberate: only positions that carry the EduCore
+    **Desk Access** role (and System Managers) can open the Desk; everyone
+    else is sent to the Vue app (`educore/access/desk.py`). Frappe's API
+    stays available to all signed-in users, because the Vue app uses it.
+-   Desk users see a trimmed Desk: a Module Profile hides modules a
+    university does not use (manufacturing, CRM and so on), and the
+    EduCore theme brands it.
+-   Business rules and permissions live on the server, so they apply
+    identically in both interfaces.
+-   Do not build Vue screens for back-office work the Desk already does
+    well, and do not send Vue-app users to the Desk to finish a task.
+-   Any Desk area that proves painful for its users can get a Vue screen
+    later, module by module, as a recorded decision.
 
 ### 3.2 Recommended frontend stack
 
@@ -320,8 +357,12 @@ view with per-campus drill-down.
                                       enrolment, finance, staffing,
                                       performance and governance reports
 
-  Technical operator                  Restricted technical maintenance;
-                                      may use Frappe Desk where necessary
+  Technical operator                  Technical administration in Frappe
+                                      Desk
+
+  *Interface:* the finance (back office), HR administration and
+  procurement / stores rows work in the Desk; the others work in the Vue
+  app (3.1).
   -----------------------------------------------------------------------
 
 ### 3.5 Suggested frontend structure
@@ -1099,8 +1140,11 @@ Any AI coding agent working on EduCore must follow these instructions.
 ### 13.2 During implementation
 
 -   Preserve the confirmed architecture and product decisions.
--   Use Vue for every university-facing EduCore screen.
--   Do not build new operational workflows in Frappe Desk.
+-   Put each screen in the interface its users work in (3.1): the Vue
+    app for students, academics, officers and self-service; the Desk for
+    specialist back-office work.
+-   Do not rebuild in Vue what ERPNext's Desk already does well for
+    back-office staff, and do not leave Vue-app users a Desk-only step.
 -   Keep Frappe as the backend authority for business rules and
     permissions.
 -   Reuse ERPNext, Frappe Education and HRMS capabilities instead of
@@ -1172,8 +1216,9 @@ Do not present these open items as already implemented or confirmed.
 
 ## 15. Core architectural principles
 
-1.  **Vue-first experience:** all university-facing EduCore interfaces
-    are Vue.
+1.  **The right interface per user:** the Vue app for students,
+    academics, officers and self-service; a trimmed Frappe Desk for
+    specialist back-office staff.
 2.  **Frappe-backed operations:** Frappe and its apps provide backend
     business capabilities.
 3.  **One source of truth:** avoid duplicate student, employee, finance

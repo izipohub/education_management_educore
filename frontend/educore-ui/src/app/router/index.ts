@@ -15,6 +15,12 @@ export const router = createRouter({
       component: () => import("@/core/layouts/AppLayout.vue"),
       children: [
         { path: "", name: "home", component: () => import("@/modules/home/HomeView.vue"), meta: { title: "Home" } },
+        {
+          path: "admissions",
+          name: "admissions",
+          component: () => import("@/modules/admissions/AdmissionsView.vue"),
+          meta: { title: "Admissions", roles: ["Admissions Officer", "Registrar"] },
+        },
       ],
     },
     { path: "/:pathMatch(.*)*", redirect: "/" },
@@ -32,6 +38,10 @@ router.beforeEach(async (to) => {
   if (!session.isSignedIn) {
     return { name: "login", query: to.fullPath !== "/" ? { redirect: to.fullPath } : {} };
   }
+  // a screen for other roles: home instead (the server refuses its data anyway)
+  if (to.meta.roles && !session.hasRole(...to.meta.roles)) {
+    return { name: "home" };
+  }
   return true;
 });
 
@@ -43,5 +53,7 @@ declare module "vue-router" {
   interface RouteMeta {
     public?: boolean;
     title?: string;
+    /** shown to users with any of these roles */
+    roles?: string[];
   }
 }

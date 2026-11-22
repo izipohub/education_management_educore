@@ -10,3 +10,7 @@ __pycache__/
 # Node / Vue
 node_modules/
 dist/
+
+# Playwright output
+frontend/educore-ui/e2e/results/
+frontend/educore-ui/playwright-report/

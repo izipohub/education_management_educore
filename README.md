@@ -54,6 +54,11 @@ http://app.educore.localhost. Vite forwards `/api`, `/assets`, `/files` and `/so
 and Frappe share one origin and Frappe's session cookie works.
 
 On the host: `cd frontend/educore-ui && npm ci && npm test` (Vitest), `npm run typecheck`, `npm run build`.
+Browser tests against the running stack and its demo data (installed Google Chrome): `npm run e2e`.
+
+Set the site's `educore_app_url` (`bench --site educore.localhost set-config educore_app_url
+http://app.educore.localhost`): users without Desk access who open `/desk` are sent there. Only back-office
+positions and System Managers use the Desk (AGENT.md 3.1).
 
 ## Tests
 

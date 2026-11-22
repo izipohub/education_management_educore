@@ -19,12 +19,17 @@ interface NavItem {
 }
 
 /** Each module adds its entry here as it is built; the server still checks every request */
-const NAV: NavItem[] = [{ label: "Home", icon: "⌂", to: "/" }];
+const NAV: NavItem[] = [
+  { label: "Home", icon: "⌂", to: "/" },
+  { label: "Admissions", icon: "✎", to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
+];
 
 const nav = computed(() => NAV.filter((item) => !item.roles || session.hasRole(...item.roles)));
 const initials = computed(() =>
   (session.me?.full_name ?? "")
     .split(/\s+/)
+    // words only: "Registrar (demo)" is "R", not "R("
+    .filter((part) => /^\p{L}/u.test(part))
     .slice(0, 2)
     .map((part) => part[0])
     .join("")

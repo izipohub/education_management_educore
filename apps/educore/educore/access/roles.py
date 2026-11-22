@@ -22,6 +22,8 @@ import frappe
 ROLES = {
 	# every employee
 	"University Staff": 1,
+	# may open Frappe's Desk: back-office positions only (AGENT.md 3.1, educore/access/desk.py)
+	"Desk Access": 1,
 	# executive and academic leadership
 	"Executive Management": 1,
 	"Campus Director": 1,
@@ -56,6 +58,8 @@ ROLES = {
 
 #: Every staff position starts with these: EduCore's staff role and HRMS self-service (leave, payslips)
 STAFF = ("University Staff", "Employee", "Employee Self Service")
+#: Back-office positions also work in Frappe's Desk
+DESK = (*STAFF, "Desk Access")
 
 #: Positions (Role Profiles), grouped as the university is. Each lists every role the position gets.
 POSITIONS = {
@@ -83,26 +87,26 @@ POSITIONS = {
 		"Accommodation Officer": (*STAFF, "Accommodation Officer"),
 	},
 	"Finance": {
-		"Bursar": (*STAFF, "Bursar", "Accounts Manager", "Prepared Report User"),
-		"Finance Officer": (*STAFF, "Finance Officer", "Accounts User"),
+		"Bursar": (*DESK, "Bursar", "Accounts Manager", "Prepared Report User"),
+		"Finance Officer": (*DESK, "Finance Officer", "Accounts User"),
 		"Student Fees Officer": (*STAFF, "Student Fees Officer", "Accounts User"),
 		"Cashier": (*STAFF, "Cashier", "Accounts User"),
 		"Financial Aid Officer": (*STAFF, "Financial Aid Officer"),
-		"Internal Auditor": (*STAFF, "Auditor", "Prepared Report User"),
+		"Internal Auditor": (*DESK, "Auditor", "Prepared Report User"),
 	},
 	"Human resources": {
-		"HR Manager": (*STAFF, "HR Manager", "HR User"),
-		"HR Officer": (*STAFF, "HR User"),
-		"Payroll Officer": (*STAFF, "HR User"),
+		"HR Manager": (*DESK, "HR Manager", "HR User"),
+		"HR Officer": (*DESK, "HR User"),
+		"Payroll Officer": (*DESK, "HR User"),
 	},
 	"Procurement and stores": {
-		"Procurement Manager": (*STAFF, "Purchase Manager", "Purchase Master Manager", "Purchase User"),
-		"Procurement Officer": (*STAFF, "Purchase User"),
-		"Stores Officer": (*STAFF, "Stock User"),
+		"Procurement Manager": (*DESK, "Purchase Manager", "Purchase Master Manager", "Purchase User"),
+		"Procurement Officer": (*DESK, "Purchase User"),
+		"Stores Officer": (*DESK, "Stock User"),
 	},
 	"Campus operations and ICT": {
 		"Facilities Manager": (*STAFF, "Facilities Manager"),
-		"ICT Administrator": (*STAFF, "System Manager"),
+		"ICT Administrator": (*DESK, "System Manager"),
 	},
 	"Students and outside users": {
 		"Student": ("Student",),

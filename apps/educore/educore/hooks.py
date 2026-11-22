@@ -23,7 +23,12 @@ has_permission = {
 	"Sales Invoice": "educore.academics.student_access.has_permission",
 }
 
+# Only back-office positions (Desk Access) and System Managers open the Desk; others go to the Vue app
+update_website_context = ["educore.access.desk.redirect_from_desk"]
+
 doc_events = {
+	# Desk users get the back-office Module Profile
+	"User": {"validate": "educore.access.desk.assign_module_profile"},
 	# Faculties, schools and departments live in ERPNext's Department tree
 	"Department": {"validate": "educore.institution.department.validate"},
 	# Programmes and courses belong to academic units, with codes, credits and NQF levels
