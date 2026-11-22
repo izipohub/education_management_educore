@@ -1,6 +1,8 @@
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from educore.tests.utils import submitted
+
 from educore.academics.calendar import ensure_academic_year, term
 from educore.api.v1 import admissions
 
@@ -15,7 +17,7 @@ class TestAdmissionsAPI(IntegrationTestCase):
 		frappe.set_user("Administrator")
 
 	def _applicant(self, offering="DIT-OSH-FT"):
-		return frappe.get_doc(
+		return submitted(frappe.get_doc(
 			{
 				"doctype": "Student Applicant",
 				"first_name": "Test",
@@ -24,7 +26,7 @@ class TestAdmissionsAPI(IntegrationTestCase):
 				"academic_year": "2027",
 				"academic_term": term(2027, "Semester 1"),
 			}
-		).insert(ignore_permissions=True)
+		).insert(ignore_permissions=True))
 
 	def _as(self, login):
 		frappe.set_user(f"{login}@educore.localhost")

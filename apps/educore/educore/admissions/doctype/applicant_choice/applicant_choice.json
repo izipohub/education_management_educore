@@ -1,0 +1,74 @@
+{
+ "actions": [],
+ "creation": "2026-11-22 16:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "rank",
+  "programme_offering",
+  "program",
+  "campus",
+  "eligibility",
+  "eligibility_note"
+ ],
+ "fields": [
+  {
+   "fieldname": "rank",
+   "fieldtype": "Int",
+   "label": "Choice",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "programme_offering",
+   "fieldtype": "Link",
+   "label": "Programme Offering",
+   "options": "Programme Offering",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Programme",
+   "options": "Program",
+   "fetch_from": "programme_offering.program",
+   "read_only": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "fetch_from": "programme_offering.campus",
+   "read_only": 1
+  },
+  {
+   "fieldname": "eligibility",
+   "fieldtype": "Select",
+   "label": "Eligibility",
+   "options": "\nMeets requirements\nDoes not meet requirements\nNeeds review",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "eligibility_note",
+   "fieldtype": "Small Text",
+   "label": "Why",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admissions",
+ "name": "Applicant Choice",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 1
+}

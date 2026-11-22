@@ -10,6 +10,19 @@ export const router = createRouter({
       component: () => import("@/modules/auth/LoginView.vue"),
       meta: { public: true, title: "Sign in" },
     },
+    // applying: open to anyone
+    {
+      path: "/apply",
+      name: "apply",
+      component: () => import("@/modules/apply/ApplyLandingView.vue"),
+      meta: { public: true, title: "Apply" },
+    },
+    {
+      path: "/apply/register",
+      name: "register",
+      component: () => import("@/modules/apply/RegisterView.vue"),
+      meta: { public: true, title: "Create an account" },
+    },
     {
       path: "/",
       component: () => import("@/core/layouts/AppLayout.vue"),
@@ -20,6 +33,12 @@ export const router = createRouter({
           name: "admissions",
           component: () => import("@/modules/admissions/AdmissionsView.vue"),
           meta: { title: "Admissions", roles: ["Admissions Officer", "Registrar"] },
+        },
+        {
+          path: "application",
+          name: "application",
+          component: () => import("@/modules/apply/ApplicationView.vue"),
+          meta: { title: "My application", roles: ["Applicant"] },
         },
         {
           path: "my-studies",
@@ -51,7 +70,7 @@ router.beforeEach(async (to) => {
 
   if (to.meta.public) {
     // a signed-in user has no business on the login page
-    return to.name === "login" && session.isSignedIn ? { name: "home" } : true;
+    return (to.name === "login" || to.name === "register") && session.isSignedIn ? { name: "home" } : true;
   }
   if (!session.isSignedIn) {
     return { name: "login", query: to.fullPath !== "/" ? { redirect: to.fullPath } : {} };
@@ -60,9 +79,12 @@ router.beforeEach(async (to) => {
   if (to.meta.roles && !session.hasRole(...to.meta.roles)) {
     return { name: "home" };
   }
-  // a student's home is their own studies
+  // a student's home is their own studies; an applicant's, their application
   if (to.name === "home" && session.isStudent) {
     return { name: "my-studies" };
+  }
+  if (to.name === "home" && session.hasRole("Applicant") && !session.hasRole("University Staff")) {
+    return { name: "application" };
   }
   return true;
 });

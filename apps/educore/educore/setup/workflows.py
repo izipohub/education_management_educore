@@ -11,11 +11,13 @@ import frappe
 ADMISSION_WORKFLOW = "EduCore Admission Decision"
 
 #: Workflow State: indicator style
-STATES = {"Applied": "Primary", "Approved": "Success", "Rejected": "Danger", "Admitted": "Info"}
-ACTIONS = ("Approve", "Reject", "Withdraw Offer", "Reconsider")
+STATES = {"Draft": "", "Applied": "Primary", "Approved": "Success", "Rejected": "Danger", "Admitted": "Info"}
+ACTIONS = ("Submit", "Approve", "Reject", "Withdraw Offer", "Reconsider")
 
-#: (state, role that may edit the application in that state)
+#: (state, role that may edit the application in that state). The first is where every application starts.
 DOCUMENT_STATES = (
+	# the applicant fills it in online (through educore.api.v1.apply), or staff capture a paper application
+	("Draft", "Academics User"),
 	("Applied", "Academics User"),
 	("Approved", "Academics User"),
 	("Rejected", "Registrar"),
@@ -23,12 +25,14 @@ DOCUMENT_STATES = (
 	("Admitted", "Registrar"),
 )
 
-#: (from, action, to, roles)
+#: (from, action, to, roles, the creator may act on their own application)
 TRANSITIONS = (
-	("Applied", "Approve", "Approved", ("Admissions Officer", "Registrar")),
-	("Applied", "Reject", "Rejected", ("Admissions Officer", "Registrar")),
-	("Approved", "Withdraw Offer", "Rejected", ("Admissions Officer", "Registrar")),
-	("Rejected", "Reconsider", "Applied", ("Registrar",)),
+	# the applicant submits their own application: "self-approval" is the point here
+	("Draft", "Submit", "Applied", ("Applicant", "Admissions Officer", "Registrar"), True),
+	("Applied", "Approve", "Approved", ("Admissions Officer", "Registrar"), False),
+	("Applied", "Reject", "Rejected", ("Admissions Officer", "Registrar"), False),
+	("Approved", "Withdraw Offer", "Rejected", ("Admissions Officer", "Registrar"), False),
+	("Rejected", "Reconsider", "Applied", ("Registrar",), False),
 )
 
 
@@ -58,9 +62,16 @@ def sync():
 	for state, role in DOCUMENT_STATES:
 		workflow.append("states", {"state": state, "doc_status": "0", "allow_edit": role})
 	workflow.transitions = []
-	for state, action, next_state, roles in TRANSITIONS:
+	for state, action, next_state, roles, self_approval in TRANSITIONS:
 		for role in roles:
 			workflow.append(
-				"transitions", {"state": state, "action": action, "next_state": next_state, "allowed": role}
+				"transitions",
+				{
+					"state": state,
+					"action": action,
+					"next_state": next_state,
+					"allowed": role,
+					"allow_self_approval": 1 if self_approval else 0,
+				},
 			)
 	workflow.save(ignore_permissions=True)

@@ -84,6 +84,7 @@ async function signIn() {
 
         <Button type="submit" label="Sign in" :loading="busy" :disabled="!email || !password" fluid class="submit" />
       </form>
+      <p class="apply-link">Applying to study? <RouterLink to="/apply">See programmes and apply</RouterLink></p>
     </section>
   </main>
 </template>
@@ -190,6 +191,16 @@ label {
 
 .error {
   margin-top: 0.75rem;
+}
+
+.apply-link {
+  margin: 1.25rem 0 0;
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.apply-link a {
+  color: var(--brand-accent);
 }
 
 .submit {

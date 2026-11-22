@@ -1,0 +1,150 @@
+{
+ "actions": [],
+ "creation": "2026-11-22 16:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "school_name",
+  "country",
+  "region",
+  "town",
+  "column_break_codes",
+  "emis_number",
+  "centre_number",
+  "ownership",
+  "section_status",
+  "active",
+  "added_by_applicant"
+ ],
+ "fields": [
+  {
+   "fieldname": "school_name",
+   "fieldtype": "Data",
+   "label": "School Name",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country",
+   "default": "Namibia",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "region",
+   "fieldtype": "Select",
+   "label": "Region",
+   "options": "\nErongo\nHardap\nǁKaras\nKavango East\nKavango West\nKhomas\nKunene\nOhangwena\nOmaheke\nOmusati\nOshana\nOshikoto\nOtjozondjupa\nZambezi",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "town",
+   "fieldtype": "Data",
+   "label": "Town",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_codes",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "emis_number",
+   "fieldtype": "Data",
+   "label": "EMIS Number",
+   "unique": 1,
+   "description": "The Ministry of Education's school number."
+  },
+  {
+   "fieldname": "centre_number",
+   "fieldtype": "Data",
+   "label": "Examination Centre Number",
+   "unique": 1,
+   "in_list_view": 1,
+   "description": "DNEA centre number, as printed on NSSC results."
+  },
+  {
+   "fieldname": "ownership",
+   "fieldtype": "Select",
+   "label": "Ownership",
+   "options": "\nGovernment\nPrivate"
+  },
+  {
+   "fieldname": "section_status",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active",
+   "default": "1"
+  },
+  {
+   "fieldname": "added_by_applicant",
+   "fieldtype": "Check",
+   "label": "Added by an Applicant",
+   "read_only": 1,
+   "description": "Typed in by an applicant whose school was not listed: check it, then complete or merge it."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admissions",
+ "name": "Secondary School",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "Admissions Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "University Staff",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "description": "A school applicants finished at. Loaded from the Ministry of Education's register; admissions keeps it current.",
+ "autoname": "SCH-.#####",
+ "naming_rule": "Expression (old style)",
+ "title_field": "school_name",
+ "show_title_field_in_link": 1,
+ "search_fields": "school_name,town,centre_number,emis_number",
+ "track_changes": 1
+}

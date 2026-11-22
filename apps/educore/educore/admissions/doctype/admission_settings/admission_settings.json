@@ -1,0 +1,97 @@
+{
+ "actions": [],
+ "creation": "2026-11-22 16:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "scale_section",
+  "scale_is_placeholder",
+  "best_subjects",
+  "points_scale",
+  "documents_section",
+  "certification_max_age_months",
+  "max_file_size_mb"
+ ],
+ "fields": [
+  {
+   "fieldname": "scale_section",
+   "fieldtype": "Section Break",
+   "label": "Points Scale"
+  },
+  {
+   "fieldname": "scale_is_placeholder",
+   "fieldtype": "Check",
+   "label": "Placeholder Scale",
+   "default": "0",
+   "description": "Set while the scale is EduCore's sample, not the university's: applicants and staff see a warning."
+  },
+  {
+   "fieldname": "best_subjects",
+   "fieldtype": "Int",
+   "label": "Subjects Counted",
+   "default": "5",
+   "description": "Points are the sum of the best results in this many subjects."
+  },
+  {
+   "fieldname": "points_scale",
+   "fieldtype": "Table",
+   "label": "Points per Grade",
+   "options": "Points Scale Row"
+  },
+  {
+   "fieldname": "documents_section",
+   "fieldtype": "Section Break",
+   "label": "Documents"
+  },
+  {
+   "fieldname": "certification_max_age_months",
+   "fieldtype": "Int",
+   "label": "Certification Valid For (Months)",
+   "default": "3",
+   "description": "A certified copy must have been certified within this many months of submitting. 0: no limit."
+  },
+  {
+   "fieldname": "max_file_size_mb",
+   "fieldtype": "Int",
+   "label": "Largest Upload (MB)",
+   "default": "5"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admissions",
+ "name": "Admission Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "description": "How applications are scored and checked. Load the university's own published points scale.",
+ "issingle": 1,
+ "track_changes": 1
+}

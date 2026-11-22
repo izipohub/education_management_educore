@@ -2,6 +2,8 @@ import frappe
 from frappe.model.workflow import apply_workflow
 from frappe.tests import IntegrationTestCase
 
+from educore.tests.utils import submitted
+
 from educore.academics.calendar import ensure_academic_year, term
 from educore.api.v1 import registry
 
@@ -19,7 +21,7 @@ class TestRegistryAPI(IntegrationTestCase):
 		frappe.set_user("Administrator")
 
 	def _approved(self, offering="BCS-WHK-FT", email=None):
-		applicant = frappe.get_doc(
+		applicant = submitted(frappe.get_doc(
 			{
 				"doctype": "Student Applicant",
 				"first_name": "Test",
@@ -29,7 +31,7 @@ class TestRegistryAPI(IntegrationTestCase):
 				"academic_term": term(2027, "Semester 1"),
 				"student_email_id": email,
 			}
-		).insert(ignore_permissions=True)
+		).insert(ignore_permissions=True))
 		apply_workflow(applicant, "Approve")
 		return applicant.name
 

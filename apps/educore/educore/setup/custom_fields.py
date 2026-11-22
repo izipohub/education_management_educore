@@ -111,6 +111,26 @@ CUSTOM_FIELDS = {
 			"insert_after": "educore_credits",
 			"description": "Full-time. Part-time and distance offerings may take longer.",
 		},
+		{
+			"fieldname": "educore_entry_section",
+			"label": "Entry Requirements",
+			"fieldtype": "Section Break",
+			"insert_after": "educore_duration_years",
+		},
+		{
+			"fieldname": "educore_min_points",
+			"label": "Minimum Points",
+			"fieldtype": "Int",
+			"insert_after": "educore_entry_section",
+			"description": "On the university's points scale (Admission Settings), over the best subjects counted.",
+		},
+		{
+			"fieldname": "educore_subject_requirements",
+			"label": "Subject Requirements",
+			"fieldtype": "Table",
+			"options": "Programme Subject Requirement",
+			"insert_after": "educore_min_points",
+		},
 	],
 	"Course": [
 		{
@@ -199,6 +219,104 @@ CUSTOM_FIELDS = {
 			"fieldtype": "Datetime",
 			"read_only": 1,
 			"insert_after": "educore_decided_by",
+		},
+		# the online application (educore/admissions/application.py)
+		{
+			"fieldname": "educore_application_section",
+			"label": "Online Application",
+			"fieldtype": "Section Break",
+			"insert_after": "educore_decided_on",
+		},
+		{
+			"fieldname": "educore_applicant_user",
+			"label": "Applicant's Login",
+			"fieldtype": "Link",
+			"options": "User",
+			"read_only": 1,
+			"insert_after": "educore_application_section",
+		},
+		{
+			"fieldname": "educore_pathway",
+			"label": "Pathway",
+			"fieldtype": "Select",
+			"options": "School leaver\nInternational",
+			"default": "School leaver",
+			"insert_after": "educore_applicant_user",
+		},
+		{
+			"fieldname": "educore_submitted_on",
+			"label": "Submitted On",
+			"fieldtype": "Datetime",
+			"read_only": 1,
+			"insert_after": "educore_pathway",
+		},
+		{
+			"fieldname": "educore_declaration",
+			"label": "Declaration Accepted",
+			"fieldtype": "Check",
+			"read_only": 1,
+			"insert_after": "educore_submitted_on",
+			"description": "The applicant declared the information true and complete (their electronic signature).",
+		},
+		{
+			"fieldname": "educore_choices",
+			"label": "Programme Choices",
+			"fieldtype": "Table",
+			"options": "Applicant Choice",
+			"insert_after": "educore_declaration",
+		},
+		{
+			"fieldname": "educore_school_section",
+			"label": "School and Results",
+			"fieldtype": "Section Break",
+			"insert_after": "educore_choices",
+		},
+		{
+			"fieldname": "educore_secondary_school",
+			"label": "Secondary School",
+			"fieldtype": "Link",
+			"options": "Secondary School",
+			"insert_after": "educore_school_section",
+		},
+		{
+			"fieldname": "educore_exam_number",
+			"label": "Examination Number",
+			"fieldtype": "Data",
+			"insert_after": "educore_secondary_school",
+		},
+		{
+			"fieldname": "educore_exam_year",
+			"label": "Examination Year",
+			"fieldtype": "Int",
+			"insert_after": "educore_exam_number",
+		},
+		{
+			"fieldname": "educore_points",
+			"label": "Points",
+			"fieldtype": "Int",
+			"read_only": 1,
+			"insert_after": "educore_exam_year",
+			"in_list_view": 1,
+		},
+		{
+			"fieldname": "educore_results",
+			"label": "School Results",
+			"fieldtype": "Table",
+			"options": "Applicant School Result",
+			"insert_after": "educore_points",
+		},
+		{
+			"fieldname": "educore_documents_section",
+			"label": "Documents",
+			"fieldtype": "Section Break",
+			"insert_after": "educore_results",
+		},
+		{
+			"fieldname": "educore_documents",
+			"label": "Documents",
+			"fieldtype": "Table",
+			"options": "Applicant Document",
+			"insert_after": "educore_documents_section",
 		},
 	],
 	"Student": [
@@ -346,5 +464,19 @@ CUSTOM_FIELDS = {
 }
 
 
+#: (DocType, field, property, value, type): changes to upstream fields, as Property Setters
+PROPERTY_SETTERS = (
+	# an online application is a Draft until the applicant submits it (workflow "EduCore Admission Decision")
+	("Student Applicant", "application_status", "options", "Draft\nApplied\nApproved\nRejected\nAdmitted", "Text"),
+	("Student Applicant", "application_status", "default", "Draft", "Data"),
+	# a draft has no offering yet; the first choice sets it, and submitting requires it
+	("Student Applicant", "program", "reqd", "0", "Check"),
+)
+
+
 def sync():
+	from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
 	create_custom_fields(CUSTOM_FIELDS, update=True)
+	for doctype, field, prop, value, prop_type in PROPERTY_SETTERS:
+		make_property_setter(doctype, field, prop, value, prop_type, validate_fields_for_doctype=False)

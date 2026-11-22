@@ -2,6 +2,8 @@ import frappe
 from frappe.model.workflow import WorkflowTransitionError, apply_workflow
 from frappe.tests import IntegrationTestCase
 
+from educore.tests.utils import submitted
+
 from educore.academics.calendar import ensure_academic_year, term
 
 
@@ -15,7 +17,7 @@ class TestAdmissionDecisions(IntegrationTestCase):
 		frappe.set_user("Administrator")
 
 	def _applicant(self, offering="DIT-OSH-FT"):
-		return frappe.get_doc(
+		return submitted(frappe.get_doc(
 			{
 				"doctype": "Student Applicant",
 				"first_name": "Test",
@@ -24,7 +26,7 @@ class TestAdmissionDecisions(IntegrationTestCase):
 				"academic_year": "2027",
 				"academic_term": term(2027, "Semester 1"),
 			}
-		).insert(ignore_permissions=True)
+		).insert(ignore_permissions=True))
 
 	def _as(self, login, applicant, action):
 		frappe.set_user(f"{login}@educore.localhost")

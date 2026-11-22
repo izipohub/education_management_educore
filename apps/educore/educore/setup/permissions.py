@@ -33,6 +33,12 @@ READ_ONLY = (
 )
 
 
+#: (DocType, role): read the records the user created themselves, nothing else and no writing. Applicants read
+#: their own application (Frappe's workflow checks read access before a Submit); every change goes through
+#: educore.api.v1.apply, which takes only the fields it lists.
+OWN_RECORDS_READ = (("Student Applicant", "Applicant"),)
+
+
 def _ensure_row(doctype, role):
 	if not frappe.db.exists("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0}):
 		add_permission(doctype, role, 0)
@@ -47,4 +53,10 @@ def sync():
 		_ensure_row(doctype, role)
 		update_permission_property(doctype, role, 0, "read", 1, validate=False)
 		for right in ("write", "create", "delete", "submit", "cancel", "amend"):
+			update_permission_property(doctype, role, 0, right, 0, validate=False)
+	for doctype, role in OWN_RECORDS_READ:
+		_ensure_row(doctype, role)
+		update_permission_property(doctype, role, 0, "read", 1, validate=False)
+		update_permission_property(doctype, role, 0, "if_owner", 1, validate=False)
+		for right in ("write", "create", "delete", "submit", "cancel", "amend", "report", "export", "print", "email", "share"):
 			update_permission_property(doctype, role, 0, right, 0, validate=False)

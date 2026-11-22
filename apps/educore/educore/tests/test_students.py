@@ -3,6 +3,8 @@ from education.education.api import enroll_student
 from frappe.model.workflow import apply_workflow
 from frappe.tests import IntegrationTestCase
 
+from educore.tests.utils import submitted
+
 from educore.academics.calendar import ensure_academic_year, term
 from educore.access import demo_users
 
@@ -14,7 +16,7 @@ class TestAdmissionsFlow(IntegrationTestCase):
 		ensure_academic_year(2027)
 
 	def _applicant(self, offering="BCS-OSH-FT", **extra):
-		return frappe.get_doc(
+		return submitted(frappe.get_doc(
 			{
 				"doctype": "Student Applicant",
 				"first_name": "Test",
@@ -24,7 +26,7 @@ class TestAdmissionsFlow(IntegrationTestCase):
 				"academic_term": term(2027, "Semester 1"),
 				**extra,
 			}
-		).insert(ignore_permissions=True)
+		).insert(ignore_permissions=True))
 
 	def test_an_application_is_for_an_offering(self):
 		applicant = self._applicant(program=frappe.db.get_value("Program", {"educore_programme_code": "BACC"}))

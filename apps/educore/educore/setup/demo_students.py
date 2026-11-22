@@ -51,7 +51,8 @@ REJECTED = [
 
 
 def _applicant(first, last, offering, year, email=None, approve=False):
-	"""An application, which always starts as Applied; approve=True takes the workflow's Approve action"""
+	"""A paper application captured by staff: created as a Draft and submitted (the workflow's Submit);
+	approve=True also takes the workflow's Approve action"""
 	existing = frappe.db.get_value("Student Applicant", {"first_name": first, "last_name": last})
 	if not existing:
 		existing = (
@@ -71,6 +72,8 @@ def _applicant(first, last, offering, year, email=None, approve=False):
 			.insert(ignore_permissions=True)
 			.name
 		)
+	if frappe.db.get_value("Student Applicant", existing, "application_status") == "Draft":
+		apply_workflow(frappe.get_doc("Student Applicant", existing), "Submit")
 	if approve and frappe.db.get_value("Student Applicant", existing, "application_status") == "Applied":
 		apply_workflow(frappe.get_doc("Student Applicant", existing), "Approve")
 	return existing

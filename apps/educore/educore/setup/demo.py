@@ -131,6 +131,10 @@ def create_demo_university():
 	ensure_academic_year(2026)
 	ensure_academic_year(2027)
 	create_fee_structures()
+
+	from educore.setup.demo_admissions import create_admissions_setup
+
+	create_admissions_setup()
 	frappe.db.commit()
 	print(
 		f"{company}: {len(CAMPUSES)} campuses, {sum(1 + len(u[4]) for u in UNITS)} units, "

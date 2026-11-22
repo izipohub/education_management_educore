@@ -15,8 +15,19 @@ def _offering(name):
 
 
 def validate_applicant(doc, method=None):
+	from educore.admissions import application
+
+	status = doc.application_status or "Draft"
+	if status == "Draft":
+		# an online application being filled in: up to three ranked choices, the first under decision
+		application.tidy_draft(doc)
+	# points and eligibility are always recomputed, so neither can be typed in
+	application.assess(doc)
+
 	offering = _offering(doc.get("educore_programme_offering"))
 	if not offering:
+		if status == "Draft":
+			return
 		frappe.throw(_("Choose the programme offering: the programme, campus and mode of study applied for"))
 	doc.program = offering.program
 	doc.campus = offering.campus
@@ -24,6 +35,10 @@ def validate_applicant(doc, method=None):
 	if doc.is_new() and not offering.is_active:
 		frappe.throw(_("{0} is not taking applications").format(offering.name))
 	if not doc.is_new() and doc.has_value_changed("application_status"):
+		before = doc.get_doc_before_save()
+		# an online application must be complete to submit; a paper application staff capture was checked in person
+		if before and before.application_status == "Draft" and status == "Applied" and doc.get("educore_applicant_user"):
+			application.check_submission(doc)
 		_record_decision(doc, offering)
 
 

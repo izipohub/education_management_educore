@@ -1,8 +1,8 @@
 # Online applications — proposal
 
-Status: **proposal for discussion** (2026-11-22). Decisions marked **Decide** need the product owner and,
-for policy, the university's registrar. Nothing here is built yet; the admissions decision workflow,
-offerings and intake capacity it builds on already exist.
+Status (2026-11-22): **phase 1 built** (applicant portal: `educore.api.v1.apply`, `educore/admissions`, the Vue
+pages `/apply`, `/apply/register`, `/application`). Phases 2–5 are proposals. Decisions still open are marked
+**Decide**.
 
 ## 1. How Namibian universities do it today
 

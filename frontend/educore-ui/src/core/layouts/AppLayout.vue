@@ -19,11 +19,12 @@ interface NavItem {
 }
 
 /** Everyone but students (whose home is My studies) */
-const STAFF_HOME = ["University Staff", "Applicant", "Sponsor", "Guardian", "External Examiner", "System Manager"];
+const STAFF_HOME = ["University Staff", "Sponsor", "Guardian", "External Examiner", "System Manager"];
 
 /** Each module adds its entry here as it is built; the server still checks every request */
 const NAV: NavItem[] = [
   { label: "Home", icon: "⌂", to: "/", roles: STAFF_HOME },
+  { label: "My application", icon: "✉", to: "/application", roles: ["Applicant"] },
   { label: "My studies", icon: "☰", to: "/my-studies", roles: ["Student"] },
   { label: "My teaching", icon: "✦", to: "/my-teaching", roles: ["Lecturer"] },
   { label: "Admissions", icon: "✎", to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
