@@ -78,6 +78,7 @@ def setup_university(
 			frappe.throw(f"University setup failed: {result}")
 
 	company = frappe.db.get_value("Company", {"company_name": company_name}) or company_name
+	allow_registration_day_user_volume()
 	rename_main_cost_center(company)
 	remove_default_departments(company)
 
@@ -86,6 +87,20 @@ def setup_university(
 	ensure_fee_setup(company)
 	frappe.db.commit()
 	return company
+
+
+#: New logins per hour. Frappe's default (60) guards a public sign-up form; a registry office enrolling an
+#: intake creates a student login per enrolment and would be stopped mid-morning on registration day.
+USERS_PER_HOUR = 1000
+
+
+def allow_registration_day_user_volume():
+	"""Raise Frappe's new-user throttle to a university's volume, unless the site already sets its own"""
+	from frappe.installer import update_site_config
+
+	if not frappe.conf.get("throttle_user_limit"):
+		update_site_config("throttle_user_limit", USERS_PER_HOUR)
+		frappe.local.conf["throttle_user_limit"] = USERS_PER_HOUR
 
 
 def rename_main_cost_center(company: str):

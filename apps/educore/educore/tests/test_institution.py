@@ -90,3 +90,5 @@ class TestUniversitySetup(IntegrationTestCase):
 		self.assertEqual(frappe.db.get_value("Company", COMPANY, "cost_center"), "Central Administration - EDU")
 		self.assertFalse(frappe.db.exists("Cost Center", "Main - EDU"))
 		self.assertFalse(frappe.db.exists("Department", "Sales - EDU"))
+		# a registry office creates a student login per enrolment on registration day
+		self.assertGreaterEqual(int(frappe.conf.get("throttle_user_limit") or 0), university.USERS_PER_HOUR)
