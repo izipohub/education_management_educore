@@ -7,6 +7,7 @@ import ProgressSpinner from "primevue/progressspinner";
 import Tag from "primevue/tag";
 import { useToast } from "primevue/usetoast";
 import { computed, ref, watch } from "vue";
+import { eligibilityLabel, offerLabel } from "@/core/status";
 import { formatDate, formatMoney, fromIsoDate, shortUser, toIsoDate } from "@/core/format";
 import DatePicker from "primevue/datepicker";
 import { type Review, extendOffer, getReview, verifyDocument, waiveFee } from "./api";
@@ -126,7 +127,7 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
     <div v-else class="review">
       <section class="block">
         <div class="state">
-          <Tag v-if="review.ready" severity="success" value="Ready for a decision" />
+          <Tag v-if="review.ready" severity="success" value="Ready" />
           <Tag v-else severity="warn" value="Incomplete" />
           <span class="sub">{{ review.pathway }}<template v-if="review.international"> (international)</template> · {{ review.intake }}<template v-if="review.submitted_on"> · submitted {{ formatDate(review.submitted_on) }}</template></span>
         </div>
@@ -142,7 +143,7 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
       <section v-if="review.offer" class="block">
         <h3>Offer</h3>
         <div class="fee">
-          <Tag :severity="offerSeverity(review.offer.status)" :value="review.offer.status ?? 'Offered'" />
+          <Tag :severity="offerSeverity(review.offer.status)" :value="offerLabel(review.offer.status) || 'Offered'" />
           <span v-if="review.offer.status === 'Awaiting response' && review.offer.deadline" class="sub">respond by {{ formatDate(review.offer.deadline) }}</span>
           <span v-else-if="review.offer.responded_on" class="sub">{{ formatDate(review.offer.responded_on) }}</span>
           <Button
@@ -181,7 +182,7 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
         <h3>School and results <span v-if="review.points !== null" class="sub">· {{ review.points }} points</span></h3>
         <p>
           {{ review.school.school_name }}<template v-if="review.school.town">, {{ review.school.town }}</template>
-          <span class="sub"> · centre {{ review.school.centre_number || "—" }} · exam no. {{ review.exam_number || "—" }} ({{ review.exam_year || "—" }})</span>
+          <span class="sub"> · centre {{ review.school.centre_number || "not given" }} · exam no. {{ review.exam_number || "not given" }} ({{ review.exam_year || "year not given" }})</span>
         </p>
         <Message v-if="review.school.added_by_applicant" severity="warn" :closable="false">
           The applicant typed this school in: it is not on the school list yet.
@@ -258,7 +259,7 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
         <h3>Choices</h3>
         <div v-for="c in review.choices" :key="c.offering" class="choice">
           <span>{{ c.rank }}. {{ c.program }} <span class="sub">({{ c.offering }})</span></span>
-          <Tag :severity="eligibilitySeverity(c.eligibility)" :value="c.eligibility ?? 'Not assessed'" />
+          <Tag :severity="eligibilitySeverity(c.eligibility)" :value="eligibilityLabel(c.eligibility)" />
           <span class="sub">{{ c.eligibility_note }}</span>
         </div>
       </section>

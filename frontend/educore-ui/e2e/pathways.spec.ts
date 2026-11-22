@@ -29,7 +29,7 @@ test("a mature age applicant enters work experience instead of school results", 
 
   // only undergraduate programmes are offered on an undergraduate route
   await page.getByText("3 · Programmes").click();
-  await expect(page.getByText("Needs review").first()).toBeVisible();
+  await expect(page.getByText("Review", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(/Entry: at least/)).toHaveCount(0);
   await page.getByRole("combobox", { name: "Choice 3" }).click();
   await expect(page.getByRole("option", { name: /Bachelor of Accounting/ }).first()).toBeVisible();
@@ -55,7 +55,7 @@ test("an admissions officer sees a postgraduate applicant's qualifications and r
   await expect(panel.getByRole("cell", { name: "NQF 7", exact: true })).toHaveCount(0);
   await panel.getByRole("button", { name: "View all (1)" }).first().click();
   await expect(panel.getByRole("cell", { name: "NQF 7", exact: true })).toBeVisible();
-  await expect(panel.getByText("Meets requirements")).toBeVisible();
+  await expect(panel.getByText("Eligible", { exact: true })).toBeVisible();
   await expect(panel.getByText("Dr Demo Referee One")).toBeVisible();
   await expect(panel.getByRole("article").filter({ hasText: "Degree or Diploma Certificate" })).toBeVisible();
   await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));

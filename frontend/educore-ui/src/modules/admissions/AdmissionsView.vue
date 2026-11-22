@@ -13,6 +13,7 @@ import ReviewPanel from "./ReviewPanel.vue";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, ref, watch } from "vue";
 import { ApiError } from "@/core/api/client";
+import { offerLabel } from "@/core/status";
 import { formatDate, shortUser } from "@/core/format";
 import {
   type Action,
@@ -230,7 +231,7 @@ function actionSeverity(action: Action) {
       <Column v-if="status === 'Approved'" header="Offer">
         <template #body="{ data }">
           <template v-if="data.offer_status">
-            <Tag :severity="OFFER_SEVERITY[data.offer_status]" :value="data.offer_status" />
+            <Tag :severity="OFFER_SEVERITY[data.offer_status]" :value="offerLabel(data.offer_status)" />
             <div v-if="data.offer_status === 'Awaiting response' && data.offer_deadline" class="sub nowrap">by {{ formatDate(data.offer_deadline) }}</div>
           </template>
           <span v-else class="sub">In person</span>

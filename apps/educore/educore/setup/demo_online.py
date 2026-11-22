@@ -134,16 +134,31 @@ def create() -> list[str]:
 
 
 def _offer(name: str):
-	"""As the Admissions Office: documents verified, fee waived, place offered with a condition"""
+	"""The fee paid by EFT and matched from the bank statement, documents verified by the Admissions Office, and
+	a place offered with a condition"""
 	from frappe.model.workflow import apply_workflow
 
 	from educore.admissions import fees
 
 	doc = frappe.get_doc("Student Applicant", name)
+	bank_line = frappe.get_doc(
+		{
+			"doctype": "Bank Transaction",
+			"date": frappe.utils.add_days(nowdate(), -3),
+			"bank_account": frappe.db.get_single_value("Admission Settings", "fee_bank_account"),
+			"company": frappe.db.get_value("Campus", {"is_main_campus": 1}, "company"),
+			"deposit": doc.educore_fee_amount,
+			"currency": "NAD",
+			"description": f"EFT T IIPINGE {name}",
+		}
+	).insert(ignore_permissions=True)
+	bank_line.submit()
+	fees.match_bank_transactions()
+
+	doc = frappe.get_doc("Student Applicant", name)
 	for row in doc.educore_documents:
 		row.status, row.verified_by, row.verified_on = "Verified", "Administrator", frappe.utils.now_datetime()
 	doc.save(ignore_permissions=True)
-	fees.waive(name, "Demo: fee waived")
 	frappe.db.set_value("Student Applicant", name, "educore_offer_conditions", "Final NSSCAS results to be submitted by 31 January 2027.")
 	apply_workflow(frappe.get_doc("Student Applicant", name), "Approve")
 

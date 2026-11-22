@@ -5,6 +5,7 @@ import Tag from "primevue/tag";
 import Textarea from "primevue/textarea";
 import { useToast } from "primevue/usetoast";
 import { computed, ref } from "vue";
+import { offerLabel } from "@/core/status";
 import { formatDate, formatMoney } from "@/core/format";
 import { type Application, acceptOffer, declineOffer } from "./api";
 
@@ -49,7 +50,7 @@ const SEVERITY = { "Awaiting response": "warn", Accepted: "success", Declined: "
   <article class="card offer">
     <div class="offer-head">
       <h2>Offer of a place</h2>
-      <Tag :severity="SEVERITY[offer.status]" :value="offer.status" />
+      <Tag :severity="SEVERITY[offer.status]" :value="offerLabel(offer.status)" />
     </div>
 
     <p class="programme">

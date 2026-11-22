@@ -43,7 +43,7 @@ test("an applicant works through their draft application", async ({ page }) => {
   await page.screenshot({ path: "e2e/results/application-results.png", fullPage: true });
 
   await page.getByText("3 · Programmes").click();
-  await expect(page.getByText("Meets requirements").first()).toBeVisible();
+  await expect(page.getByText("Eligible", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Biology below NSSCO C")).toBeVisible();
   await page.screenshot({ path: "e2e/results/application-choices.png", fullPage: true });
 

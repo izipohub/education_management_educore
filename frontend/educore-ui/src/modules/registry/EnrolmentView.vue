@@ -150,8 +150,8 @@ function invoiceSeverity(status: string) {
         <template #body="{ data }">
           <div class="actions">
             <div v-if="data.needs_acceptance" class="awaiting">
-              <Tag severity="warn" value="Awaiting acceptance" class="nowrap" />
-              <span v-if="data.offer_deadline" class="sub nowrap">by {{ formatDate(data.offer_deadline) }}</span>
+              <Tag severity="warn" value="Pending" class="nowrap" title="The applicant has not accepted the offer yet" />
+              <span class="sub nowrap">acceptance<template v-if="data.offer_deadline"> by {{ formatDate(data.offer_deadline) }}</template></span>
             </div>
             <Button v-else-if="page?.can_enrol" label="Enrol" size="small" @click="startEnrol(data)" />
           </div>

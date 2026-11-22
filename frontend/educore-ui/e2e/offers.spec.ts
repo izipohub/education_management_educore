@@ -12,7 +12,7 @@ async function signIn(page: Page, login: string) {
 
 test("an applicant sees their offer, its conditions and deadline, and the letter", async ({ page }) => {
   await signIn(page, "offer.applicant");
-  await expect(page.getByText("Offered a place")).toBeVisible();
+  await expect(page.getByText("Offered", { exact: true })).toBeVisible();
   const offer = page.getByRole("article").filter({ has: page.getByRole("heading", { name: "Offer of a place" }) });
   await expect(offer.getByText("Bachelor of Computer Science", { exact: true })).toBeVisible();
   await expect(offer.getByText(/Conditions: Final NSSCAS results/)).toBeVisible();
@@ -36,7 +36,7 @@ test("admissions sees the offer awaiting a response", async ({ page }) => {
   await page.getByRole("link", { name: "Admissions" }).click();
   await page.getByRole("radio", { name: /^Approved/ }).or(page.getByRole("button", { name: /^Approved/ })).first().click();
   const tomas = page.getByRole("row").filter({ hasText: "Tomas Iipinge" });
-  await expect(tomas.getByText("Awaiting response")).toBeVisible();
+  await expect(tomas.getByText("Pending", { exact: true })).toBeVisible();
   await expect(tomas.getByText(/^by /)).toBeVisible();
   // paper applications are answered in person
   await expect(page.getByRole("row").filter({ hasText: "Maria Kandjii" }).getByText("In person")).toBeVisible();
@@ -51,7 +51,7 @@ test("the registry enrols an online applicant only once they accept", async ({ p
   await signIn(page, "registry-officer.whk");
   await page.getByRole("link", { name: "Enrolment" }).click();
   const tomas = page.getByRole("row").filter({ hasText: "Tomas Iipinge" });
-  await expect(tomas.getByText("Awaiting acceptance")).toBeVisible();
+  await expect(tomas.getByText("Pending", { exact: true })).toBeVisible();
   await expect(tomas.getByRole("button", { name: "Enrol" })).toHaveCount(0);
   // paper offers are enrolled as before
   await expect(page.getByRole("row").filter({ hasText: "Maria Kandjii" }).getByRole("button", { name: "Enrol" })).toBeVisible();

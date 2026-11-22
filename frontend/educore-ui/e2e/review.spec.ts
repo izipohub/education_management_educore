@@ -51,7 +51,7 @@ test("an admissions officer reviews an online application before deciding", asyn
 
 test("an applicant sees how to pay, with their application number as the reference", async ({ page }) => {
   await signIn(page, "online.applicant");
-  await expect(page.getByText("Under review")).toBeVisible();
+  await expect(page.getByText("Submitted", { exact: true })).toBeVisible();
   await expect(page.getByText("Application fee N$ 150.00")).toBeVisible();
   await expect(page.getByText("Not received yet")).toBeVisible();
   await expect(page.locator(".reference")).toHaveText(/^EDU-APP-\d{4}-\d{5}$/);

@@ -11,6 +11,7 @@ import SelectButton from "primevue/selectbutton";
 import Tag from "primevue/tag";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, reactive, ref, watch } from "vue";
+import { applicationLabel, eligibilityLabel } from "@/core/status";
 import { formatDate, fromIsoDate, toIsoDate } from "@/core/format";
 import FeePanel from "./FeePanel.vue";
 import OfferPanel from "./OfferPanel.vue";
@@ -267,7 +268,7 @@ const offeringOptions = computed(() =>
     .filter((o) => o.level === (pathway.value?.level ?? "Undergraduate"))
     .map((o) => ({
     value: o.name,
-    label: `${o.program} — ${o.campus.replace(" Campus", "")}, ${o.mode_of_study}`,
+    label: `${o.program}, ${o.campus.replace(" Campus", "")}, ${o.mode_of_study}`,
   })),
 );
 const offeringByName = computed(() => new Map((options.value?.offerings ?? []).map((o) => [o.name, o])));
@@ -368,18 +369,7 @@ const statusSeverity = computed(() =>
     app.value?.status ?? "Draft"
   ],
 );
-const statusText = computed(
-  () =>
-    ({
-      Draft: "Draft",
-      Applied: "Under review",
-      Approved: "Offered a place",
-      Rejected: "Unsuccessful",
-      Declined: "Offer declined",
-      Lapsed: "Offer lapsed",
-      Admitted: "Admitted",
-    })[app.value?.status ?? "Draft"],
-);
+const statusText = computed(() => applicationLabel(app.value?.status ?? "Draft"));
 </script>
 
 <template>
@@ -450,7 +440,7 @@ const statusText = computed(
           <Message v-if="app.decision_reason" severity="error" :closable="false">{{ app.decision_reason }}</Message>
           <h2>Your choices</h2>
           <ol class="choice-list">
-            <li v-for="c in app.choices" :key="c.offering">{{ c.program }} — {{ c.campus }}</li>
+            <li v-for="c in app.choices" :key="c.offering">{{ c.program }}, {{ c.campus }}</li>
           </ol>
           <h2>Documents</h2>
           <ul class="doc-list">
@@ -621,7 +611,7 @@ const statusText = computed(
               />
               <small v-if="choices[index] && showsEntry" class="sub">Entry: {{ requirementText(choices[index]) }}</small>
               <div v-if="eligibilityFor(choices[index])" class="eligibility">
-                <Tag :severity="eligibilitySeverity(eligibilityFor(choices[index])?.eligibility)" :value="eligibilityFor(choices[index])?.eligibility ?? ''" />
+                <Tag :severity="eligibilitySeverity(eligibilityFor(choices[index])?.eligibility)" :value="eligibilityLabel(eligibilityFor(choices[index])?.eligibility)" />
                 <span class="sub">{{ eligibilityFor(choices[index])?.eligibility_note }}</span>
               </div>
             </div>
@@ -691,7 +681,7 @@ const statusText = computed(
               <li v-for="q in app.prior_qualifications" :key="q.qualification + q.institution">{{ q.qualification }}, {{ q.institution }}<template v-if="q.year_completed"> ({{ q.year_completed }})</template></li>
               <li v-if="app.employment.length">{{ app.employment.length }} {{ app.employment.length === 1 ? "job" : "jobs" }}<template v-if="app.work_years"> · {{ app.work_years }} years of work</template></li>
               <li v-if="app.referees.length">Referees: {{ app.referees.map((r) => r.full_name).join(", ") }}</li>
-              <li v-for="c in app.choices" :key="c.offering">Choice {{ c.rank }}: {{ c.program }} — {{ c.campus }}</li>
+              <li v-for="c in app.choices" :key="c.offering">Choice {{ c.rank }}: {{ c.program }}, {{ c.campus }}</li>
               <li>{{ app.documents.filter((d) => d.uploaded).length }} documents uploaded</li>
             </ul>
             <FeePanel v-if="app.fee.amount" :fee="app.fee" />
