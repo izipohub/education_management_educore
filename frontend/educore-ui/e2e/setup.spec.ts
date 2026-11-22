@@ -37,6 +37,11 @@ test("the registrar sets the admission rules", async ({ page }) => {
   await expect(listItem(page, "Mature Age Entry").getByText(/from age 25/)).toBeVisible();
   await openRecord(page, "Mature Age Entry");
   await expect(pane(page).getByLabel("Minimum age")).toHaveValue("25");
+  // the name can be changed; renaming keeps its applications (cancelled here)
+  await pane(page).getByLabel("Name", { exact: true }).fill("Mature Age Entry (MAE)");
+  await expect(pane(page).getByText("Renaming keeps its applications")).toBeVisible();
+  await pane(page).getByRole("button", { name: "Cancel" }).click();
+  await expect(pane(page).getByLabel("Name", { exact: true })).toHaveValue("Mature Age Entry");
   await page.screenshot({ path: "e2e/results/setup-pathway.png" });
 
   await page.getByRole("tab", { name: /^Programmes/ }).click();

@@ -27,9 +27,10 @@ const active = flag("active");
 
 function save() {
   const { document_name, required_for, must_be_certified, description, active: inUse } = form.value;
+  // a changed name renames the document; uploads and pathways follow
   emit(
     "save",
-    { required_for, must_be_certified, description, active: inUse, ...(isNew.value ? { document_name } : {}) },
+    { required_for, must_be_certified, description, active: inUse, document_name: document_name.trim() },
     isNew.value ? undefined : (props.document as DocumentType).name,
   );
 }
@@ -42,7 +43,7 @@ function save() {
     </template>
     <DetailSection title="Document">
       <div class="form">
-        <EcField v-if="isNew" label="Name" for="doc-name"><InputText id="doc-name" v-model="form.document_name" fluid /></EcField>
+        <EcField label="Name" for="doc-name"><InputText id="doc-name" v-model="form.document_name" fluid /></EcField>
         <EcField label="Asked of" for="doc-for" label-id="doc-for-label" hint="Pathway only: asked for by the pathways that list it">
           <Select v-model="form.required_for" input-id="doc-for" aria-labelledby="doc-for-label" :options="setup.choices.required_for" fluid />
         </EcField>
@@ -54,7 +55,7 @@ function save() {
     </DetailSection>
     <template #actions>
       <EcButton label="Cancel" variant="ghost" :disabled="saving" @click="isNew ? emit('cancel') : reset()" />
-      <EcButton label="Save" variant="primary" :loading="saving" :disabled="isNew && !form.document_name.trim()" @click="save" />
+      <EcButton label="Save" variant="primary" :loading="saving" :disabled="!form.document_name.trim()" @click="save" />
     </template>
   </DetailPane>
 </template>

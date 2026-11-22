@@ -24,8 +24,11 @@ test("an admissions officer reviews an online application before deciding", asyn
   await openRecord(page, "Nangula Haufiku");
   const record = pane(page);
   // what is outstanding comes first; no offer until it is done
-  await expect(record.getByText("3 documents to verify · Application fee outstanding")).toBeVisible();
-  await expect(record.getByRole("button", { name: "Make offer" })).toBeDisabled();
+  // the sections carry the statuses; the offer waits until they are done, and its button says why
+  await expect(record.getByText("0 of 3 verified")).toBeVisible();
+  const offer = record.getByRole("button", { name: "Make offer" });
+  await expect(offer).toBeDisabled();
+  await expect(offer).toHaveAttribute("title", "3 documents to verify · Application fee outstanding");
   await expect(record.getByRole("link", { name: "Open file" }).first()).toBeVisible();
   await expand(page, "Results");
   await expect(record.getByText("Business Studies")).toBeVisible();

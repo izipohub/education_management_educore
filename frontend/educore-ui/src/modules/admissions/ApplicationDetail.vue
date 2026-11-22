@@ -123,7 +123,10 @@ async function confirmDecision() {
   if (ok) deciding.value = null;
 }
 const actionLabel = (action: Action) => (action === "Approve" ? "Make offer" : action);
-const approveBlocked = computed(() => (full.value ? "All places on this offering are offered" : review.value?.ready === false ? "Outstanding items first" : ""));
+/** why Make offer is unavailable (the sections show the details: documents to verify, the fee) */
+const approveBlocked = computed(() =>
+  full.value ? "All places on this offering are offered" : review.value?.ready === false ? outstanding.value.join(" · ") : "",
+);
 
 // last: it runs at once, and resets the state declared above
 watch(
@@ -151,12 +154,7 @@ watch(
     <template #tags>
       <StatusTag kind="application" :value="review.status" />
     </template>
-    <template v-if="review.status === 'Applied' && review.online" #notice>
-      <div class="readiness" :class="review.ready ? 'ready' : 'waiting'">
-        <strong>{{ review.ready ? "Ready for a decision" : "Outstanding" }}</strong>
-        <span v-if="!review.ready">{{ outstanding.join(" · ") }}</span>
-      </div>
-    </template>
+
 
     <DetailSection v-if="review.offer" title="Offer" :collapsible="Boolean(review.offer.conditions || review.can_review)">
       <template #summary>
@@ -375,25 +373,6 @@ watch(
 <style scoped>
 .error {
   margin: 1rem;
-}
-
-.readiness {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.6rem;
-  padding: 0.55rem 0.75rem;
-  border-radius: var(--ec-radius-sm);
-  font-size: 0.85rem;
-}
-
-.readiness.waiting {
-  background: #fffbeb;
-  color: var(--ec-warn);
-}
-
-.readiness.ready {
-  background: #f0fdf4;
-  color: var(--ec-success);
 }
 
 p {

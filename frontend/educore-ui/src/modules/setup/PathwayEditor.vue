@@ -46,7 +46,8 @@ const addDocument = () =>
 function save() {
   const { pathway_name, documents, ...rest } = form.value;
   const clean = (documents ?? []).filter((d: PathwayDocument) => d.document_type);
-  emit("save", { ...rest, documents: clean, ...(isNew.value ? { pathway_name } : {}) }, existing.value?.name);
+  // the name is sent too: a changed name renames the pathway, and its applications follow
+  emit("save", { ...rest, documents: clean, pathway_name: pathway_name.trim() }, existing.value?.name);
 }
 </script>
 
@@ -61,7 +62,13 @@ function save() {
 
     <DetailSection title="Entry">
       <div class="grid">
-        <EcField v-if="isNew" label="Name" for="pw-name"><InputText id="pw-name" v-model="form.pathway_name" fluid /></EcField>
+        <EcField
+          label="Name"
+          for="pw-name"
+          :hint="existing && form.pathway_name.trim() !== existing.name ? 'Renaming keeps its applications' : undefined"
+        >
+          <InputText id="pw-name" v-model="form.pathway_name" fluid />
+        </EcField>
         <EcField label="Level">
           <SelectButton v-model="form.level" :options="['Undergraduate', 'Postgraduate']" :allow-empty="false" aria-label="Level" size="small" />
         </EcField>
@@ -107,7 +114,7 @@ function save() {
 
     <template #actions>
       <EcButton label="Cancel" variant="ghost" :disabled="saving" @click="isNew ? emit('cancel') : reset()" />
-      <EcButton label="Save" variant="primary" :loading="saving" :disabled="isNew && !form.pathway_name.trim()" @click="save" />
+      <EcButton label="Save" variant="primary" :loading="saving" :disabled="!form.pathway_name.trim()" @click="save" />
     </template>
   </DetailPane>
 </template>

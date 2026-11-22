@@ -75,6 +75,29 @@ class TestAdmissionSetup(IntegrationTestCase):
 		self.assertEqual(rpl["documents"][0]["document_type"], "Curriculum Vitae")
 		self.assertRaises(frappe.ValidationError, api.save_pathway, {"evidence": "Astrology"}, name="Postgraduate")
 
+	def test_renaming_a_pathway_keeps_its_applications(self):
+		frappe.set_user("Administrator")
+		before = frappe.db.count("Student Applicant", {"educore_pathway": "School leaver"})
+		frappe.set_user(REGISTRAR)
+		data = api.save_pathway({"pathway_name": "Grade 12 school leaver"}, name="School leaver")
+		self.assertIn("Grade 12 school leaver", [p["name"] for p in data["pathways"]])
+		self.assertEqual(frappe.db.count("Student Applicant", {"educore_pathway": "Grade 12 school leaver"}), before)
+		# only the capitals: the same record, renamed
+		data = api.save_pathway({"pathway_name": "Grade 12 School Leaver"}, name="Grade 12 school leaver")
+		names = [p["name"] for p in data["pathways"]]
+		self.assertIn("Grade 12 School Leaver", names)
+		self.assertNotIn("Grade 12 school leaver", names)
+		self.assertEqual(frappe.db.count("Student Applicant", {"educore_pathway": "Grade 12 School Leaver"}), before)
+		self.assertRaises(frappe.ValidationError, api.save_pathway, {"pathway_name": "Postgraduate"}, name="Grade 12 School Leaver")
+		api.save_pathway({"pathway_name": "School leaver"}, name="Grade 12 School Leaver")  # the other tests use it
+
+	def test_renaming_a_document_keeps_the_uploads_and_pathways(self):
+		data = api.save_document_type({"document_name": "Curriculum vitae (CV)"}, name="Curriculum Vitae")
+		self.assertIn("Curriculum vitae (CV)", [d["name"] for d in data["documents"]])
+		mature = next(p for p in data["pathways"] if p["name"] == "Mature Age Entry")
+		self.assertIn("Curriculum vitae (CV)", [d["document_type"] for d in mature["documents"]])
+		api.save_document_type({"document_name": "Curriculum Vitae"}, name="Curriculum vitae (CV)")
+
 	def test_a_new_document_can_be_asked_for(self):
 		data = api.save_document_type({"document_name": "Police Clearance", "required_for": "Pathway only", "must_be_certified": 1})
 		self.assertIn("Police Clearance", [d["name"] for d in data["documents"]])

@@ -91,10 +91,10 @@ const programme = computed<Programme | null>(() => setup.value?.programmes.find(
 const first = () => (items.value[0]?.name as string) ?? null;
 
 async function onSavePathway(data: Partial<Pathway> & { pathway_name?: string }, name?: string) {
-  if (await run(() => savePathway(data, name), "Pathway saved")) selected.value = name ?? data.pathway_name ?? null;
+  if (await run(() => savePathway(data, name), "Entry pathway saved")) selected.value = data.pathway_name ?? name ?? null;
 }
 async function onSaveDocument(data: Partial<DocumentType> & { document_name?: string }, name?: string) {
-  if (await run(() => saveDocumentType(data, name), "Document saved")) selected.value = name ?? data.document_name ?? null;
+  if (await run(() => saveDocumentType(data, name), "Document saved")) selected.value = data.document_name ?? name ?? null;
 }
 const onSaveProgramme = (name: string, data: Partial<Programme>) => run(() => saveProgramme(name, data), "Entry requirements saved");
 

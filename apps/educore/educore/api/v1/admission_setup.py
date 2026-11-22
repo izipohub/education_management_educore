@@ -180,6 +180,44 @@ def save_points_scale(rows: list | str) -> dict:
 	return setup()
 
 
+# --- renaming ------------------------------------------------------------------------------------------
+
+
+def _rename(doctype: str, old: str, new: str | None, title_field: str) -> str:
+	"""A new name for a pathway or a document; every record that refers to it follows. Returns the name in use."""
+	new = (new or "").strip()
+	if not new or new == old:
+		return old
+	if new.lower() != old.lower():
+		if frappe.db.exists(doctype, new):
+			frappe.throw(_("There is already one called {0}").format(new))
+		from frappe.model.rename_doc import rename_doc
+
+		# the Registrar's right to do this was checked above; their role need not rename records in the Desk
+		rename_doc(doctype=doctype, old=old, new=new, force=True, ignore_permissions=True, show_alert=False)
+	else:
+		_rename_case(doctype, old, new)
+	frappe.db.set_value(doctype, new, title_field, new)
+	frappe.clear_document_cache(doctype, old)
+	return new
+
+
+def _rename_case(doctype: str, old: str, new: str):
+	"""Only the capitals change: the database sees the same name, so Frappe's rename refuses; the name, its child
+	rows and every link to it are set directly"""
+	from frappe.model.rename_doc import get_link_fields
+
+	frappe.db.sql(f"update `tab{doctype}` set name = %s where binary name = %s", (new, old))
+	for table in frappe.get_meta(doctype).get_table_fields():
+		frappe.db.sql(f"update `tab{table.options}` set parent = %s where binary parent = %s and parenttype = %s", (new, old, doctype))
+	for link in get_link_fields(doctype):
+		if link.get("issingle"):
+			continue
+		frappe.db.sql(
+			f"update `tab{link['parent']}` set `{link['fieldname']}` = %s where binary `{link['fieldname']}` = %s", (new, old)
+		)
+
+
 # --- pathways ------------------------------------------------------------------------------------------
 
 
@@ -207,6 +245,7 @@ def save_pathway(data: dict | str, name: str | None = None) -> dict:
 	_require_setup_role()
 	data = frappe.parse_json(data)
 	if name:
+		name = _rename("Admission Pathway", name, data.get("pathway_name"), "pathway_name")
 		doc = frappe.get_doc("Admission Pathway", name)
 	else:
 		new_name = (data.get("pathway_name") or "").strip()
@@ -250,6 +289,7 @@ def save_document_type(data: dict | str, name: str | None = None) -> dict:
 	_require_setup_role()
 	data = frappe.parse_json(data)
 	if name:
+		name = _rename("Admission Document Type", name, data.get("document_name"), "document_name")
 		doc = frappe.get_doc("Admission Document Type", name)
 	else:
 		new_name = (data.get("document_name") or "").strip()
