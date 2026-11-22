@@ -4,6 +4,7 @@ from frappe.model.workflow import apply_workflow
 from frappe.tests import IntegrationTestCase
 
 from educore.academics.calendar import ensure_academic_year, term
+from educore.access import demo_users
 
 
 class TestAdmissionsFlow(IntegrationTestCase):
@@ -43,20 +44,18 @@ class TestAdmissionsFlow(IntegrationTestCase):
 			frappe.clear_document_cache("Programme Offering", "BCS-OSH-FT")
 
 	def test_enrolling_an_applicant_carries_the_offering_through(self):
-		applicant = self._applicant(student_email_id="test.enrol@educore.localhost")
+		# the student's login exists already, so Education does not create one: no welcome email (which
+		# needs built assets) and no run-in with Frappe's new-users-per-hour throttle
+		email = "test.enrol@educore.localhost"
+		if not frappe.db.exists("User", email):
+			frappe.flags.in_import = True
+			try:
+				demo_users.new_user(email=email, first_name="Test", last_name="Enrol", password="Campus-Demo-2026", positions=[])
+			finally:
+				frappe.flags.in_import = False
+		applicant = self._applicant(student_email_id=email)
 		apply_workflow(applicant, "Approve")
-		# Education creates the student's login; the seeded users may have used this hour's quota
-		limit = frappe.local.conf.get("throttle_user_limit")
-		frappe.local.conf["throttle_user_limit"] = 10_000
-		mute, frappe.flags.mute_emails = frappe.flags.mute_emails, True  # no welcome email from a test
-		try:
-			enrollment = enroll_student(applicant.name)
-		finally:
-			frappe.flags.mute_emails = mute
-			if limit is None:
-				frappe.local.conf.pop("throttle_user_limit", None)
-			else:
-				frappe.local.conf["throttle_user_limit"] = limit
+		enrollment = enroll_student(applicant.name)
 		self.assertEqual(enrollment.educore_programme_offering, "BCS-OSH-FT")
 		self.assertEqual(enrollment.campus, "Oshakati Campus")
 		self.assertEqual(enrollment.department, frappe.db.get_value("Department", {"educore_unit_code": "COMP"}))
