@@ -22,6 +22,12 @@ export const router = createRouter({
           meta: { title: "Admissions", roles: ["Admissions Officer", "Registrar"] },
         },
         {
+          path: "my-studies",
+          name: "my-studies",
+          component: () => import("@/modules/student/MyStudiesView.vue"),
+          meta: { title: "My studies", roles: ["Student"] },
+        },
+        {
           path: "enrolment",
           name: "enrolment",
           component: () => import("@/modules/registry/EnrolmentView.vue"),
@@ -47,6 +53,10 @@ router.beforeEach(async (to) => {
   // a screen for other roles: home instead (the server refuses its data anyway)
   if (to.meta.roles && !session.hasRole(...to.meta.roles)) {
     return { name: "home" };
+  }
+  // a student's home is their own studies
+  if (to.name === "home" && session.isStudent) {
+    return { name: "my-studies" };
   }
   return true;
 });

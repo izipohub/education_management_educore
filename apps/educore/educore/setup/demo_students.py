@@ -94,6 +94,11 @@ def create():
 			student = enrollment.student
 		if frappe.db.exists("User", email) and not frappe.db.get_value("Student", student, "user"):
 			frappe.db.set_value("Student", student, "user", email)
+		# the test login carries the student's own name, as a real student's login does
+		if frappe.db.exists("User", email) and frappe.db.get_value("User", email, "first_name") != first:
+			user = frappe.get_doc("User", email)
+			user.first_name, user.last_name = first, last
+			user.save(ignore_permissions=True)
 		enrolled += 1
 
 	for first, last, offering in APPLICANTS:

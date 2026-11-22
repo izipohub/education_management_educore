@@ -18,9 +18,13 @@ interface NavItem {
   roles?: string[];
 }
 
+/** Everyone but students (whose home is My studies) */
+const STAFF_HOME = ["University Staff", "Applicant", "Sponsor", "Guardian", "External Examiner", "System Manager"];
+
 /** Each module adds its entry here as it is built; the server still checks every request */
 const NAV: NavItem[] = [
-  { label: "Home", icon: "⌂", to: "/" },
+  { label: "Home", icon: "⌂", to: "/", roles: STAFF_HOME },
+  { label: "My studies", icon: "☰", to: "/my-studies", roles: ["Student"] },
   { label: "Admissions", icon: "✎", to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
   { label: "Enrolment", icon: "✓", to: "/enrolment", roles: ["Registry Officer", "Registrar"] },
 ];
