@@ -22,6 +22,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { label: "Home", icon: "⌂", to: "/" },
   { label: "Admissions", icon: "✎", to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
+  { label: "Enrolment", icon: "✓", to: "/enrolment", roles: ["Registry Officer", "Registrar"] },
 ];
 
 const nav = computed(() => NAV.filter((item) => !item.roles || session.hasRole(...item.roles)));

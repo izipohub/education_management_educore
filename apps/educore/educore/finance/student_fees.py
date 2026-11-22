@@ -15,6 +15,8 @@ account. EduCore adds:
   campus although the money goes into one central account.
 """
 
+from contextlib import contextmanager
+
 import frappe
 from frappe import _
 from frappe.utils import add_days, getdate
@@ -145,6 +147,9 @@ def ensure_fiscal_year(date, company: str):
 	from frappe.utils import add_years, cstr
 
 	date = getdate(date)
+	# ERPNext caches the fiscal years in Redis, which a rolled-back transaction does not undo: a year
+	# created by a failed enrolment would otherwise stay "known" while missing from the database
+	frappe.cache.delete_key("fiscal_years")
 	if get_fiscal_years(date, company=company, boolean=True):
 		return
 	latest = frappe.get_all(
@@ -172,8 +177,29 @@ def ensure_fiscal_year(date, company: str):
 # --- Invoicing -----------------------------------------------------------------------------------------
 
 
+@contextmanager
+def _as_system():
+	"""Run as Administrator, then switch back. The enrolment invoice is an automatic consequence of
+	enrolling a student, not an accounting action of the registry officer who enrols: ERPNext would refuse
+	it for lack of accounting rights, which registry staff rightly do not have. Yields the real user."""
+	user = frappe.session.user
+	if user == "Administrator":
+		yield user
+		return
+	frappe.set_user("Administrator")
+	try:
+		yield user
+	finally:
+		frappe.set_user(user)
+
+
 def invoice_enrollment(enrollment) -> str | None:
 	"""The enrolment's Sales Invoice, from its offering's fee structure for the year (submitted)"""
+	with _as_system() as enrolled_by:
+		return _invoice_enrollment(enrollment, enrolled_by)
+
+
+def _invoice_enrollment(enrollment, enrolled_by: str) -> str | None:
 	existing = frappe.db.get_value(
 		"Sales Invoice", {"educore_program_enrollment": enrollment.name, "docstatus": ("<", 2)}
 	)
@@ -208,7 +234,9 @@ def invoice_enrollment(enrollment) -> str | None:
 			"campus": enrollment.campus,
 			"educore_program_enrollment": enrollment.name,
 			"educore_fee_structure": structure.name,
-			"remarks": _("Fees {0}, {1}").format(enrollment.academic_year, enrollment.educore_programme_offering),
+			"remarks": _("Fees {0}, {1}. Enrolled by {2}.").format(
+				enrollment.academic_year, enrollment.educore_programme_offering, enrolled_by
+			),
 		}
 	)
 	for component in structure.components:

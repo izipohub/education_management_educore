@@ -21,6 +21,12 @@ export const router = createRouter({
           component: () => import("@/modules/admissions/AdmissionsView.vue"),
           meta: { title: "Admissions", roles: ["Admissions Officer", "Registrar"] },
         },
+        {
+          path: "enrolment",
+          name: "enrolment",
+          component: () => import("@/modules/registry/EnrolmentView.vue"),
+          meta: { title: "Enrolment", roles: ["Registry Officer", "Registrar"] },
+        },
       ],
     },
     { path: "/:pathMatch(.*)*", redirect: "/" },

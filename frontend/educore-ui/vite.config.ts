@@ -23,6 +23,8 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       strictPort: true,
       allowedHosts: [env.APP_HOST || "app.educore.localhost", "localhost"],
+      // Playwright writes here while tests run; a reload mid-test would break them
+      watch: { ignored: ["**/e2e/results/**", "**/playwright-report/**"] },
       proxy: {
         "/api": toFrappe,
         "/assets": toFrappe,

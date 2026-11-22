@@ -1,5 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { formatDate, shortUser } from "@/core/format";
+import { formatDate, formatMoney, fromIsoDate, shortUser, toIsoDate } from "@/core/format";
+
+describe("ISO dates", () => {
+  it("round-trips a calendar day without shifting it", () => {
+    expect(toIsoDate(fromIsoDate("2027-02-01"))).toBe("2027-02-01");
+    expect(fromIsoDate("2027-02-01").getDate()).toBe(1);
+  });
+});
+
+describe("formatMoney", () => {
+  it("shows Namibian dollars with two decimals", () => {
+    expect(formatMoney(33400)).toBe("N$ 33,400.00");
+    expect(formatMoney(0)).toBe("N$ 0.00");
+    expect(formatMoney(null)).toBe("");
+  });
+});
 
 describe("formatDate", () => {
   it("shows dates as DD-MM-YYYY", () => {
