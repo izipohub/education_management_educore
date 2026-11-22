@@ -320,6 +320,18 @@ CUSTOM_FIELDS = {
 			"description": "From the invoice paid: collections are reported per campus.",
 		},
 	],
+	# Course groups: taught on a campus; campus users see their campus's groups
+	"Student Group": [
+		{
+			"fieldname": "campus",
+			"label": "Campus",
+			"fieldtype": "Link",
+			"options": "Campus",
+			"insert_after": "group_based_on",
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+		},
+	],
 	"Room": [
 		{
 			"fieldname": "campus",

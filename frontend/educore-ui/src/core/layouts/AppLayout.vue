@@ -25,6 +25,7 @@ const STAFF_HOME = ["University Staff", "Applicant", "Sponsor", "Guardian", "Ext
 const NAV: NavItem[] = [
   { label: "Home", icon: "⌂", to: "/", roles: STAFF_HOME },
   { label: "My studies", icon: "☰", to: "/my-studies", roles: ["Student"] },
+  { label: "My teaching", icon: "✦", to: "/my-teaching", roles: ["Lecturer"] },
   { label: "Admissions", icon: "✎", to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
   { label: "Enrolment", icon: "✓", to: "/enrolment", roles: ["Registry Officer", "Registrar"] },
 ];

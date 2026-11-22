@@ -113,8 +113,11 @@ def create():
 			apply_workflow(frappe.get_doc("Student Applicant", applicant), "Reject")
 
 	from educore.setup.demo_finance import invoice_and_pay
+	from educore.setup.demo_teaching import create_course_groups
 
 	fees = invoice_and_pay()
+	groups = create_course_groups()
+	print(f"{groups} course groups created")
 	frappe.db.commit()
 	print(
 		f"{enrolled} students enrolled for 2026; for 2027: {len(APPLICANTS)} applications pending, "

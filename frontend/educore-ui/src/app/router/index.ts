@@ -28,6 +28,12 @@ export const router = createRouter({
           meta: { title: "My studies", roles: ["Student"] },
         },
         {
+          path: "my-teaching",
+          name: "my-teaching",
+          component: () => import("@/modules/teaching/MyTeachingView.vue"),
+          meta: { title: "My teaching", roles: ["Lecturer"] },
+        },
+        {
           path: "enrolment",
           name: "enrolment",
           component: () => import("@/modules/registry/EnrolmentView.vue"),
