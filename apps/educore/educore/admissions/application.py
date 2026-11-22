@@ -179,6 +179,23 @@ def missing(doc) -> list[str]:
 	return gaps
 
 
+def decision_blockers(doc) -> list[str]:
+	"""What stops staff approving an online application: unverified required documents, an unsettled fee"""
+	from educore.admissions.fees import settled
+
+	if not doc.get("educore_applicant_user"):
+		return []  # a paper application captured by staff was checked in person
+	blockers = []
+	uploaded = {d.document_type: d for d in doc.get("educore_documents") or []}
+	for document in required_documents(doc):
+		row = uploaded.get(document)
+		if not row or row.status != "Verified":
+			blockers.append(_("{0} is not verified").format(document))
+	if not settled(doc):
+		blockers.append(_("The application fee is not paid or waived"))
+	return blockers
+
+
 def intake_open(intake: str) -> bool:
 	admission = frappe.get_cached_doc("Student Admission", intake)
 	today = getdate(nowdate())

@@ -115,6 +115,18 @@ export interface Application {
   declaration: boolean;
   submitted_on: string | null;
   decision_reason: string | null;
+  fee: Fee;
+}
+
+export interface Fee {
+  amount: number | null;
+  status: "Unpaid" | "Paid" | "Waived";
+  paid_on: string | null;
+  /** the application number: the EFT reference */
+  reference: string;
+  bank: { bank_name: string | null; account_name: string | null; account_number: string | null; branch_code: string | null };
+  /** DPO card payments, once the university's merchant account is connected */
+  card_payments: boolean;
 }
 
 /** What the browser may send: the server takes only these fields */

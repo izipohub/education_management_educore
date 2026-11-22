@@ -5,9 +5,15 @@ allows. Decisions go through the "EduCore Admission Decision" workflow, which ch
 applicant's validation, which checks intake capacity and the reason (educore.academics.students).
 """
 
+import os
+
 import frappe
 from frappe import _
 from frappe.model.workflow import apply_workflow, get_transitions
+from frappe.utils import add_months, getdate, now_datetime, nowdate
+
+from educore.admissions import application as rules
+from educore.admissions import fees
 
 STATUSES = ("Applied", "Approved", "Rejected", "Admitted")
 NEEDS_REASON = ("Reject", "Withdraw Offer")
@@ -27,21 +33,44 @@ FIELDS = [
 	"educore_decided_by as decided_by",
 	"educore_decided_on as decided_on",
 	"educore_decision_reason as decision_reason",
+	"educore_points as points",
+	"educore_fee_status as fee_status",
 ]
 
+#: who checks documents and waives fees
+REVIEW_ROLES = ("Admissions Officer", "Registrar", "System Manager")
 
-def _actions(name: str) -> list[str]:
+
+def _actions(doc) -> list[str]:
 	"""The workflow actions the current user may take on this applicant now"""
-	doc = frappe.get_doc("Student Applicant", name)
 	if not doc.has_permission("write"):
 		return []
 	return [t.action for t in get_transitions(doc)]
 
 
+def _completeness(doc) -> dict:
+	"""For an online application: documents verified of those required, the fee, and what blocks a decision"""
+	online = bool(doc.get("educore_applicant_user"))
+	required = rules.required_documents(doc) if online else []
+	verified = {d.document_type for d in doc.get("educore_documents") or [] if d.status == "Verified"}
+	rejected = [d.document_type for d in doc.get("educore_documents") or [] if d.status == "Rejected"]
+	blockers = rules.decision_blockers(doc)
+	return {
+		"online": online,
+		"documents_required": len(required),
+		"documents_verified": len([d for d in required if d in verified]),
+		"documents_rejected": rejected,
+		"blockers": blockers,
+		"ready": not blockers,
+	}
+
+
 def _row(row) -> dict:
 	row = dict(row)
 	row["applicant"] = row.get("title") or " ".join(p for p in (row.get("first_name"), row.get("last_name")) if p)
-	row["actions"] = _actions(row["name"])
+	doc = frappe.get_doc("Student Applicant", row["name"])
+	row["actions"] = _actions(doc)
+	row.update(_completeness(doc))
 	return row
 
 
@@ -126,3 +155,124 @@ def decide(name: str, action: str, reason: str | None = None) -> dict:
 	apply_workflow(doc, action)
 	row = frappe.get_list("Student Applicant", filters={"name": name}, fields=FIELDS, limit=1)[0]
 	return _row(row)
+
+
+# --- reviewing an online application --------------------------------------------------------------------
+
+
+def _reviewable(name: str, write: bool = False):
+	"""The applicant, if this user may see it (campus scope); for changes, also the admissions roles"""
+	doc = frappe.get_doc("Student Applicant", name)
+	doc.check_permission("write" if write else "read")
+	if write and not set(frappe.get_roles()) & set(REVIEW_ROLES):
+		frappe.throw(_("Only admissions staff check documents and fees"), frappe.PermissionError)
+	return doc
+
+
+def _certification_problem(row) -> str | None:
+	if not frappe.get_cached_value("Admission Document Type", row.document_type, "must_be_certified"):
+		return None
+	if not row.certified_on:
+		return _("No certification date given")
+	max_age = rules.settings().certification_max_age_months or 0
+	if max_age and getdate(row.certified_on) < getdate(add_months(nowdate(), -max_age)):
+		return _("Certified more than {0} months ago").format(max_age)
+	return None
+
+
+@frappe.whitelist(methods=["GET"])
+def review(name: str) -> dict:
+	"""Everything an admissions officer needs to check one application"""
+	doc = _reviewable(name)
+	required = set(rules.required_documents(doc))
+	school = (
+		frappe.db.get_value(
+			"Secondary School",
+			doc.educore_secondary_school,
+			["school_name", "town", "region", "centre_number", "emis_number", "added_by_applicant"],
+			as_dict=True,
+		)
+		if doc.get("educore_secondary_school")
+		else None
+	)
+	return {
+		"name": doc.name,
+		"applicant": doc.title,
+		"status": doc.application_status,
+		"intake": doc.student_admission,
+		"pathway": doc.get("educore_pathway"),
+		"submitted_on": str(doc.educore_submitted_on) if doc.get("educore_submitted_on") else None,
+		"personal": {
+			"email": doc.student_email_id,
+			"date_of_birth": str(doc.date_of_birth) if doc.date_of_birth else None,
+			"gender": doc.gender,
+			"nationality": doc.nationality,
+			"mobile": doc.student_mobile_number,
+			"city": doc.city,
+		},
+		"school": school,
+		"exam_number": doc.get("educore_exam_number"),
+		"exam_year": doc.get("educore_exam_year"),
+		"results": [{"subject": r.subject, "level": r.level, "grade": r.grade, "points": r.points} for r in doc.educore_results],
+		"points": doc.get("educore_points"),
+		"choices": [
+			{"rank": c.rank, "offering": c.programme_offering, "program": c.program, "campus": c.campus,
+			 "eligibility": c.eligibility, "eligibility_note": c.eligibility_note}
+			for c in doc.educore_choices
+		],
+		"documents": [
+			{
+				"document_type": d.document_type,
+				"required": d.document_type in required,
+				"file_url": d.file,
+				"file_name": os.path.basename(d.file or ""),
+				"certified_on": str(d.certified_on) if d.certified_on else None,
+				"certification_problem": _certification_problem(d),
+				"status": d.status,
+				"rejection_reason": d.rejection_reason,
+				"verified_by": d.verified_by,
+				"verified_on": str(d.verified_on) if d.verified_on else None,
+			}
+			for d in doc.educore_documents
+		],
+		"missing_documents": sorted(required - {d.document_type for d in doc.educore_documents}),
+		"fee": {
+			"amount": doc.get("educore_fee_amount"),
+			"status": doc.get("educore_fee_status"),
+			"paid_on": str(doc.educore_fee_paid_on) if doc.get("educore_fee_paid_on") else None,
+			"voucher": doc.get("educore_fee_voucher"),
+			"bank_transaction": doc.get("educore_fee_bank_transaction"),
+			"note": doc.get("educore_fee_note"),
+		},
+		"can_review": bool(set(frappe.get_roles()) & set(REVIEW_ROLES)) and doc.has_permission("write"),
+		"actions": _actions(doc),
+		**_completeness(doc),
+	}
+
+
+@frappe.whitelist(methods=["POST"])
+def verify_document(name: str, document_type: str, verdict: str, reason: str | None = None) -> dict:
+	"""Verified, or Rejected with a reason the applicant sees (they can then upload it again)"""
+	if verdict not in ("Verified", "Rejected"):
+		frappe.throw(_("A document is Verified or Rejected"))
+	doc = _reviewable(name, write=True)
+	if doc.application_status != "Applied":
+		frappe.throw(_("Documents are checked while an application is waiting for a decision"))
+	row = next((d for d in doc.educore_documents if d.document_type == document_type), None)
+	if not row:
+		frappe.throw(_("{0} has not uploaded {1}").format(doc.title, document_type))
+	if verdict == "Rejected" and not (reason or "").strip():
+		frappe.throw(_("Tell the applicant why the document is rejected"))
+	row.status = verdict
+	row.rejection_reason = reason.strip() if verdict == "Rejected" else None
+	row.verified_by = frappe.session.user
+	row.verified_on = now_datetime()
+	doc.save()
+	return review(name)
+
+
+@frappe.whitelist(methods=["POST"])
+def waive_fee(name: str, reason: str) -> dict:
+	_reviewable(name, write=True)
+	fees.waive(name, reason)
+	return review(name)

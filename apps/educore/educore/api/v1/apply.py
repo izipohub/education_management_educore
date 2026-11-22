@@ -204,6 +204,25 @@ def _serialise(doc) -> dict:
 		"declaration": bool(doc.get("educore_declaration")),
 		"submitted_on": str(doc.educore_submitted_on) if doc.get("educore_submitted_on") else None,
 		"decision_reason": doc.get("educore_decision_reason") if doc.application_status == "Rejected" else None,
+		"fee": _fee(doc),
+	}
+
+
+def _fee(doc) -> dict:
+	"""What to pay and how: EFT with the application number as reference (card once DPO is connected)"""
+	settings = rules.settings()
+	return {
+		"amount": doc.get("educore_fee_amount"),
+		"status": doc.get("educore_fee_status") or "Unpaid",
+		"paid_on": str(doc.educore_fee_paid_on) if doc.get("educore_fee_paid_on") else None,
+		"reference": doc.name,
+		"bank": {
+			"bank_name": settings.eft_bank_name,
+			"account_name": settings.eft_account_name,
+			"account_number": settings.eft_account_number,
+			"branch_code": settings.eft_branch_code,
+		},
+		"card_payments": bool(settings.card_payments_enabled),
 	}
 
 
@@ -342,7 +361,7 @@ def upload_document(document_type: str, certified_on: str | None = None) -> dict
 	doc = _own_application(for_update=True)
 	if not doc:
 		frappe.throw(_("Start your application first"))
-	if doc.application_status != "Draft":
+	if doc.application_status != "Draft" and not _replacing_rejected(doc, document_type):
 		frappe.throw(_("Your application is submitted and can no longer be changed"))
 	if not frappe.db.exists("Admission Document Type", {"name": document_type, "active": 1}):
 		frappe.throw(_("Unknown document {0}").format(document_type))
@@ -398,6 +417,13 @@ def upload_document(document_type: str, certified_on: str | None = None) -> dict
 	doc.flags.ignore_permissions = True
 	doc.save()
 	return _serialise(doc)
+
+
+def _replacing_rejected(doc, document_type: str) -> bool:
+	"""After submitting, an applicant may replace only a document admissions rejected"""
+	return doc.application_status == "Applied" and any(
+		d.document_type == document_type and d.status == "Rejected" for d in doc.educore_documents
+	)
 
 
 def _delete_file(row):

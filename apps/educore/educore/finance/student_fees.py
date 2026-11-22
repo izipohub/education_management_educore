@@ -62,6 +62,11 @@ def ensure_fee_setup(company: str):
 		"Other Student Fees": _account(company, "Other Student Fees", "Direct Income", "Income Account"),
 	}
 	_account(company, CENTRAL_BANK, "Bank Accounts", "Bank")
+	application_fees = _account(company, "Application Fees", "Direct Income", "Income Account")
+	if frappe.db.exists("DocType", "Admission Settings") and not frappe.db.get_single_value(
+		"Admission Settings", "fee_income_account"
+	):
+		frappe.db.set_single_value("Admission Settings", "fee_income_account", application_fees)
 
 	group = frappe.get_doc("Customer Group", "Student")
 	if not any(row.company == company for row in group.accounts):

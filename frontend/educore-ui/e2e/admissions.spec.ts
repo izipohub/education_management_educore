@@ -21,7 +21,10 @@ test("an admissions officer sees their campus's applications, with decisions the
   await expect(page.getByText("Elias Haimbodi")).toBeVisible();
   // Windhoek's applicants are not this officer's
   await expect(page.getByText("Selma Nghifikwa")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Approve", exact: true })).toHaveCount(2);
+  // the paper applications can be decided; the online one waits for its documents and fee
+  for (const name of ["Hilma Nakale", "Elias Haimbodi"]) {
+    await expect(page.getByRole("row").filter({ hasText: name }).getByRole("button", { name: "Approve", exact: true })).toBeEnabled();
+  }
   await expect(page.locator(".p-datatable-mask")).toHaveCount(0);
   await page.screenshot({ path: "e2e/results/admissions-officer-osh.png", fullPage: true });
 

@@ -1,6 +1,6 @@
 # Online applications — proposal
 
-Status (2026-11-22): **phase 1 built** (applicant portal: `educore.api.v1.apply`, `educore/admissions`, the Vue
+Status (2026-11-22): **phases 1 and 2 built** (EFT fee matching and document verification; DPO cards wait for the merchant account) (applicant portal: `educore.api.v1.apply`, `educore/admissions`, the Vue
 pages `/apply`, `/apply/register`, `/application`). Phases 2–5 are proposals. Decisions still open are marked
 **Decide**.
 

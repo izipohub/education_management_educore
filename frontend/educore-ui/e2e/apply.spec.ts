@@ -51,8 +51,13 @@ test("an applicant works through their draft application", async ({ page }) => {
   await expect(page.getByText("National ID or Passport")).toBeVisible();
   await page.screenshot({ path: "e2e/results/application-documents.png", fullPage: true });
 
+  // no scrolling back up: from the bottom of a long step, the step bar stays in reach and the next step opens in view
+  await page.getByRole("button", { name: "Continue", exact: true }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("group", { name: "Steps" }).or(page.getByLabel("Steps"))).toBeInViewport();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Check and submit" })).toBeInViewport();
+
   // submitting needs the declaration (not submitted here: the demo draft stays a draft)
-  await page.getByText("5 · Submit").click();
   const submit = page.getByRole("button", { name: "Submit application" });
   await expect(submit).toBeDisabled();
   await page.getByLabel(/I declare that the information/).check();

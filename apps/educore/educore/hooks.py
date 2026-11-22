@@ -23,6 +23,11 @@ has_permission = {
 	"Sales Invoice": "educore.academics.student_access.has_permission",
 }
 
+scheduler_events = {
+	# application fees paid by EFT: match the imported bank statement to applications
+	"hourly": ["educore.admissions.fees.match_bank_transactions"],
+}
+
 # Only back-office positions (Desk Access) and System Managers open the Desk; others go to the Vue app
 update_website_context = ["educore.access.desk.redirect_from_desk"]
 

@@ -10,7 +10,18 @@
   "points_scale",
   "documents_section",
   "certification_max_age_months",
-  "max_file_size_mb"
+  "max_file_size_mb",
+  "fee_section",
+  "fee_namibian",
+  "fee_international",
+  "fee_income_account",
+  "fee_bank_account",
+  "fee_column",
+  "eft_bank_name",
+  "eft_account_name",
+  "eft_account_number",
+  "eft_branch_code",
+  "card_payments_enabled"
  ],
  "fields": [
   {
@@ -55,6 +66,71 @@
    "fieldtype": "Int",
    "label": "Largest Upload (MB)",
    "default": "5"
+  },
+  {
+   "fieldname": "fee_section",
+   "fieldtype": "Section Break",
+   "label": "Application Fee"
+  },
+  {
+   "fieldname": "fee_namibian",
+   "fieldtype": "Currency",
+   "label": "Fee for Namibian Applicants",
+   "default": "150",
+   "options": "NAD"
+  },
+  {
+   "fieldname": "fee_international",
+   "fieldtype": "Currency",
+   "label": "Fee for International Applicants",
+   "default": "300",
+   "options": "NAD"
+  },
+  {
+   "fieldname": "fee_income_account",
+   "fieldtype": "Link",
+   "label": "Income Account",
+   "options": "Account",
+   "description": "Where application fees are booked."
+  },
+  {
+   "fieldname": "fee_bank_account",
+   "fieldtype": "Link",
+   "label": "Bank Account",
+   "options": "Bank Account",
+   "description": "The account applicants pay into by EFT; its statement lines are matched to applications by their reference."
+  },
+  {
+   "fieldname": "fee_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "eft_bank_name",
+   "fieldtype": "Data",
+   "label": "Bank (shown to applicants)"
+  },
+  {
+   "fieldname": "eft_account_name",
+   "fieldtype": "Data",
+   "label": "Account Name (shown to applicants)"
+  },
+  {
+   "fieldname": "eft_account_number",
+   "fieldtype": "Data",
+   "label": "Account Number (shown to applicants)"
+  },
+  {
+   "fieldname": "eft_branch_code",
+   "fieldtype": "Data",
+   "label": "Branch Code (shown to applicants)"
+  },
+  {
+   "fieldname": "card_payments_enabled",
+   "fieldtype": "Check",
+   "label": "Card Payments (DPO)",
+   "default": "0",
+   "read_only": 1,
+   "description": "Switched on once the university's DPO merchant account is connected."
   }
  ],
  "index_web_pages_for_search": 0,

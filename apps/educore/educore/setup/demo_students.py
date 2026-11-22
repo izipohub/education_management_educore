@@ -121,6 +121,12 @@ def create():
 	fees = invoice_and_pay()
 	groups = create_course_groups()
 	print(f"{groups} course groups created")
+
+	from educore.setup.demo_online import create as create_online_application
+
+	online = create_online_application()
+	if online:
+		print(f"online application {online} submitted (documents to check, fee not received)")
 	frappe.db.commit()
 	print(
 		f"{enrolled} students enrolled for 2026; for 2027: {len(APPLICANTS)} applications pending, "

@@ -9,7 +9,9 @@
   "file_doc",
   "certified_on",
   "status",
-  "rejection_reason"
+  "rejection_reason",
+  "verified_by",
+  "verified_on"
  ],
  "fields": [
   {
@@ -54,6 +56,19 @@
    "fieldname": "rejection_reason",
    "fieldtype": "Small Text",
    "label": "Reason Rejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "verified_by",
+   "fieldtype": "Link",
+   "label": "Checked By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "verified_on",
+   "fieldtype": "Datetime",
+   "label": "Checked On",
    "read_only": 1
   }
  ],

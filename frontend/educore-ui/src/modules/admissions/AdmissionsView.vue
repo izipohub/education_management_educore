@@ -9,6 +9,7 @@ import Select from "primevue/select";
 import SelectButton from "primevue/selectbutton";
 import Tag from "primevue/tag";
 import Textarea from "primevue/textarea";
+import ReviewPanel from "./ReviewPanel.vue";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, ref, watch } from "vue";
 import { ApiError } from "@/core/api/client";
@@ -79,6 +80,16 @@ onMounted(load);
 
 function places(row: Application): Places | undefined {
   return page.value?.capacity[`${row.offering}|${row.academic_year}`];
+}
+
+/** the application open in the review panel */
+const reviewing = ref<string | null>(null);
+
+/** why Approve is unavailable on this row, or undefined when it is not */
+function approveBlocked(row: Application): string | undefined {
+  if (isFull(row)) return "All places on this offering are offered";
+  if (row.blockers.length) return `Not ready: ${row.blockers.join("; ")}`;
+  return undefined;
 }
 
 function isFull(row: Application) {
@@ -183,6 +194,19 @@ function actionSeverity(action: Action) {
         </template>
       </Column>
 
+      <Column v-if="status === 'Applied'" header="Documents and fee">
+        <template #body="{ data }">
+          <template v-if="data.online">
+            <Tag
+              :severity="data.documents_verified === data.documents_required ? 'success' : data.documents_rejected.length ? 'danger' : 'secondary'"
+              :value="`Documents ${data.documents_verified}/${data.documents_required}`"
+            />
+            <Tag :severity="data.fee_status === 'Unpaid' ? 'warn' : 'success'" :value="`Fee ${(data.fee_status ?? 'Unpaid').toLowerCase()}`" class="fee-tag" />
+          </template>
+          <span v-else class="sub">Paper application</span>
+        </template>
+      </Column>
+
       <Column header="Places offered">
         <template #body="{ data }">
           <Tag
@@ -206,6 +230,7 @@ function actionSeverity(action: Action) {
       <Column header="" class="actions-col">
         <template #body="{ data }">
           <div class="actions">
+            <Button label="Review" size="small" text @click="reviewing = data.name" />
             <Button
               v-for="action in data.actions"
               :key="action"
@@ -214,14 +239,16 @@ function actionSeverity(action: Action) {
               :severity="actionSeverity(action)"
               :outlined="action !== 'Approve'"
               :loading="busy.has(data.name)"
-              :disabled="action === 'Approve' && isFull(data)"
-              :title="action === 'Approve' && isFull(data) ? 'All places on this offering are offered' : undefined"
+              :disabled="action === 'Approve' && Boolean(approveBlocked(data))"
+              :title="action === 'Approve' ? approveBlocked(data) : undefined"
               @click="start(data, action)"
             />
           </div>
         </template>
       </Column>
     </DataTable>
+
+    <ReviewPanel :name="reviewing" @close="reviewing = null" @changed="load" />
 
     <Dialog
       :visible="reasonFor !== null"
@@ -297,6 +324,10 @@ h1 {
 
 .nowrap {
   white-space: nowrap;
+}
+
+.fee-tag {
+  margin-left: 0.35rem;
 }
 
 .actions {

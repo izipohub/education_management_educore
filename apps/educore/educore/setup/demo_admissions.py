@@ -71,6 +71,50 @@ SCHOOLS = [
 
 INTAKE = "2027 Intake"
 
+#: a fictional bank and account for the fee, shown to applicants as EFT details
+DEMO_BANK = "Demo Commercial Bank"
+DEMO_ACCOUNT_NUMBER = "DEMO-62-0000-0001"
+
+
+def _fee_bank_account():
+	from educore.finance.student_fees import CENTRAL_BANK, ensure_fee_setup
+
+	company = frappe.db.get_value("Campus", {"is_main_campus": 1}, "company")
+	if not company:
+		return
+	ensure_fee_setup(company)
+	if not frappe.db.exists("Bank", DEMO_BANK):
+		frappe.get_doc({"doctype": "Bank", "bank_name": DEMO_BANK}).insert(ignore_permissions=True)
+	abbr = frappe.get_cached_value("Company", company, "abbr")
+	account = frappe.db.get_value("Bank Account", {"account": f"{CENTRAL_BANK} - {abbr}"})
+	if not account:
+		account = (
+			frappe.get_doc(
+				{
+					"doctype": "Bank Account",
+					"account_name": "University Main Account",
+					"bank": DEMO_BANK,
+					"account": f"{CENTRAL_BANK} - {abbr}",
+					"is_company_account": 1,
+					"company": company,
+					"bank_account_no": DEMO_ACCOUNT_NUMBER,
+					"branch_code": "DEMO-000",
+				}
+			)
+			.insert(ignore_permissions=True)
+			.name
+		)
+	settings = frappe.get_single("Admission Settings")
+	if not settings.fee_bank_account:
+		settings.fee_bank_account = account
+		settings.eft_bank_name = DEMO_BANK
+		settings.eft_account_name = "EduCore Demo University"
+		settings.eft_account_number = DEMO_ACCOUNT_NUMBER
+		settings.eft_branch_code = "DEMO-000"
+		settings.fee_namibian = settings.fee_namibian or 150
+		settings.fee_international = settings.fee_international or 300
+		settings.save(ignore_permissions=True)
+
 
 def create_admissions_setup():
 	for subject, counts_as in SUBJECTS.items():
@@ -92,6 +136,8 @@ def create_admissions_setup():
 		settings.certification_max_age_months = 3
 		settings.max_file_size_mb = 5
 		settings.save(ignore_permissions=True)
+
+	_fee_bank_account()
 
 	for name, (required_for, certified, guidance) in DOCUMENTS.items():
 		if not frappe.db.exists("Admission Document Type", name):

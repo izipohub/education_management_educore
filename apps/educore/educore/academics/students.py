@@ -23,6 +23,9 @@ def validate_applicant(doc, method=None):
 		application.tidy_draft(doc)
 	# points and eligibility are always recomputed, so neither can be typed in
 	application.assess(doc)
+	from educore.admissions.fees import set_fee
+
+	set_fee(doc)
 
 	offering = _offering(doc.get("educore_programme_offering"))
 	if not offering:
@@ -50,6 +53,11 @@ DECISIONS = ("Approved", "Rejected")
 def _record_decision(doc, offering):
 	status = doc.application_status
 	if status == "Approved":
+		from educore.admissions.application import decision_blockers
+
+		blockers = decision_blockers(doc)
+		if blockers:
+			frappe.throw(_("Not ready to approve:") + "<br>" + "<br>".join(f"• {b}" for b in blockers))
 		_check_intake_capacity(doc, offering)
 	if status in NEEDS_REASON and not (doc.get("educore_decision_reason") or "").strip():
 		frappe.throw(_("Write the reason in Decision Notes before rejecting the application or withdrawing the offer"))

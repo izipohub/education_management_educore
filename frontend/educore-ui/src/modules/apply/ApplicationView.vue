@@ -12,6 +12,7 @@ import Tag from "primevue/tag";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { formatDate, fromIsoDate, toIsoDate } from "@/core/format";
+import FeePanel from "./FeePanel.vue";
 import {
   type Application,
   type ApplyOptions,
@@ -40,6 +41,16 @@ const saving = ref(false);
 
 type Step = "personal" | "school" | "choices" | "documents" | "submit";
 const step = ref<Step>("personal");
+const ORDER: Step[] = ["personal", "school", "choices", "documents", "submit"];
+/** the top of the step area: brought into view on every step change, so nobody scrolls back up */
+const stepTop = ref<HTMLElement | null>(null);
+watch(step, () => {
+  requestAnimationFrame(() => stepTop.value?.scrollIntoView({ behavior: "smooth", block: "start" }));
+});
+function go(offset: number) {
+  const index = ORDER.indexOf(step.value) + offset;
+  if (index >= 0 && index < ORDER.length) step.value = ORDER[index]!;
+}
 const steps = computed(() => {
   const list: { label: string; value: Step }[] = [
     { label: "1 · About you", value: "personal" },
@@ -355,9 +366,33 @@ const statusText = computed(
           <ul class="doc-list">
             <li v-for="d in app.documents.filter((x) => x.uploaded)" :key="d.document_type">
               {{ d.document_type }} <Tag :value="d.status ?? ''" :severity="d.status === 'Verified' ? 'success' : d.status === 'Rejected' ? 'danger' : 'secondary'" />
-              <div v-if="d.rejection_reason" class="sub">{{ d.rejection_reason }}</div>
+              <template v-if="d.status === 'Rejected'">
+                <p class="rejected">Not accepted: {{ d.rejection_reason }}. Upload a new certified copy.</p>
+                <div class="upload">
+                  <DatePicker
+                    v-if="mustBeCertified(d.document_type)"
+                    v-model="certifiedOn[d.document_type]"
+                    date-format="dd-mm-yy"
+                    placeholder="Date certified"
+                    show-icon
+                    :max-date="new Date()"
+                    :aria-label="`Date ${d.document_type} was certified`"
+                  />
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" :aria-label="`File for ${d.document_type}`" @change="pickFile(d.document_type, $event)" />
+                  <Button
+                    label="Upload"
+                    size="small"
+                    :loading="uploading === d.document_type"
+                    :disabled="!pendingFile[d.document_type] || (mustBeCertified(d.document_type) && !certifiedOn[d.document_type])"
+                    @click="upload(d.document_type)"
+                  />
+                </div>
+              </template>
             </li>
           </ul>
+        </article>
+        <article v-if="app.fee.amount" class="card fee-card">
+          <FeePanel :fee="app.fee" />
         </article>
       </template>
 
@@ -369,13 +404,16 @@ const statusText = computed(
           <ul v-else>
             <li v-for="gap in app.missing" :key="gap">{{ gap }}</li>
           </ul>
+          <p v-if="app.fee.amount" class="points">
+            Application fee: <strong>{{ app.fee.status === 'Unpaid' ? 'not received yet' : app.fee.status.toLowerCase() }}</strong>
+          </p>
           <p v-if="app.points !== null && app.pathway !== 'International'" class="points">
             Your points: <strong>{{ app.points }}</strong>
             <span class="sub"> (best {{ options?.best_subjects }} subjects)</span>
           </p>
         </aside>
 
-        <div class="main">
+        <div ref="stepTop" class="main">
           <SelectButton v-model="step" :options="steps" option-label="label" option-value="value" :allow-empty="false" aria-label="Steps" class="steps" />
 
           <!-- 1 about you -->
@@ -398,7 +436,7 @@ const statusText = computed(
               <label>Pathway</label>
               <SelectButton v-model="personal.pathway" :options="['School leaver', 'International']" :allow-empty="false" aria-label="Pathway" />
             </div>
-            <Button label="Save and continue" :loading="saving" @click="savePersonal" />
+            <div class="step-nav"><Button label="Save and continue" :loading="saving" @click="savePersonal" /></div>
           </article>
 
           <!-- 2 school and results -->
@@ -444,7 +482,10 @@ const statusText = computed(
               <Button label="Add a subject" text @click="addResult" />
             </template>
             <Message v-else severity="info" :closable="false">The admissions office assesses foreign qualifications: upload them with your documents.</Message>
-            <div><Button label="Save and continue" :loading="saving" @click="saveSchool" /></div>
+            <div class="step-nav">
+              <Button label="Back" severity="secondary" text @click="go(-1)" />
+              <Button label="Save and continue" :loading="saving" @click="saveSchool" />
+            </div>
           </article>
 
           <!-- 3 programmes -->
@@ -470,7 +511,10 @@ const statusText = computed(
               </div>
             </div>
             <p class="sub">Eligibility is a first check on your results; the admissions office decides.</p>
-            <div><Button label="Save and continue" :loading="saving" @click="saveChoices" /></div>
+            <div class="step-nav">
+              <Button label="Back" severity="secondary" text @click="go(-1)" />
+              <Button label="Save and continue" :loading="saving" @click="saveChoices" />
+            </div>
           </article>
 
           <!-- 4 documents -->
@@ -516,7 +560,10 @@ const statusText = computed(
                 />
               </div>
             </div>
-            <div><Button label="Continue" @click="step = 'submit'" /></div>
+            <div class="step-nav">
+              <Button label="Back" severity="secondary" text @click="go(-1)" />
+              <Button label="Continue" @click="go(1)" />
+            </div>
           </article>
 
           <!-- 5 submit -->
@@ -528,6 +575,7 @@ const statusText = computed(
               <li v-for="c in app.choices" :key="c.offering">Choice {{ c.rank }}: {{ c.program }} — {{ c.campus }}</li>
               <li>{{ app.documents.filter((d) => d.uploaded).length }} documents uploaded</li>
             </ul>
+            <FeePanel v-if="app.fee.amount" :fee="app.fee" />
             <Message v-if="app.missing.length" severity="warn" :closable="false">
               Not complete yet: {{ app.missing.join("; ") }}
             </Message>
@@ -538,7 +586,10 @@ const statusText = computed(
                 that a false declaration may cancel my application or my studies.
               </label>
             </div>
-            <div><Button label="Submit application" :loading="saving" :disabled="!declared || app.missing.length > 0" @click="submit" /></div>
+            <div class="step-nav">
+              <Button label="Back" severity="secondary" text @click="go(-1)" />
+              <Button label="Submit application" :loading="saving" :disabled="!declared || app.missing.length > 0" @click="submit" />
+            </div>
           </article>
         </div>
       </div>
@@ -621,9 +672,25 @@ h2 {
   margin: 1rem 0 0;
 }
 
+.main {
+  scroll-margin-top: 0.5rem;
+}
+
+/* always reachable: the step bar stays at the top of the screen while scrolling */
 .steps {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   margin-bottom: 1rem;
   flex-wrap: wrap;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.06);
+}
+
+.step-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .form {
@@ -690,6 +757,16 @@ label {
 .doc-list {
   margin: 0;
   padding-left: 1.1rem;
+}
+
+.rejected {
+  margin: 0.25rem 0;
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.fee-card {
+  margin-top: 1rem;
 }
 
 @media (max-width: 900px) {

@@ -22,6 +22,67 @@ export interface Application {
   decision_reason: string | null;
   /** what this user may do now, from the admission workflow */
   actions: Action[];
+  points: number | null;
+  fee_status: "Unpaid" | "Paid" | "Waived" | null;
+  /** an online application (paper applications are checked in person) */
+  online: boolean;
+  documents_required: number;
+  documents_verified: number;
+  documents_rejected: string[];
+  /** what stops approving it; empty: ready */
+  blockers: string[];
+  ready: boolean;
+}
+
+export interface ReviewDocument {
+  document_type: string;
+  required: boolean;
+  file_url: string | null;
+  file_name: string;
+  certified_on: string | null;
+  certification_problem: string | null;
+  status: "Pending" | "Verified" | "Rejected";
+  rejection_reason: string | null;
+  verified_by: string | null;
+  verified_on: string | null;
+}
+
+export interface Review {
+  name: string;
+  applicant: string;
+  status: string;
+  intake: string;
+  pathway: string;
+  submitted_on: string | null;
+  personal: { email: string; date_of_birth: string | null; gender: string | null; nationality: string | null; mobile: string | null; city: string | null };
+  school: { school_name: string; town: string | null; region: string | null; centre_number: string | null; emis_number: string | null; added_by_applicant: 0 | 1 } | null;
+  exam_number: string | null;
+  exam_year: number | null;
+  results: { subject: string; level: string; grade: string; points: number | null }[];
+  points: number | null;
+  choices: { rank: number; offering: string; program: string; campus: string; eligibility: string | null; eligibility_note: string | null }[];
+  documents: ReviewDocument[];
+  missing_documents: string[];
+  fee: { amount: number | null; status: string | null; paid_on: string | null; voucher: string | null; bank_transaction: string | null; note: string | null };
+  can_review: boolean;
+  actions: Action[];
+  online: boolean;
+  documents_required: number;
+  documents_verified: number;
+  blockers: string[];
+  ready: boolean;
+}
+
+export function getReview(name: string) {
+  return get<Review>("educore.api.v1.admissions.review", { name });
+}
+
+export function verifyDocument(name: string, documentType: string, verdict: "Verified" | "Rejected", reason?: string) {
+  return post<Review>("educore.api.v1.admissions.verify_document", { name, document_type: documentType, verdict, reason });
+}
+
+export function waiveFee(name: string, reason: string) {
+  return post<Review>("educore.api.v1.admissions.waive_fee", { name, reason });
 }
 
 export interface Places {
