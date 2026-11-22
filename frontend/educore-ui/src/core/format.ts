@@ -25,6 +25,12 @@ export function formatMoney(value: number | null | undefined): string {
   return value === null || value === undefined ? "" : `N$ ${NUMBER.format(value)}`;
 }
 
+/** A headline amount, short: N$ 104.7K, N$ 1.2M */
+export function formatMoneyCompact(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "";
+  return `N$ ${new Intl.NumberFormat("en-NA", { notation: "compact", maximumFractionDigits: 1 }).format(value)}`;
+}
+
 /** "registry-officer.osh@educore.localhost" → "registry-officer.osh" */
 export function shortUser(user: string | null | undefined): string {
   return user ? user.replace(/@.*$/, "") : "";

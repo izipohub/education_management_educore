@@ -25,23 +25,43 @@
 :root {
   color-scheme: light;
 
-  /* one set of values for every screen (core/ui uses these; so should modules) */
-  --ec-bg: #f6f7fb;
+  /* one set of values for every screen (core/ui uses these; so should modules).
+     Colour follows 60 / 30 / 10: the calm main colour fills most of the screen, the brand's dark colour carries
+     structure (navigation, headings), and the loud accent marks only what to act on (primary buttons, the
+     active place). The three brand colours come from the university's EduCore Branding (core/branding.ts). */
+
+  /* 60: main */
+  --ec-bg: #f4f2ec;
   --ec-surface: #ffffff;
-  --ec-surface-muted: #f9fafb;
-  --ec-border: #e5e7eb;
-  --ec-border-soft: #f1f2f5;
-  --ec-text: #1f2937;
-  --ec-muted: #6b7280;
-  --ec-subtle: #9ca3af;
-  --ec-accent: var(--color-brand-navy);
-  --ec-accent-soft: color-mix(in srgb, var(--color-brand-navy) 8%, white);
+  --ec-surface-muted: #faf9f5;
+  --ec-border: #e6e2d8;
+  --ec-border-soft: #efece5;
+  --ec-text: #1f2430;
+  --ec-muted: #6b6f7a;
+  --ec-subtle: #a3a6ad;
+
+  /* 30: second (brand dark and primary) */
+  --ec-second: var(--brand-night, #07142b);
+  --ec-second-raised: color-mix(in srgb, var(--ec-second) 88%, white);
+  --ec-on-second: #eef2f8;
+  --ec-on-second-muted: #9eabc2;
+  --ec-ink: var(--brand-ink, #0b1f3a);
+  --ec-accent: var(--brand-primary, #1e3a8a);
+  --ec-accent-soft: color-mix(in srgb, var(--ec-accent) 8%, white);
+
+  /* 10: loud (brand accent) */
+  --ec-loud: var(--brand-accent, #f2b33d);
+  --ec-on-loud: var(--brand-on-accent, #0b1f3a);
+  --ec-loud-soft: color-mix(in srgb, var(--ec-loud) 18%, white);
+
+  /* state */
   --ec-warn: #b45309;
   --ec-danger: #b91c1c;
   --ec-success: #15803d;
-  --ec-radius: 0.75rem;
+
+  --ec-radius: 0.875rem;
   --ec-radius-sm: 0.5rem;
-  --ec-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+  --ec-shadow: 0 1px 2px rgb(24 20 10 / 0.04), 0 2px 6px rgb(24 20 10 / 0.04);
   --ec-topbar-height: 3.75rem;
 }
 
@@ -54,9 +74,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+h1,
+h2,
+h3 {
+  color: var(--ec-ink);
+}
+
 /* visible keyboard focus everywhere, not just where a component styles it */
 :focus-visible {
-  outline: 2px solid var(--color-brand-navy);
+  outline: 2px solid var(--ec-accent);
   outline-offset: 2px;
 }
 

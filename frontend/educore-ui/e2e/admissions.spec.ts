@@ -3,7 +3,7 @@ import { listItem, openRecord, pane, signIn } from "./support";
 
 test("an admissions officer sees their campus's applications, with decisions they may take", async ({ page }) => {
   await signIn(page, "admissions-officer.osh");
-  await expect(page.getByText("Oshakati Campus")).toBeVisible();
+  await expect(page.getByText(/^Oshakati Campus · /)).toBeVisible();
 
   await page.getByRole("link", { name: "Admissions" }).click();
   await expect(page.getByRole("heading", { name: "Admissions", exact: true })).toBeVisible();
@@ -45,5 +45,5 @@ test("staff without admissions rights have no Admissions screen", async ({ page 
   await signIn(page, "registry-officer.osh");
   await expect(page.getByRole("link", { name: "Admissions" })).toHaveCount(0);
   await page.goto("/admissions");
-  await expect(page.getByRole("heading", { name: /Welcome/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Good (morning|afternoon|evening)/ })).toBeVisible();
 });

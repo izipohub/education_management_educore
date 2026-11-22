@@ -30,8 +30,8 @@ test("a student who has paid sees that they are paid up", async ({ page }) => {
 
 test("staff have no student page", async ({ page }) => {
   await signIn(page, "registrar");
-  await expect(page.getByRole("heading", { name: /Welcome/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Good (morning|afternoon|evening)/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "My studies" })).toHaveCount(0);
   await page.goto("/my-studies");
-  await expect(page.getByRole("heading", { name: /Welcome/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Good (morning|afternoon|evening)/ })).toBeVisible();
 });

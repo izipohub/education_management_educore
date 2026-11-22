@@ -24,11 +24,21 @@ export const DEFAULT_BRANDING: Branding = {
 const branding = ref<Branding>(DEFAULT_BRANDING);
 let loading: Promise<void> | null = null;
 
+/** The brand's three colours as CSS variables, which the 60/30/10 tokens in styles/main.css build on */
+export function applyBrandColours(brand: Branding) {
+  const root = document.documentElement.style;
+  root.setProperty("--brand-primary", brand.primary_color);
+  root.setProperty("--brand-night", brand.background_color);
+  root.setProperty("--brand-accent", brand.accent_color);
+  root.setProperty("--brand-on-accent", brand.text_on_accent);
+}
+
 /** The university's name, logos and colours (educore_theme's EduCore Branding), fetched once */
 export function useBranding() {
   loading ??= get<Branding>("educore_theme.branding.public_branding")
     .then((data) => {
       branding.value = data;
+      applyBrandColours(data);
     })
     .catch(() => {
       // the defaults stand; the login page must never fail because branding did

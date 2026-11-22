@@ -71,7 +71,7 @@ async function signOut() {
   <div class="shell">
     <header class="topbar">
       <RouterLink to="/" class="brand">
-        <img :src="branding.logo" :alt="branding.institution_name" />
+        <img :src="branding.logo_on_dark || branding.logo" :alt="branding.institution_name" />
       </RouterLink>
       <div class="user">
         <div class="who">
@@ -114,8 +114,17 @@ async function signOut() {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.75rem 1.5rem;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--ec-second);
+  color: var(--ec-on-second);
+}
+
+.topbar :deep(.p-button) {
+  color: var(--ec-on-second-muted);
+}
+
+.topbar :deep(.p-avatar) {
+  background: var(--ec-second-raised);
+  color: var(--ec-on-second);
 }
 
 .brand img {
@@ -142,7 +151,7 @@ async function signOut() {
 
 .positions {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--ec-on-second-muted);
 }
 
 .body {
@@ -152,30 +161,50 @@ async function signOut() {
 }
 
 .sidebar {
-  padding: 1rem 0.75rem;
-  background: #fff;
-  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.75rem;
+  background: var(--ec-second);
 }
 
 .nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.65rem;
   font-size: 0.9rem;
   padding: 0.55rem 0.75rem;
-  border-radius: 0.5rem;
-  color: #374151;
+  border-radius: var(--ec-radius-sm);
+  color: var(--ec-on-second-muted);
   text-decoration: none;
 }
 
 .nav-item:hover {
-  background: #f3f4f6;
+  background: var(--ec-second-raised);
+  color: var(--ec-on-second);
 }
 
+/* the loud accent marks where you are */
 .nav-item.active {
-  background: color-mix(in srgb, var(--color-brand-navy) 10%, white);
-  color: var(--color-brand-navy);
+  background: var(--ec-second-raised);
+  color: var(--ec-on-second);
   font-weight: 600;
+}
+
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: -0.75rem;
+  top: 0.45rem;
+  bottom: 0.45rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--ec-loud);
+}
+
+.nav-item.active svg {
+  color: var(--ec-loud);
 }
 
 .content {
@@ -204,9 +233,8 @@ async function signOut() {
   .sidebar {
     display: flex;
     gap: 0.25rem;
+    flex-direction: row;
     overflow-x: auto;
-    border-right: 0;
-    border-bottom: 1px solid #e5e7eb;
   }
 }
 </style>

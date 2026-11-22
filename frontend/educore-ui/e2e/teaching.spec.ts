@@ -7,7 +7,7 @@ async function signIn(page: Page, login: string) {
   await page.getByLabel("Email").fill(`${login}@educore.localhost`);
   await page.locator("#password").fill(PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { name: /Welcome/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Good (morning|afternoon|evening)/ })).toBeVisible();
 }
 
 test("a lecturer sees their classes and the students in them", async ({ page }) => {

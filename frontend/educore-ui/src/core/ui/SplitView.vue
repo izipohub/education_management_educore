@@ -143,7 +143,7 @@ async function move(step: number) {
 
 .row[aria-selected="true"] {
   background: var(--ec-accent-soft);
-  border-left-color: var(--ec-accent);
+  border-left-color: var(--ec-loud);
 }
 
 .list:focus-visible .row[aria-selected="true"] {
