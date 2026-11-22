@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import Button from "primevue/button";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
 import Select from "primevue/select";
 import ToggleSwitch from "primevue/toggleswitch";
 import { computed, reactive, watch } from "vue";
+import EcButton from "@/core/ui/EcButton.vue";
 import type { Settings } from "./api";
 
 const props = defineProps<{ settings: Settings; countries: string[]; saving: boolean }>();
@@ -108,8 +108,8 @@ const notify = flag("notify_applicants");
 
     <!-- only once something changed: nothing sits over the form otherwise -->
     <div v-if="changed || saving" class="save-bar">
-      <Button label="Undo changes" text :disabled="!changed || saving" @click="Object.assign(form, settings)" />
-      <Button label="Save" :loading="saving" @click="emit('save', { ...form })" />
+      <EcButton label="Undo changes" variant="ghost" :disabled="!changed || saving" @click="Object.assign(form, settings)" />
+      <EcButton label="Save" variant="primary" :loading="saving" @click="emit('save', { ...form })" />
     </div>
   </div>
 </template>

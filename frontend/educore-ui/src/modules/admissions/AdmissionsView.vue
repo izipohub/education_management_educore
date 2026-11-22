@@ -5,10 +5,10 @@ import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import Select from "primevue/select";
-import SelectButton from "primevue/selectbutton";
 import { computed, onMounted, ref, watch } from "vue";
 import { applicationLabel } from "@/core/status";
 import { formatDate } from "@/core/format";
+import EcTabs from "@/core/ui/EcTabs.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
 import SplitView from "@/core/ui/SplitView.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
@@ -25,7 +25,8 @@ const selected = ref<string | null>(null);
 
 const statusOptions = computed(() =>
   STATUSES.filter((s) => !OCCASIONAL.includes(s) || (page.value?.counts[s] ?? 0) > 0 || s === status.value).map((s) => ({
-    label: `${applicationLabel(s)} ${page.value?.counts[s] ?? 0}`,
+    label: applicationLabel(s),
+    count: page.value?.counts[s] ?? 0,
     value: s,
   })),
 );
@@ -76,8 +77,10 @@ const docsClass = (r: Application) => (r.documents_verified === r.documents_requ
 
 <template>
   <PageHeader title="Admissions" subtitle="Applications for the campuses you work on.">
-    <SelectButton v-model="status" :options="statusOptions" option-label="label" option-value="value" :allow-empty="false" aria-label="Status" class="tabs" />
-    <Select v-model="academicYear" :options="page?.academic_years ?? []" placeholder="Year" aria-label="Academic year" class="year" />
+    <template #actions>
+      <Select v-model="academicYear" :options="page?.academic_years ?? []" placeholder="Year" aria-label="Academic year" class="year" size="small" />
+    </template>
+    <EcTabs v-model="status" :tabs="statusOptions" label="Status" class="tabs" />
   </PageHeader>
 
   <Message v-if="loadError" severity="error" :closable="false">{{ loadError }}</Message>
@@ -124,7 +127,7 @@ const docsClass = (r: Application) => (r.documents_verified === r.documents_requ
 
 <style scoped>
 .tabs {
-  flex-wrap: wrap;
+  flex: 1;
 }
 
 .year {

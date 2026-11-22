@@ -27,6 +27,11 @@ meter tracks); red only for a limit reached, always with a word ("Full").
 | `EmptyState` | Nothing to show |
 | `StatTile` | A headline number with its context and a link to act on it (dashboard) |
 | `BarList` | Magnitudes or meters: one row per item, one hue, shared baseline (dashboard) |
+| `EcButton` | Every button. `primary` (the loud accent; one per view or pane), `secondary`, `ghost` (Edit, Cancel, Add), `danger` (refuse, remove), `quiet-danger` (a refusal inside a row); `sm` inside sections; `loading` shows a small spinner in the button |
+| `EcModal` | A small modal that asks one thing (a reason, a choice) and closes; records and editing never go in a modal |
+| `EcField` | A form field: label, control, then a hint or the error |
+| `EcTabs` | The views of one screen (a queue's statuses, a setup's sections), with counts; ← → move between tabs |
+| `EcSkeleton` | Loading: grey shapes where the content will be (`list`, `pane`, `tiles`, `card`, `lines`), never a spinner in the page |
 | `.card` / `.ec-card`, `.ec-muted` | A card; secondary text |
 
 Icons: Lucide (`@lucide/vue`), 18 px in the menu, 15 to 16 px inline.
@@ -36,7 +41,9 @@ Icons: Lucide (`@lucide/vue`), 18 px in the menu, 15 to 16 px inline.
 - Show what must be seen; details one click away (sections, "View all", Edit). No explanatory text for the obvious.
 - Status tags are one or two words; the sentence beside the tag says the rest.
 - Formal wording; no long dashes (use commas or " · ").
-- Actions that decide something sit in the pane's footer; a decision that needs a reason or a choice opens a small
-  dialog.
+- Actions that decide something sit in the pane's footer; a decision that needs a reason or a choice opens an
+  `EcModal`.
+- Editing a record happens in the docked side window, like an ERP: setup lists (pathways, documents, programmes)
+  are split views too, never overlay drawers.
 - Dates DD-MM-YYYY, money N$ (`core/format.ts`).
 - Colours, radius, borders and shadows come from the `--ec-*` tokens, never hard-coded per screen.

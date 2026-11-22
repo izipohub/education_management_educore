@@ -68,7 +68,7 @@ export const router = createRouter({
           path: "admission-setup",
           name: "admission-setup",
           component: () => import("@/modules/setup/AdmissionSetupView.vue"),
-          meta: { title: "Admission setup", roles: ["Registrar", "System Manager"] },
+          meta: { fill: true, title: "Admission setup", roles: ["Registrar", "System Manager"] },
         },
         {
           path: "enrolment",

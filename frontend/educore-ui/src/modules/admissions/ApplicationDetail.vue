@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import Button from "primevue/button";
 import DatePicker from "primevue/datepicker";
-import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
-import ProgressSpinner from "primevue/progressspinner";
 import Textarea from "primevue/textarea";
 import { useToast } from "primevue/usetoast";
 import { computed, ref, watch } from "vue";
 import { formatDate, formatMoney, fromIsoDate, shortUser, toIsoDate } from "@/core/format";
 import DetailPane from "@/core/ui/DetailPane.vue";
+import EcButton from "@/core/ui/EcButton.vue";
+import EcField from "@/core/ui/EcField.vue";
+import EcModal from "@/core/ui/EcModal.vue";
+import EcSkeleton from "@/core/ui/EcSkeleton.vue";
 import DetailSection from "@/core/ui/DetailSection.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
 import { type Action, type Places, type Review, decide, extendOffer, getReview, verifyDocument, waiveFee } from "./api";
@@ -140,7 +141,7 @@ watch(
 
 <template>
   <Message v-if="error" severity="error" :closable="false" class="error">{{ error }}</Message>
-  <div v-else-if="!review" class="loading"><ProgressSpinner style="width: 2rem; height: 2rem" aria-label="Loading" /></div>
+  <EcSkeleton v-else-if="!review" shape="pane" :rows="5" label="Loading the application" />
 
   <DetailPane
     v-else
@@ -166,11 +167,11 @@ watch(
       <p v-if="review.offer.conditions">Conditions: {{ review.offer.conditions }}</p>
       <p v-if="review.offer.decline_reason">Reason given: {{ review.offer.decline_reason }}</p>
       <template v-if="review.can_review && review.offer.status === 'Awaiting response'">
-        <Button v-if="!extending" label="Extend deadline" size="small" text @click="startExtend" />
+        <EcButton v-if="!extending" label="Extend deadline" size="sm" variant="ghost" @click="startExtend" />
         <div v-else class="inline-form">
           <DatePicker v-model="newDeadline" date-format="dd-mm-yy" show-icon :min-date="new Date()" aria-label="New deadline" />
-          <Button label="Save" size="small" :disabled="!newDeadline || busy" @click="confirmExtend" />
-          <Button label="Cancel" size="small" text @click="extending = false" />
+          <EcButton label="Save" size="sm" :disabled="!newDeadline || busy" @click="confirmExtend" />
+          <EcButton label="Cancel" size="sm" variant="ghost" @click="extending = false" />
         </div>
       </template>
     </DetailSection>
@@ -215,8 +216,8 @@ watch(
             </div>
           </div>
           <div v-if="canCheck && d.status !== 'Verified' && rejecting !== d.document_type" class="doc-actions">
-            <Button label="Verify" size="small" outlined :disabled="busy" @click="verify(d.document_type)" />
-            <Button label="Reject" size="small" severity="danger" text :disabled="busy" @click="(rejecting = d.document_type), (rejectReason = '')" />
+            <EcButton label="Verify" size="sm" :disabled="busy" @click="verify(d.document_type)" />
+            <EcButton label="Reject" size="sm" variant="quiet-danger" :disabled="busy" @click="(rejecting = d.document_type), (rejectReason = '')" />
           </div>
           <StatusTag v-else kind="document" :value="d.status" />
         </div>
@@ -224,8 +225,8 @@ watch(
         <p v-if="d.rejection_reason" class="danger">Rejected: {{ d.rejection_reason }}</p>
         <div v-if="rejecting === d.document_type" class="inline-form">
           <InputText v-model="rejectReason" placeholder="Reason, shown to the applicant" fluid size="small" :aria-label="`Reason for rejecting ${d.document_type}`" />
-          <Button label="Reject" size="small" severity="danger" :disabled="!rejectReason.trim() || busy" @click="confirmReject" />
-          <Button label="Cancel" size="small" text @click="rejecting = null" />
+          <EcButton label="Reject" size="sm" variant="danger" :disabled="!rejectReason.trim() || busy" @click="confirmReject" />
+          <EcButton label="Cancel" size="sm" variant="ghost" @click="rejecting = null" />
         </div>
       </div>
     </DetailSection>
@@ -238,11 +239,11 @@ watch(
       </template>
       <p v-if="review.fee.note" class="ec-muted">{{ review.fee.note }}</p>
       <template v-if="review.can_review && review.fee.status === 'Unpaid'">
-        <Button v-if="!waiving" label="Waive the fee" size="small" text @click="waiving = true" />
+        <EcButton v-if="!waiving" label="Waive the fee" size="sm" variant="ghost" @click="waiving = true" />
         <div v-else class="inline-form">
           <InputText v-model="waiveReason" placeholder="Reason, e.g. the scheme it falls under" fluid aria-label="Reason for waiving the fee" />
-          <Button label="Waive" size="small" :disabled="!waiveReason.trim() || busy" @click="confirmWaive" />
-          <Button label="Cancel" size="small" text @click="waiving = false" />
+          <EcButton label="Waive" size="sm" :disabled="!waiveReason.trim() || busy" @click="confirmWaive" />
+          <EcButton label="Cancel" size="sm" variant="ghost" @click="waiving = false" />
         </div>
       </template>
     </DetailSection>
@@ -318,18 +319,18 @@ watch(
     <DetailSection v-if="review.previous_student_number" title="Earlier studies" :summary="`Student number ${review.previous_student_number}`" />
 
     <template v-if="review.actions.length" #actions>
-      <Button
+      <EcButton
         v-for="action in review.actions.filter((a) => a !== 'Approve')"
         :key="action"
         :label="action"
-        :severity="action === 'Reconsider' ? 'secondary' : 'danger'"
-        outlined
+        :variant="action === 'Reconsider' ? 'secondary' : 'danger'"
         :disabled="busy"
         @click="start(action)"
       />
-      <Button
+      <EcButton
         v-if="review.actions.includes('Approve')"
         label="Make offer"
+        variant="primary"
         :disabled="busy || Boolean(approveBlocked)"
         :title="approveBlocked || undefined"
         @click="start('Approve')"
@@ -337,47 +338,41 @@ watch(
     </template>
   </DetailPane>
 
-  <Dialog
-    :visible="deciding !== null"
-    modal
-    :header="deciding ? `${offering ? 'Offer a place' : deciding}: ${review?.applicant}` : ''"
-    :style="{ width: 'min(32rem, calc(100vw - 32px))' }"
-    @update:visible="(v: boolean) => !v && (deciding = null)"
+  <EcModal
+    :open="deciding !== null"
+    :title="deciding ? `${offering ? 'Offer a place' : deciding}: ${review?.applicant}` : ''"
+    :description="offering ? 'The applicant is asked to accept or decline in the portal.' : undefined"
+    @update:open="(v: boolean) => !v && (deciding = null)"
   >
-    <div class="dialog-body">
-      <fieldset v-if="offering && (review?.choices.length ?? 0) > 1" class="choices">
-        <legend class="label">Programme to offer</legend>
-        <label v-for="c in review?.choices" :key="c.offering" class="choice-option">
-          <input v-model="offerChoice" type="radio" name="offer-choice" :value="c.offering" />
-          <span class="grow">{{ c.rank }}. {{ c.program }} <span class="ec-muted">{{ c.campus }}</span></span>
-          <StatusTag kind="eligibility" :value="c.eligibility" />
-        </label>
-      </fieldset>
-      <label for="decision-text" class="label">
-        {{ offering ? "Offer conditions (optional, shown in the offer letter)" : "Reason (kept on the application)" }}
+    <fieldset v-if="offering && (review?.choices.length ?? 0) > 1" class="choices">
+      <legend class="label">Programme to offer</legend>
+      <label v-for="c in review?.choices" :key="c.offering" class="choice-option">
+        <input v-model="offerChoice" type="radio" name="offer-choice" :value="c.offering" />
+        <span class="grow">{{ c.rank }}. {{ c.program }} <span class="ec-muted">{{ c.campus }}</span></span>
+        <StatusTag kind="eligibility" :value="c.eligibility" />
       </label>
+    </fieldset>
+    <EcField
+      :label="offering ? 'Offer conditions (optional)' : 'Reason'"
+      for="decision-text"
+      :hint="offering ? 'Shown in the offer letter' : 'Kept on the application'"
+    >
       <Textarea id="decision-text" v-model="decisionText" rows="3" fluid auto-resize />
-    </div>
+    </EcField>
     <template #footer>
-      <Button label="Cancel" text @click="deciding = null" />
-      <Button
+      <EcButton label="Cancel" variant="ghost" @click="deciding = null" />
+      <EcButton
         :label="deciding ? actionLabel(deciding) : ''"
-        :severity="offering ? undefined : 'danger'"
+        :variant="offering ? 'primary' : 'danger'"
         :loading="busy"
         :disabled="!offering && !decisionText.trim()"
         @click="confirmDecision"
       />
     </template>
-  </Dialog>
+  </EcModal>
 </template>
 
 <style scoped>
-.loading {
-  display: flex;
-  justify-content: center;
-  padding: 3rem;
-}
-
 .error {
   margin: 1rem;
 }
@@ -486,11 +481,6 @@ p {
 
 .warn {
   color: var(--ec-warn);
-}
-
-.dialog-body {
-  display: grid;
-  gap: 0.5rem;
 }
 
 .label {

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import Message from "primevue/message";
-import ProgressSpinner from "primevue/progressspinner";
 import Tag from "primevue/tag";
 import { computed, onMounted, ref } from "vue";
 import { useSession } from "@/core/auth/session";
 import { formatDate, formatMoney, formatMoneyCompact } from "@/core/format";
 import BarList from "@/core/ui/BarList.vue";
 import DetailSection from "@/core/ui/DetailSection.vue";
+import EcSkeleton from "@/core/ui/EcSkeleton.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
 import StatTile from "@/core/ui/StatTile.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
@@ -45,7 +45,12 @@ const hasAny = computed(() => Object.keys(s.value).length > 0);
     <PageHeader :title="greeting" :subtitle="scope" />
 
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
-    <div v-else-if="!stats" class="loading"><ProgressSpinner style="width: 2.5rem; height: 2.5rem" aria-label="Loading" /></div>
+    <template v-else-if="!stats">
+      <EcSkeleton shape="tiles" :rows="4" label="Loading the dashboard" />
+      <div class="panels">
+        <div v-for="i in 2" :key="i" class="card"><EcSkeleton shape="card" :rows="4" label="Loading" /></div>
+      </div>
+    </template>
 
     <template v-else>
       <!-- the headline numbers, each with where to act on it -->

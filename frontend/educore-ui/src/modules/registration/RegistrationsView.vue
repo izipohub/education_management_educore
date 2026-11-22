@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import Button from "primevue/button";
 import Message from "primevue/message";
-import SelectButton from "primevue/selectbutton";
 import Textarea from "primevue/textarea";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, ref, watch } from "vue";
 import { formatDate } from "@/core/format";
 import DetailPane from "@/core/ui/DetailPane.vue";
 import DetailSection from "@/core/ui/DetailSection.vue";
+import EcButton from "@/core/ui/EcButton.vue";
+import EcField from "@/core/ui/EcField.vue";
+import EcTabs from "@/core/ui/EcTabs.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
 import SplitView from "@/core/ui/SplitView.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
@@ -36,7 +37,7 @@ async function load() {
 onMounted(load);
 watch(status, load);
 
-const tabs = computed(() => (["Submitted", "Returned", "Approved"] as const).map((s) => ({ label: `${s} ${page.value?.counts[s] ?? 0}`, value: s })));
+const tabs = computed(() => (["Submitted", "Returned", "Approved"] as const).map((s) => ({ label: s, count: page.value?.counts[s] ?? 0, value: s })));
 const items = computed(() => (page.value?.rows ?? []) as unknown as Record<string, unknown>[]);
 const asRow = (item: Record<string, unknown>) => item as unknown as QueueRow;
 const current = computed(() => page.value?.rows.find((r) => r.name === selected.value) ?? null);
@@ -70,7 +71,7 @@ const sendBack = (row: QueueRow) => note.value.trim() && run(() => returnRegistr
     :title="page?.academic_year ? `Registrations ${page.academic_year}` : 'Registrations'"
     subtitle="Returning students in your faculty and campus. Approving registers the student and invoices the year."
   >
-    <SelectButton v-model="status" :options="tabs" option-label="label" option-value="value" :allow-empty="false" aria-label="Status" />
+    <EcTabs v-model="status" :tabs="tabs" label="Status" class="tabs" />
   </PageHeader>
 
   <Message v-if="loadError" severity="error" :closable="false">{{ loadError }}</Message>
@@ -125,18 +126,19 @@ const sendBack = (row: QueueRow) => note.value.trim() && run(() => returnRegistr
           </div>
         </DetailSection>
         <DetailSection v-if="returning" title="Return">
-          <label for="note" class="label">What should the student change? They see this.</label>
-          <Textarea id="note" v-model="note" rows="3" auto-resize fluid />
+          <EcField label="What should the student change?" for="note" hint="The student sees this">
+            <Textarea id="note" v-model="note" rows="3" auto-resize fluid />
+          </EcField>
         </DetailSection>
 
         <template v-if="current.status === 'Submitted'" #actions>
           <template v-if="returning">
-            <Button label="Cancel" text :disabled="busy" @click="returning = false" />
-            <Button label="Return to student" severity="danger" :loading="busy" :disabled="!note.trim()" @click="sendBack(current)" />
+            <EcButton label="Cancel" variant="ghost" :disabled="busy" @click="returning = false" />
+            <EcButton label="Return to student" variant="danger" :loading="busy" :disabled="!note.trim()" @click="sendBack(current)" />
           </template>
           <template v-else>
-            <Button label="Return" severity="secondary" outlined :disabled="busy" @click="returning = true" />
-            <Button label="Approve" :loading="busy" @click="approve(current)" />
+            <EcButton label="Return" :disabled="busy" @click="returning = true" />
+            <EcButton label="Approve" variant="primary" :loading="busy" @click="approve(current)" />
           </template>
         </template>
       </DetailPane>
@@ -145,6 +147,10 @@ const sendBack = (row: QueueRow) => note.value.trim() && run(() => returnRegistr
 </template>
 
 <style scoped>
+.tabs {
+  flex: 1;
+}
+
 .item {
   display: grid;
   gap: 0.3rem;

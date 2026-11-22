@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import { Search } from "@lucide/vue";
-import Button from "primevue/button";
 import DatePicker from "primevue/datepicker";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import Select from "primevue/select";
-import SelectButton from "primevue/selectbutton";
 import Tag from "primevue/tag";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, ref, watch } from "vue";
 import { formatDate, formatMoney, fromIsoDate, toIsoDate } from "@/core/format";
 import DetailPane from "@/core/ui/DetailPane.vue";
 import DetailSection from "@/core/ui/DetailSection.vue";
+import EcButton from "@/core/ui/EcButton.vue";
+import EcField from "@/core/ui/EcField.vue";
+import EcTabs from "@/core/ui/EcTabs.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
 import SplitView from "@/core/ui/SplitView.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
@@ -31,8 +32,8 @@ const loadError = ref("");
 const selected = ref<string | null>(null);
 
 const viewOptions = computed(() => [
-  { label: `To enrol ${page.value?.waiting.length ?? 0}`, value: "waiting" },
-  { label: `Enrolled ${page.value?.enrolled.length ?? 0}`, value: "enrolled" },
+  { label: "To enrol", count: page.value?.waiting.length ?? 0, value: "waiting" as View },
+  { label: "Enrolled", count: page.value?.enrolled.length ?? 0, value: "enrolled" as View },
 ]);
 const items = computed(() => ((view.value === "waiting" ? page.value?.waiting : page.value?.enrolled) ?? []) as unknown as Record<string, unknown>[]);
 const offer = computed(() => (view.value === "waiting" ? (page.value?.waiting.find((o) => o.name === selected.value) ?? null) : null));
@@ -119,8 +120,10 @@ const invoiceSeverity = (status: string) => (status === "Paid" ? "success" : sta
 
 <template>
   <PageHeader title="Enrolment" subtitle="Admitted applicants on your campuses. Enrolling creates the student, their login and the year's fees.">
-    <SelectButton v-model="view" :options="viewOptions" option-label="label" option-value="value" :allow-empty="false" aria-label="View" />
-    <Select v-model="academicYear" :options="page?.academic_years ?? []" placeholder="Year" aria-label="Academic year" class="year" />
+    <template #actions>
+      <Select v-model="academicYear" :options="page?.academic_years ?? []" placeholder="Year" aria-label="Academic year" class="year" size="small" />
+    </template>
+    <EcTabs v-model="view" :tabs="viewOptions" label="View" class="tabs" />
   </PageHeader>
 
   <Message v-if="loadError" severity="error" :closable="false">{{ loadError }}</Message>
@@ -173,20 +176,18 @@ const invoiceSeverity = (status: string) => (status === "Paid" ? "success" : sta
         <DetailSection title="Fees" :summary="offer.fees !== null ? formatMoney(offer.fees) : 'No fees set for this offering'" />
         <DetailSection v-if="page?.can_enrol && !offer.needs_acceptance" title="Enrol">
           <div class="form">
-            <div class="field">
-              <label for="enrol-email">Student's email (their login)</label>
+            <EcField label="Student's email (their login)" for="enrol-email" :error="email && !EMAIL.test(email.trim()) ? 'Not a valid email address' : undefined">
               <InputText id="enrol-email" v-model="email" type="email" autocomplete="off" fluid :invalid="Boolean(email) && !EMAIL.test(email.trim())" />
-            </div>
-            <div class="field">
-              <label for="enrol-date">Enrolled from</label>
+            </EcField>
+            <EcField label="Enrolled from" for="enrol-date">
               <DatePicker v-model="enrollmentDay" input-id="enrol-date" date-format="dd-mm-yy" show-icon fluid />
-            </div>
+            </EcField>
           </div>
           <Message v-if="formError" severity="error" :closable="false" role="alert">{{ formError }}</Message>
         </DetailSection>
 
         <template v-if="page?.can_enrol && !offer.needs_acceptance" #actions>
-          <Button label="Enrol" :loading="saving" :disabled="!canEnrol" @click="confirmEnrol" />
+          <EcButton label="Enrol" variant="primary" :loading="saving" :disabled="!canEnrol" @click="confirmEnrol" />
         </template>
       </DetailPane>
 
@@ -215,6 +216,10 @@ const invoiceSeverity = (status: string) => (status === "Paid" ? "success" : sta
 <style scoped>
 .year {
   width: 7.5rem;
+}
+
+.tabs {
+  flex: 1;
 }
 
 .search {

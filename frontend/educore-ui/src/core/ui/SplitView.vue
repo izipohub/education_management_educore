@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="T extends Record<string, unknown>">
 import { ChevronLeft } from "@lucide/vue";
-import ProgressSpinner from "primevue/progressspinner";
 import { computed, nextTick, ref } from "vue";
+import EcSkeleton from "./EcSkeleton.vue";
 import EmptyState from "./EmptyState.vue";
 
 /**
@@ -51,7 +51,7 @@ async function move(step: number) {
   <div class="split" :class="{ 'has-selection': selected !== null }">
     <div class="list-pane ec-card">
       <div v-if="$slots.filters" class="filters"><slot name="filters" /></div>
-      <div v-if="loading && !items.length" class="loading"><ProgressSpinner style="width: 2rem; height: 2rem" aria-label="Loading" /></div>
+      <EcSkeleton v-if="loading && !items.length" shape="list" :rows="5" />
       <EmptyState v-else-if="!items.length" :title="emptyTitle" :hint="emptyHint" />
       <ul
         v-else
@@ -110,12 +110,6 @@ async function move(step: number) {
   gap: 0.5rem;
   padding: 0.75rem;
   border-bottom: 1px solid var(--ec-border-soft);
-}
-
-.loading {
-  display: flex;
-  justify-content: center;
-  padding: 2rem;
 }
 
 .list {

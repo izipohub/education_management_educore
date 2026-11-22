@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { listItem, openRecord, pane } from "./support";
 
 const PASSWORD = process.env.EDUCORE_DEMO_PASSWORD ?? "Campus-Demo-2026";
 
@@ -31,20 +32,17 @@ test("the registrar sets the admission rules", async ({ page }) => {
   await expect(days).toHaveValue("14");
   await page.screenshot({ path: "e2e/results/setup-rules.png", fullPage: true });
 
-  // pathways: one line each, details in the editor (closed without saving)
-  await page.getByText("Pathways", { exact: true }).click();
-  const mature = page.getByRole("row").filter({ hasText: "Mature age entry" });
-  await expect(mature.getByText(/From age 23/)).toBeVisible();
-  await mature.getByRole("button", { name: "Edit" }).click();
-  await expect(page.getByLabel("Minimum age")).toHaveValue("23");
-  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
-  await page.screenshot({ path: "e2e/results/setup-pathway.png", fullPage: true });
-  await page.getByRole("button", { name: "Cancel" }).click();
+  // pathways: one line each, the editor docked beside the list (nothing saved)
+  await page.getByRole("tab", { name: /^Pathways/ }).click();
+  await expect(listItem(page, "Mature age entry").getByText(/from age 23/)).toBeVisible();
+  await openRecord(page, "Mature age entry");
+  await expect(pane(page).getByLabel("Minimum age")).toHaveValue("23");
+  await page.screenshot({ path: "e2e/results/setup-pathway.png" });
 
-  await page.getByText("Programmes", { exact: true }).click();
-  await expect(page.getByRole("row").filter({ hasText: "Master of Business Administration" }).getByText("NQF 7, 60%")).toBeVisible();
+  await page.getByRole("tab", { name: /^Programmes/ }).click();
+  await expect(listItem(page, "Master of Business Administration").getByText(/NQF 7, 60%/)).toBeVisible();
 
-  await page.getByText("Points scale", { exact: true }).click();
+  await page.getByRole("tab", { name: "Points scale" }).click();
   await expect(page.getByLabel("Grade 1", { exact: true })).toHaveValue("A*");
 });
 
