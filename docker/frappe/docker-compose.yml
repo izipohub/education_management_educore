@@ -1,0 +1,61 @@
+# EduCore backend: Frappe 16 + ERPNext 16 + Frappe HR 16 + Frappe Education 16.
+#
+# Reached through the local Nginx Proxy Manager, like production:
+#   http://educore.localhost  -> NPM proxy host -> educore-frappe:8000  (web)
+#                                 location /socket.io -> educore-frappe:9000  (realtime, websockets on)
+#   (*.localhost always means "this computer": no /etc/hosts line needed)
+#
+#   browser ──► NPM ──(proxy)──► frappe (gunicorn :8000, socket.io :9000) ──(app)──► mariadb, redis
+#
+# Frappe picks the site from the Host header, so the NPM domain must equal the site name
+# (educore.localhost). No ports are published; MariaDB and Redis are reachable only on the app network.
+#
+# Start: docker compose up -d   Logs: docker compose logs -f frappe   Stop: docker compose down
+# Remove all data: docker compose down -v
+# Bench commands: docker compose exec frappe bash, then cd frappe-bench
+# Development setup: a bench in the frappe/bench image, created on first start by init.sh (site
+# educore.localhost, Administrator / admin: change before any real use). Production images come later.
+name: educore-frappe
+services:
+  mariadb:
+    image: mariadb:11.8
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --skip-character-set-client-handshake
+    environment:
+      MYSQL_ROOT_PASSWORD: ${EDUCORE_DB_ROOT_PASSWORD:-educore}
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    restart: unless-stopped
+    networks: [app]
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks: [app]
+  frappe:
+    image: frappe/bench:latest
+    command: bash /workspace/init.sh
+    environment:
+      - SHELL=/bin/bash
+      - EDUCORE_DB_ROOT_PASSWORD=${EDUCORE_DB_ROOT_PASSWORD:-educore}
+    working_dir: /home/frappe
+    volumes:
+      - .:/workspace
+      - bench:/home/frappe
+      # EduCore's own Frappe apps (educore_theme, …), edited here and linked into the bench by init.sh
+      - ../../apps:/home/frappe/educore-apps
+    depends_on: [mariadb, redis]
+    restart: unless-stopped
+    networks:
+      app:
+      proxy:
+        # "Forward Hostname" in NPM: educore-frappe, port 8000 (and 9000 for /socket.io).
+        aliases: [educore-frappe]
+networks:
+  # The app's own network: MariaDB and Redis are reachable only from here.
+  app:
+  # Nginx Proxy Manager's network, created outside this stack. Only the frappe container joins it.
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-proxy}
+volumes:
+  mariadb-data:
+  bench:

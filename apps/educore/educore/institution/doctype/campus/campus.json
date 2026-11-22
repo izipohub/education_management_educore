@@ -1,0 +1,170 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:campus_name",
+ "creation": "2026-11-22 12:00:00.000000",
+ "description": "A campus of the university. Each campus gets its own cost center and HR branch.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "campus_name",
+  "campus_code",
+  "is_main_campus",
+  "column_break_main",
+  "company",
+  "disabled",
+  "location_section",
+  "city",
+  "region",
+  "column_break_location",
+  "address",
+  "accounting_section",
+  "cost_center",
+  "column_break_accounting",
+  "branch"
+ ],
+ "fields": [
+  {
+   "fieldname": "campus_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Campus Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "Short code, e.g. WHK. Used in cost centers and identifiers; cannot change later.",
+   "fieldname": "campus_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Campus Code",
+   "length": 10,
+   "reqd": 1,
+   "set_only_once": 1,
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_main_campus",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Main Campus"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "University (Company)",
+   "options": "Company",
+   "remember_last_selected_value": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Disabled"
+  },
+  {
+   "fieldname": "location_section",
+   "fieldtype": "Section Break",
+   "label": "Location"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Town / City"
+  },
+  {
+   "fieldname": "region",
+   "fieldtype": "Data",
+   "label": "Region"
+  },
+  {
+   "fieldname": "column_break_location",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Small Text",
+   "label": "Address"
+  },
+  {
+   "fieldname": "accounting_section",
+   "fieldtype": "Section Break",
+   "label": "Accounting and HR"
+  },
+  {
+   "description": "Created with the campus. Campus income and costs post here.",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_accounting",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Created with the campus. Employees' campus in HR.",
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "label": "HR Branch",
+   "options": "Branch",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-22 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Institution",
+ "name": "Campus",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "University Staff"
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  }
+ ],
+ "search_fields": "campus_code,city",
+ "show_title_field_in_link": 0,
+ "sort_field": "campus_name",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}

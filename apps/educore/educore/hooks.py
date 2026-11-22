@@ -1,0 +1,45 @@
+app_name = "educore"
+app_title = "EduCore"
+app_publisher = "Izipo"
+app_description = "University management on Frappe: institution, academics, students, finance, HR and campus"
+app_email = "dev@izipo.health"
+app_license = "GNU General Public License (v3)"
+
+required_apps = ["erpnext", "hrms", "education"]
+
+# Custom fields on upstream DocTypes (educore/setup/custom_fields.py), and roles and positions
+# (educore/access/roles.py), kept as defined
+after_install = "educore.setup.install.after_migrate"
+after_migrate = "educore.setup.install.after_migrate"
+
+# Students and guardians see only their own (their wards') enrolments and fee invoices, as Education
+# does for Student; staff are unaffected
+permission_query_conditions = {
+	"Program Enrollment": "educore.academics.student_access.query_conditions",
+	"Sales Invoice": "educore.academics.student_access.query_conditions",
+}
+has_permission = {
+	"Program Enrollment": "educore.academics.student_access.has_permission",
+	"Sales Invoice": "educore.academics.student_access.has_permission",
+}
+
+doc_events = {
+	# Faculties, schools and departments live in ERPNext's Department tree
+	"Department": {"validate": "educore.institution.department.validate"},
+	# Programmes and courses belong to academic units, with codes, credits and NQF levels
+	"Program": {"validate": "educore.academics.catalogue.validate_program"},
+	"Course": {"validate": "educore.academics.catalogue.validate_course"},
+	# Applicants, students and enrolments are on a programme offering: campus, mode, faculty
+	"Student Applicant": {"validate": "educore.academics.students.validate_applicant"},
+	"Student": {"validate": "educore.academics.students.validate_student"},
+	"Program Enrollment": {
+		"validate": "educore.academics.students.validate_enrollment",
+		"on_submit": "educore.academics.students.on_enrollment_submit",
+	},
+	# Student fees per offering, invoiced on enrolment to the campus cost center
+	"Fee Structure": {
+		"validate": "educore.finance.student_fees.validate_fee_structure",
+		"before_submit": "educore.finance.student_fees.before_submit_fee_structure",
+	},
+	"Payment Entry": {"validate": "educore.finance.student_fees.validate_payment"},
+}

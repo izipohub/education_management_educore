@@ -1,0 +1,19 @@
+include MANIFEST.in
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include educore_theme *.css
+recursive-include educore_theme *.csv
+recursive-include educore_theme *.html
+recursive-include educore_theme *.js
+recursive-include educore_theme *.json
+recursive-include educore_theme *.md
+recursive-include educore_theme *.py
+recursive-include educore_theme *.txt
+recursive-exclude educore_theme *.pyc
+recursive-include educore_theme *.png
+recursive-include educore_theme *.jpg
+recursive-include educore_theme *.ico
+recursive-include educore_theme *.woff2
+recursive-include educore_theme *.svg

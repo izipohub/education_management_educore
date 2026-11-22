@@ -1,0 +1,359 @@
+/* EduCore on Frappe's own website pages (login, forgot password, /apps). The same layout as the Izipo
+   Consulting workspace login (erp.izipoconsulting.com) and izipo_theme: a hero column beside a glass
+   sign-in card on a dark backdrop.
+
+   Every colour comes from four variables. The defaults below are EduCore's; branding.website_context()
+   sets the university's own (from EduCore Branding) on html:root, which outranks :root, so they win. Shades are
+   mixed from them with color-mix(). The font is Inter, served from this app so the login works on a
+   campus network with no internet. */
+
+@font-face {
+	font-family: "Inter";
+	src: url("/assets/educore_theme/fonts/InterVariable.woff2") format("woff2");
+	font-weight: 100 900;
+	font-display: swap;
+}
+
+:root {
+	--edu-primary: #1e3a8a;
+	--edu-accent: #f2b33d;
+	--edu-night: #07142b;
+	--edu-on-accent: #0b1f3a;
+	--edu-login-image: none;
+
+	--edu-accent-strong: color-mix(in srgb, var(--edu-accent) 82%, black);
+	--edu-accent-soft: color-mix(in srgb, var(--edu-accent) 55%, white);
+	--edu-primary-soft: color-mix(in srgb, var(--edu-primary) 45%, white);
+	--edu-card: color-mix(in srgb, var(--edu-night) 78%, var(--edu-primary));
+}
+
+body {
+	font-family: "Inter", system-ui, sans-serif;
+}
+
+.btn-login {
+	background: var(--edu-accent);
+	border: none;
+	color: var(--edu-on-accent);
+}
+
+.page-card a,
+.forgot-password-message a {
+	color: var(--edu-primary);
+}
+
+/* ---- Login page ------------------------------------------------------------------------------- */
+
+body[data-path="login"] {
+	background-color: var(--edu-night);
+	color: #e5e7eb;
+}
+
+body[data-path="login"]::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	background:
+		radial-gradient(circle at 2px 2px, color-mix(in srgb, var(--edu-primary-soft) 14%, transparent) 1px, transparent 1px) 0 0 / 40px 40px,
+		radial-gradient(560px circle at 100% 15%, color-mix(in srgb, var(--edu-accent) 9%, transparent), transparent 70%),
+		radial-gradient(480px circle at 0% 85%, color-mix(in srgb, var(--edu-primary) 45%, transparent), transparent 70%),
+		linear-gradient(to top, var(--edu-night), transparent 40%),
+		linear-gradient(
+			to right,
+			var(--edu-night) 0%,
+			color-mix(in srgb, var(--edu-night) 90%, transparent) 45%,
+			color-mix(in srgb, var(--edu-night) 55%, transparent) 100%
+		),
+		var(--edu-login-image) center / cover no-repeat;
+}
+
+body[data-path="login"] .page-content-wrapper,
+body[data-path="login"] main.container,
+body[data-path="login"] .page_content {
+	background: transparent;
+}
+
+body[data-path="login"] .navbar {
+	background: color-mix(in srgb, var(--edu-night) 60%, transparent) !important;
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+body[data-path="login"] .navbar .navbar-brand img {
+	filter: brightness(0) invert(1);
+}
+
+body[data-path="login"] .web-footer {
+	background: transparent;
+	border-top: 1px solid rgba(255, 255, 255, 0.06);
+	color: #9ca3af;
+}
+
+/* hero text left, card right; Frappe shows one section (login, forgot, …) at a time in the right cell */
+.edu-login-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1.1fr) minmax(0, 420px);
+	align-items: center;
+	gap: 4rem;
+	min-height: calc(100vh - 180px);
+	padding: 3rem 0;
+}
+
+.edu-login-layout > .edu-login-hero {
+	grid-column: 1;
+	grid-row: 1;
+}
+
+.edu-login-layout > section {
+	grid-column: 2;
+	grid-row: 1;
+}
+
+.edu-login-hero {
+	animation: edu-rise 0.8s ease-out both;
+}
+
+.edu-login-brand {
+	margin-bottom: 1.25rem;
+	font-size: 0.8rem;
+	font-weight: 600;
+	letter-spacing: 0.25em;
+	text-transform: uppercase;
+	color: var(--edu-primary-soft);
+}
+
+.edu-gradient-brand,
+.edu-gradient-accent {
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+.edu-gradient-brand {
+	background-image: linear-gradient(to right, var(--edu-accent), var(--edu-accent-soft));
+}
+
+.edu-gradient-accent {
+	background-image: linear-gradient(to right, var(--edu-accent-soft), var(--edu-accent));
+}
+
+.edu-login-heading {
+	margin-bottom: 1.5rem;
+	font-size: clamp(2.25rem, 4.2vw, 3.6rem);
+	font-weight: 700;
+	line-height: 1.08;
+	letter-spacing: -0.02em;
+	color: #fff;
+}
+
+.edu-login-text {
+	max-width: 36rem;
+	margin-bottom: 0;
+	font-size: 1.1rem;
+	line-height: 1.7;
+	color: #c9d3e3;
+}
+
+.edu-login-facts {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 1rem;
+	max-width: 36rem;
+	margin: 2.5rem 0 0;
+	padding-top: 1.5rem;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.edu-login-facts dt {
+	font-size: 0.95rem;
+	font-weight: 700;
+	line-height: 1.35;
+	color: #fff;
+}
+
+.edu-login-facts dd {
+	margin: 0.25rem 0 0;
+	font-size: 0.75rem;
+	color: #94a3b8;
+}
+
+/* glass card */
+body[data-path="login"] .login-content.page-card {
+	max-width: 420px;
+	margin: 0 auto;
+	padding: 2rem;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 1.25rem;
+	background: color-mix(in srgb, var(--edu-card) 75%, transparent);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	box-shadow: 0 25px 50px -12px color-mix(in srgb, var(--edu-primary) 40%, transparent);
+	color: #e5e7eb;
+	--icon-stroke: #9ca3af;
+	animation: edu-rise 0.8s 0.15s ease-out both;
+}
+
+/* the logo-on-dark is put in by educore-web.js; until then the normal logo is shown as it is */
+body[data-path="login"] .page-card .app-logo {
+	max-height: none;
+	height: 40px;
+	width: auto;
+}
+
+body[data-path="login"] .page-card-head {
+	padding-top: 0;
+}
+
+body[data-path="login"] .page-card-head h4 {
+	color: #fff;
+	font-size: 1.35rem;
+	font-weight: 700;
+}
+
+body[data-path="login"] .page-card-head .page-card-subtitle {
+	font-size: 0.9rem;
+	font-weight: 400;
+	line-height: 1.5;
+}
+
+body[data-path="login"] .page-card-subtitle,
+body[data-path="login"] .sign-up-message,
+body[data-path="login"] .page-card .text-muted {
+	color: #9ca3af !important;
+}
+
+body[data-path="login"] .page-card .form-label {
+	color: #d1d5db;
+}
+
+/* !important: Frappe's login bundle styles inputs through --control-bg with deeper selectors */
+body[data-path="login"] .page-card .form-control {
+	border: 1px solid rgba(255, 255, 255, 0.12) !important;
+	border-radius: 0.75rem;
+	background: rgba(255, 255, 255, 0.05) !important;
+	color: #fff !important;
+}
+
+body[data-path="login"] .page-card .form-control::placeholder {
+	color: #6b7280;
+}
+
+body[data-path="login"] .page-card .form-control:focus {
+	border-color: var(--edu-accent) !important;
+	background: rgba(255, 255, 255, 0.08) !important;
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--edu-accent) 25%, transparent);
+}
+
+body[data-path="login"] .page-card .form-control:-webkit-autofill {
+	-webkit-text-fill-color: #fff;
+	-webkit-box-shadow: 0 0 0 1000px var(--edu-card) inset;
+	caret-color: #fff;
+}
+
+body[data-path="login"] .page-card a,
+body[data-path="login"] .forgot-password-message a {
+	color: var(--edu-accent);
+}
+
+body[data-path="login"] .btn-login,
+body[data-path="login"] .page-card .es-button[data-variant="solid"] {
+	padding: 0.7rem 1rem;
+	border: none;
+	border-radius: 0.75rem;
+	background: linear-gradient(to right, var(--edu-accent), var(--edu-accent-strong)) !important;
+	color: var(--edu-on-accent) !important;
+	font-size: 0.95rem;
+	font-weight: 600;
+	transition: box-shadow 0.3s, transform 0.3s, filter 0.3s;
+}
+
+body[data-path="login"] .btn-login:hover,
+body[data-path="login"] .page-card .es-button[data-variant="solid"]:hover {
+	filter: brightness(1.06);
+	box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--edu-accent) 35%, transparent);
+	transform: scale(1.02);
+}
+
+body[data-path="login"] .btn-login:focus-visible,
+body[data-path="login"] .page-card .es-button[data-variant="solid"]:focus-visible {
+	outline: 2px solid #fff;
+	outline-offset: 2px;
+}
+
+body[data-path="login"] .page-card .btn-login-option {
+	padding: 0.7rem 1rem;
+	border: 1px solid rgba(255, 255, 255, 0.2) !important;
+	border-radius: 0.75rem;
+	background: rgba(255, 255, 255, 0.08) !important;
+	color: #fff !important;
+	font-weight: 600;
+}
+
+body[data-path="login"] .page-card .btn-login-option:hover {
+	background: rgba(255, 255, 255, 0.16) !important;
+}
+
+@keyframes edu-rise {
+	from {
+		opacity: 0;
+		transform: translateY(30px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.edu-login-hero,
+	body[data-path="login"] .login-content.page-card {
+		animation: none;
+	}
+}
+
+/* tablet and phone: a short heading above the card */
+@media (max-width: 991px) {
+	.edu-login-layout {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2rem;
+		min-height: 0;
+		padding: 2rem 0;
+	}
+
+	.edu-login-layout > .edu-login-hero,
+	.edu-login-layout > section {
+		grid-column: 1;
+	}
+
+	.edu-login-layout > section {
+		grid-row: 2;
+	}
+
+	.edu-login-hero {
+		text-align: center;
+	}
+
+	.edu-login-heading {
+		margin-bottom: 0;
+		font-size: clamp(1.75rem, 7vw, 2.5rem);
+	}
+
+	.edu-login-text,
+	.edu-login-facts {
+		display: none;
+	}
+
+	/* Frappe makes the card the whole screen on a phone; here it stays a card under the heading */
+	body[data-path="login"] .login-content.page-card {
+		min-height: 0;
+		padding: 1.5rem;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 1.25rem;
+	}
+
+	body[data-path="login"] .page-content-wrapper {
+		padding: 0 16px;
+	}
+}

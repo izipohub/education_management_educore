@@ -1,0 +1,164 @@
+{
+ "actions": [],
+ "creation": "2026-11-22 15:00:00.000000",
+ "description": "A programme as a campus runs it, in one mode of study: what applicants apply for and students register on.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "program",
+  "campus",
+  "mode_of_study",
+  "column_break_main",
+  "department",
+  "programme_code",
+  "is_active",
+  "intake_section",
+  "intake_capacity",
+  "column_break_intake",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Programme",
+   "options": "Program",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "default": "Full-time",
+   "fieldname": "mode_of_study",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Mode of Study",
+   "options": "Full-time\nPart-time\nDistance\nBlended",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The programme's faculty or department; faculty users see the offerings of their unit.",
+   "fetch_from": "program.department",
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Faculty / Department",
+   "options": "Department",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "program.educore_programme_code",
+   "fieldname": "programme_code",
+   "fieldtype": "Data",
+   "label": "Programme Code",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "description": "Open for new intakes. Clear it to stop admitting while current students finish.",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  },
+  {
+   "fieldname": "intake_section",
+   "fieldtype": "Section Break",
+   "label": "Intake"
+  },
+  {
+   "description": "First-year places per intake. Empty: no limit set.",
+   "fieldname": "intake_capacity",
+   "fieldtype": "Int",
+   "label": "Intake Capacity",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_intake",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-22 15:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Academics",
+ "name": "Programme Offering",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Faculty Officer",
+   "write": 1
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "University Staff"
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  }
+ ],
+ "search_fields": "program,campus,mode_of_study",
+ "show_title_field_in_link": 1,
+ "sort_field": "program",
+ "sort_order": "ASC",
+ "states": [],
+ "title_field": "program",
+ "track_changes": 1
+}

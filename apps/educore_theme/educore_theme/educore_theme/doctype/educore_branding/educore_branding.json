@@ -1,0 +1,161 @@
+{
+ "actions": [],
+ "creation": "2026-11-22 10:00:00.000000",
+ "description": "The university's name, logos, colours and login page text. Empty fields use the EduCore defaults.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "institution_section",
+  "institution_name",
+  "login_subtitle",
+  "logos_section",
+  "logo",
+  "logo_on_dark",
+  "column_break_logos",
+  "mark",
+  "favicon",
+  "colours_section",
+  "primary_color",
+  "accent_color",
+  "background_color",
+  "login_section",
+  "login_heading",
+  "login_heading_accent",
+  "login_text",
+  "login_facts",
+  "login_background"
+ ],
+ "fields": [
+  {
+   "fieldname": "institution_section",
+   "fieldtype": "Section Break",
+   "label": "Institution"
+  },
+  {
+   "description": "Shown as the system's name, in the browser tab and on the login page. Empty: EduCore.",
+   "fieldname": "institution_name",
+   "fieldtype": "Data",
+   "label": "Institution Name"
+  },
+  {
+   "description": "Shown after the name above the login heading. Empty: University Management.",
+   "fieldname": "login_subtitle",
+   "fieldtype": "Data",
+   "label": "Product Label"
+  },
+  {
+   "fieldname": "logos_section",
+   "fieldtype": "Section Break",
+   "label": "Logos"
+  },
+  {
+   "description": "For light backgrounds: the desk and website navbar.",
+   "fieldname": "logo",
+   "fieldtype": "Attach Image",
+   "label": "Logo"
+  },
+  {
+   "description": "A white or light version, for the dark login page.",
+   "fieldname": "logo_on_dark",
+   "fieldtype": "Attach Image",
+   "label": "Logo on Dark"
+  },
+  {
+   "fieldname": "column_break_logos",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Square icon (at least 192 x 192): app tiles, sidebar and splash screen.",
+   "fieldname": "mark",
+   "fieldtype": "Attach Image",
+   "label": "Icon"
+  },
+  {
+   "description": "Browser tab icon (.ico, .png or .svg).",
+   "fieldname": "favicon",
+   "fieldtype": "Attach Image",
+   "label": "Favicon"
+  },
+  {
+   "fieldname": "colours_section",
+   "fieldtype": "Section Break",
+   "label": "Colours"
+  },
+  {
+   "description": "Main brand colour: links and highlights on light pages. Empty: #1E3A8A.",
+   "fieldname": "primary_color",
+   "fieldtype": "Color",
+   "label": "Primary Colour"
+  },
+  {
+   "description": "Accent: buttons and highlights on the login page. Empty: #F2B33D.",
+   "fieldname": "accent_color",
+   "fieldtype": "Color",
+   "label": "Accent Colour"
+  },
+  {
+   "description": "Dark backdrop of the login page. Empty: #07142B.",
+   "fieldname": "background_color",
+   "fieldtype": "Color",
+   "label": "Login Background Colour"
+  },
+  {
+   "fieldname": "login_section",
+   "fieldtype": "Section Break",
+   "label": "Login Page"
+  },
+  {
+   "description": "Empty: One university,",
+   "fieldname": "login_heading",
+   "fieldtype": "Data",
+   "label": "Heading"
+  },
+  {
+   "description": "The highlighted end of the heading. Empty: every campus connected.",
+   "fieldname": "login_heading_accent",
+   "fieldtype": "Data",
+   "label": "Heading Highlight"
+  },
+  {
+   "fieldname": "login_text",
+   "fieldtype": "Small Text",
+   "label": "Text"
+  },
+  {
+   "description": "Up to three lines, each as: Title | caption",
+   "fieldname": "login_facts",
+   "fieldtype": "Small Text",
+   "label": "Highlights"
+  },
+  {
+   "description": "Optional photo behind the login page, darkened so the text stays readable.",
+   "fieldname": "login_background",
+   "fieldtype": "Attach Image",
+   "label": "Background Photo"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-11-22 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "EduCore Theme",
+ "name": "EduCore Branding",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

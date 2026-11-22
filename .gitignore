@@ -1,0 +1,12 @@
+# Local logins: never committed
+CREDS.md
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Node / Vue
+node_modules/
+dist/
