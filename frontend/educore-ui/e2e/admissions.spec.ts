@@ -1,14 +1,5 @@
-import { expect, type Page, test } from "@playwright/test";
-
-const PASSWORD = process.env.EDUCORE_DEMO_PASSWORD ?? "Campus-Demo-2026";
-
-async function signIn(page: Page, login: string) {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(`${login}@educore.localhost`);
-  await page.locator("#password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { name: /Welcome/ })).toBeVisible();
-}
+import { expect, test } from "@playwright/test";
+import { listItem, openRecord, pane, signIn } from "./support";
 
 test("an admissions officer sees their campus's applications, with decisions they may take", async ({ page }) => {
   await signIn(page, "admissions-officer.osh");
@@ -16,36 +7,38 @@ test("an admissions officer sees their campus's applications, with decisions the
 
   await page.getByRole("link", { name: "Admissions" }).click();
   await expect(page.getByRole("heading", { name: "Admissions", exact: true })).toBeVisible();
-
-  await expect(page.getByText("Hilma Nakale")).toBeVisible();
-  await expect(page.getByText("Elias Haimbodi")).toBeVisible();
+  await expect(listItem(page, "Hilma Nakale")).toBeVisible();
+  await expect(listItem(page, "Elias Haimbodi")).toBeVisible();
   // Windhoek's applicants are not this officer's
-  await expect(page.getByText("Selma Nghifikwa")).toHaveCount(0);
-  // the paper applications can be decided; the online one waits for its documents and fee
-  for (const name of ["Hilma Nakale", "Elias Haimbodi"]) {
-    await expect(page.getByRole("row").filter({ hasText: name }).getByRole("button", { name: "Approve", exact: true })).toBeEnabled();
-  }
-  await expect(page.locator(".p-datatable-mask")).toHaveCount(0);
-  await page.screenshot({ path: "e2e/results/admissions-officer-osh.png", fullPage: true });
+  await expect(listItem(page, "Selma Nghifikwa")).toHaveCount(0);
+
+  // a paper application can be decided at once
+  await openRecord(page, "Hilma Nakale");
+  await expect(pane(page).getByRole("button", { name: "Make offer" })).toBeEnabled();
+  await page.screenshot({ path: "e2e/results/admissions-officer-osh.png" });
 
   // rejecting asks for a reason first (cancelled: the demo data stays as it is)
-  await page.getByRole("button", { name: "Reject", exact: true }).first().click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Reject", exact: true })).toBeDisabled();
-  await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
+  await pane(page).getByRole("button", { name: "Reject", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("button", { name: "Reject", exact: true })).toBeDisabled();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+
+  // ↓ moves to the next application
+  await listItem(page, "Hilma Nakale").click();
+  await page.keyboard.press("ArrowDown");
+  await expect(pane(page).getByRole("heading", { name: "Elias Haimbodi" })).toBeVisible();
 });
 
 test("the registrar sees every campus, and a full offering", async ({ page }) => {
   await signIn(page, "registrar");
   await page.getByRole("link", { name: "Admissions" }).click();
-  await expect(page.getByText("Selma Nghifikwa")).toBeVisible();
-  await expect(page.getByText("Rosalia Fredericks")).toBeVisible();
-  // BSAMS-WHK-FT: 2 places, both offered, so Johannes cannot be approved
-  await expect(page.getByText("2 of 2")).toBeVisible();
-  const johannes = page.getByRole("row").filter({ hasText: "Johannes Swartbooi" });
-  await expect(johannes.getByRole("button", { name: "Approve", exact: true })).toBeDisabled();
-  await expect(page.locator(".p-datatable-mask")).toHaveCount(0);
-  await page.screenshot({ path: "e2e/results/registrar.png", fullPage: true });
+  await expect(listItem(page, "Selma Nghifikwa")).toBeVisible();
+  await expect(listItem(page, "Rosalia Fredericks")).toBeVisible();
+  // BSAMS-WHK-FT: 2 places, both offered, so Johannes cannot be offered one
+  await openRecord(page, "Johannes Swartbooi");
+  await expect(pane(page).getByText("2 of 2 offered")).toBeVisible();
+  await expect(pane(page).getByRole("button", { name: "Make offer" })).toBeDisabled();
+  await page.screenshot({ path: "e2e/results/registrar.png" });
 });
 
 test("staff without admissions rights have no Admissions screen", async ({ page }) => {

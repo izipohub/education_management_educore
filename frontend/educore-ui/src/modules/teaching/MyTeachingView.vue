@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageHeader from "@/core/ui/PageHeader.vue";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Message from "primevue/message";
@@ -41,21 +42,11 @@ const totalStudents = computed(() => new Set(data.value?.classes.flatMap((c) => 
 
 <template>
   <section class="teaching">
-    <header class="head">
-      <div>
-        <h1>My teaching</h1>
-        <p v-if="data?.linked" class="intro">
-          {{ data.classes.length }} classes · {{ totalStudents }} students
-        </p>
-      </div>
-      <Select
-        v-if="data?.linked && data.academic_years.length"
-        v-model="academicYear"
-        :options="data.academic_years"
-        aria-label="Academic year"
-        class="year"
-      />
-    </header>
+    <PageHeader title="My teaching" :subtitle="data?.linked ? `${data.classes.length} classes · ${totalStudents} students` : undefined">
+      <template v-if="data?.linked && data.academic_years.length" #actions>
+        <Select v-model="academicYear" :options="data.academic_years" aria-label="Academic year" class="year" />
+      </template>
+    </PageHeader>
 
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
     <div v-else-if="!data" class="loading"><ProgressSpinner style="width: 2.5rem; height: 2.5rem" aria-label="Loading" /></div>

@@ -120,12 +120,6 @@ const notify = flag("notify_applicants");
   gap: 1rem;
 }
 
-.card {
-  padding: 1.25rem;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-}
 
 .group {
   display: grid;

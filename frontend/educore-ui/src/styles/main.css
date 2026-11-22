@@ -24,13 +24,32 @@
 
 :root {
   color-scheme: light;
+
+  /* one set of values for every screen (core/ui uses these; so should modules) */
+  --ec-bg: #f6f7fb;
+  --ec-surface: #ffffff;
+  --ec-surface-muted: #f9fafb;
+  --ec-border: #e5e7eb;
+  --ec-border-soft: #f1f2f5;
+  --ec-text: #1f2937;
+  --ec-muted: #6b7280;
+  --ec-subtle: #9ca3af;
+  --ec-accent: var(--color-brand-navy);
+  --ec-accent-soft: color-mix(in srgb, var(--color-brand-navy) 8%, white);
+  --ec-warn: #b45309;
+  --ec-danger: #b91c1c;
+  --ec-success: #15803d;
+  --ec-radius: 0.75rem;
+  --ec-radius-sm: 0.5rem;
+  --ec-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+  --ec-topbar-height: 3.75rem;
 }
 
 html,
 body {
   margin: 0;
-  background: #f6f7fb;
-  color: #1f2937;
+  background: var(--ec-bg);
+  color: var(--ec-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
@@ -39,4 +58,28 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-brand-navy);
   outline-offset: 2px;
+}
+
+@layer components {
+  /* the few shared classes; anything larger is a component in core/ui */
+  .ec-card,
+  .card {
+    background: var(--ec-surface);
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius);
+    box-shadow: var(--ec-shadow);
+  }
+
+  .card {
+    padding: 1.25rem;
+  }
+
+  .ec-muted {
+    color: var(--ec-muted);
+    font-size: 0.8125rem;
+  }
+
+  .ec-nowrap {
+    white-space: nowrap;
+  }
 }

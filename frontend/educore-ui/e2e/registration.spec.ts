@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { listItem, openRecord, pane } from "./support";
 
 const PASSWORD = process.env.EDUCORE_DEMO_PASSWORD ?? "Campus-Demo-2026";
 
@@ -37,15 +38,14 @@ test("a student who owes fees sees what blocks them", async ({ page }) => {
 test("the faculty officer sees the submitted registrations of their faculty and campus", async ({ page }) => {
   await signIn(page, "faculty-officer.fst.osh");
   await page.getByRole("link", { name: "Registrations" }).click();
-  const martha = page.getByRole("row").filter({ hasText: "Martha Shilongo" });
-  await expect(martha.getByText("BCS-OSH-FT · year 2")).toBeVisible();
-  await martha.getByRole("button", { name: /2 courses, 32 credits/ }).click();
-  await expect(martha.getByText("Data Structures and Algorithms")).toBeVisible();
-  await expect(martha.getByRole("button", { name: "Approve" })).toBeEnabled();
+  await expect(listItem(page, "Martha Shilongo").getByText("Year 2 · 32 credits")).toBeVisible();
+  await openRecord(page, "Martha Shilongo");
+  await expect(pane(page).getByText("Data Structures and Algorithms")).toBeVisible();
+  await expect(pane(page).getByRole("button", { name: "Approve" })).toBeEnabled();
 
   // returning asks for a note (cancelled: the demo registration stays waiting)
-  await martha.getByRole("button", { name: "Return" }).click();
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Return" })).toBeDisabled();
-  await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
-  await page.screenshot({ path: "e2e/results/registration-queue.png", fullPage: true });
+  await pane(page).getByRole("button", { name: "Return" }).click();
+  await expect(pane(page).getByRole("button", { name: "Return to student" })).toBeDisabled();
+  await pane(page).getByRole("button", { name: "Cancel" }).click();
+  await page.screenshot({ path: "e2e/results/registration-queue.png" });
 });

@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { expand, openRecord, pane } from "./support";
 
 const PASSWORD = process.env.EDUCORE_DEMO_PASSWORD ?? "Campus-Demo-2026";
 
@@ -46,20 +47,16 @@ test("a mature age applicant enters work experience instead of school results", 
 test("an admissions officer sees a postgraduate applicant's qualifications and referees", async ({ page }) => {
   await signIn(page, "admissions-officer.whk");
   await page.getByRole("link", { name: "Admissions" }).click();
-  const row = page.getByRole("row").filter({ hasText: "Ndinelao Shikongo" });
-  await row.getByRole("button", { name: "Review" }).click();
-  const panel = page.getByRole("dialog");
-  await expect(panel.getByText("Postgraduate · 2027 Intake")).toBeVisible();
+  await openRecord(page, "Ndinelao Shikongo");
+  const record = pane(page);
+  await expect(record.getByText(/Postgraduate · 2027 Intake/)).toBeVisible();
   // one line per section; the rest on request
-  await expect(panel.getByText(/Bachelor of Accounting/).first()).toBeVisible();
-  await expect(panel.getByRole("cell", { name: "NQF 7", exact: true })).toHaveCount(0);
-  await panel.getByRole("button", { name: "View all (1)" }).first().click();
-  await expect(panel.getByRole("cell", { name: "NQF 7", exact: true })).toBeVisible();
-  await expect(panel.getByText("Eligible", { exact: true })).toBeVisible();
-  await expect(panel.getByText("Dr Demo Referee One")).toBeVisible();
-  await expect(panel.getByRole("article").filter({ hasText: "Degree or Diploma Certificate" })).toBeVisible();
-  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
-  await page.screenshot({ path: "e2e/results/pathway-postgraduate-review.png", fullPage: true });
+  await expect(record.getByText("NQF 7 · 68%")).toBeVisible();
+  await expect(record.getByText("Eligible", { exact: true })).toBeVisible();
+  await expect(record.getByText("Dr Demo Referee One, Demo Referee Two")).toBeVisible();
+  await expand(page, "Documents");
+  await expect(record.getByText("Degree or Diploma Certificate")).toBeVisible();
+  await page.screenshot({ path: "e2e/results/pathway-postgraduate-review.png" });
 });
 
 test("a new applicant chooses how they are applying", async ({ page }) => {

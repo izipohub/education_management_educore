@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageHeader from "@/core/ui/PageHeader.vue";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Message from "primevue/message";
@@ -37,13 +38,7 @@ const feeStatus = computed(() => {
     <div v-else-if="!data" class="loading"><ProgressSpinner style="width: 2.5rem; height: 2.5rem" aria-label="Loading" /></div>
 
     <template v-else>
-      <header class="head">
-        <h1>{{ data.student.name }}</h1>
-        <p class="sub">
-          Student number <strong>{{ data.student.number }}</strong>
-          <template v-if="data.student.campus"> · {{ data.student.campus }}</template>
-        </p>
-      </header>
+      <PageHeader :title="data.student.name" :subtitle="[`Student number ${data.student.number}`, data.student.campus].filter(Boolean).join(' · ')" />
 
       <div class="cards">
         <article v-if="current" class="card programme">
@@ -142,12 +137,6 @@ const feeStatus = computed(() => {
   margin: 1.5rem 0;
 }
 
-.card {
-  padding: 1.25rem;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-}
 
 .card h2,
 .block h2 {

@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import StatusTag from "@/core/ui/StatusTag.vue";
+import PageHeader from "@/core/ui/PageHeader.vue";
 import Button from "primevue/button";
 import Checkbox from "primevue/checkbox";
 import Message from "primevue/message";
 import ProgressSpinner from "primevue/progressspinner";
-import Tag from "primevue/tag";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, ref } from "vue";
 import { formatDate, formatMoney } from "@/core/format";
@@ -74,8 +75,17 @@ async function submit() {
   }
 }
 
-const PERIOD_LABEL = { upcoming: "Opens soon", open: "Open", late: "Late", closed: "Closed" } as const;
-const STATUS_SEVERITY = { Draft: "secondary", Submitted: "info", Returned: "warn", Approved: "success" } as const;
+const headerLine = computed(() => {
+  const p = period.value;
+  if (!p || !state.value) return undefined;
+  const when = {
+    upcoming: `opens ${formatDate(p.opens_on)}`,
+    open: `closes ${formatDate(p.closes_on)}`,
+    late: `late registration until ${formatDate(p.late_until)}`,
+    closed: "closed",
+  }[p.state];
+  return `${state.value.programme} · year ${year.value} · ${when}`;
+});
 </script>
 
 <template>
@@ -84,20 +94,12 @@ const STATUS_SEVERITY = { Draft: "secondary", Submitted: "info", Returned: "warn
     <Message v-else-if="loadError" severity="error" :closable="false">{{ loadError }}</Message>
 
     <template v-else-if="state">
-      <header class="head">
-        <div>
-          <h1>{{ period ? `Registration ${period.academic_year}` : "Registration" }}</h1>
-          <p v-if="period" class="sub">
-            {{ state.programme }} · year {{ year }} ·
-            <template v-if="period.state === 'upcoming'">opens {{ formatDate(period.opens_on) }}</template>
-            <template v-else-if="period.state === 'open'">closes {{ formatDate(period.closes_on) }}</template>
-            <template v-else-if="period.state === 'late'">late registration until {{ formatDate(period.late_until) }}</template>
-            <template v-else>closed</template>
-          </p>
-        </div>
-        <Tag v-if="registration" :severity="STATUS_SEVERITY[registration.status]" :value="registration.status" />
-        <Tag v-else-if="period" :severity="period.state === 'open' ? 'success' : 'secondary'" :value="PERIOD_LABEL[period.state]" />
-      </header>
+      <PageHeader :title="period ? `Registration ${period.academic_year}` : 'Registration'" :subtitle="headerLine">
+        <template #actions>
+          <StatusTag v-if="registration" kind="registration" :value="registration.status" />
+          <StatusTag v-else-if="period" kind="period" :value="period.state" />
+        </template>
+      </PageHeader>
 
       <Message v-if="!period" severity="info" :closable="false">There is no registration period at the moment.</Message>
 
@@ -220,12 +222,6 @@ h2 {
   color: #6b7280;
 }
 
-.card {
-  padding: 1.25rem;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-}
 
 .blockers ul {
   margin: 0 0 0.5rem;

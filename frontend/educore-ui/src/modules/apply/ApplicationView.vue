@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import StatusTag from "@/core/ui/StatusTag.vue";
+import PageHeader from "@/core/ui/PageHeader.vue";
 import AutoComplete from "primevue/autocomplete";
 import Button from "primevue/button";
 import Checkbox from "primevue/checkbox";
@@ -11,7 +13,7 @@ import SelectButton from "primevue/selectbutton";
 import Tag from "primevue/tag";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, reactive, ref, watch } from "vue";
-import { applicationLabel, eligibilityLabel } from "@/core/status";
+import { eligibilityLabel } from "@/core/status";
 import { formatDate, fromIsoDate, toIsoDate } from "@/core/format";
 import FeePanel from "./FeePanel.vue";
 import OfferPanel from "./OfferPanel.vue";
@@ -364,12 +366,6 @@ async function submit() {
   }
 }
 
-const statusSeverity = computed(() =>
-  ({ Draft: "secondary", Applied: "info", Approved: "success", Rejected: "danger", Declined: "secondary", Lapsed: "secondary", Admitted: "success" })[
-    app.value?.status ?? "Draft"
-  ],
-);
-const statusText = computed(() => applicationLabel(app.value?.status ?? "Draft"));
 </script>
 
 <template>
@@ -417,13 +413,9 @@ const statusText = computed(() => applicationLabel(app.value?.status ?? "Draft")
 
     <!-- the application -->
     <template v-else>
-      <header class="head">
-        <div>
-          <h1>Your application</h1>
-          <p class="sub">{{ app.intake }} · {{ app.name }}</p>
-        </div>
-        <Tag :severity="statusSeverity" :value="statusText" />
-      </header>
+      <PageHeader title="Your application" :subtitle="`${app.intake} · ${app.name}`" class="app-header">
+        <template #actions><StatusTag kind="application" :value="app.status" /></template>
+      </PageHeader>
 
       <!-- submitted: read only -->
       <template v-if="!app.editable">
@@ -742,12 +734,6 @@ h2 {
   margin-bottom: 1rem;
 }
 
-.card {
-  padding: 1.25rem;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-}
 
 .start {
   max-width: 36rem;

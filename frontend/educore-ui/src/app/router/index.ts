@@ -32,7 +32,7 @@ export const router = createRouter({
           path: "admissions",
           name: "admissions",
           component: () => import("@/modules/admissions/AdmissionsView.vue"),
-          meta: { title: "Admissions", roles: ["Admissions Officer", "Registrar"] },
+          meta: { fill: true, title: "Admissions", roles: ["Admissions Officer", "Registrar"] },
         },
         {
           path: "application",
@@ -62,7 +62,7 @@ export const router = createRouter({
           path: "registrations",
           name: "registrations",
           component: () => import("@/modules/registration/RegistrationsView.vue"),
-          meta: { title: "Registrations", roles: ["Faculty Officer", "Registrar"] },
+          meta: { fill: true, title: "Registrations", roles: ["Faculty Officer", "Registrar"] },
         },
         {
           path: "admission-setup",
@@ -74,7 +74,7 @@ export const router = createRouter({
           path: "enrolment",
           name: "enrolment",
           component: () => import("@/modules/registry/EnrolmentView.vue"),
-          meta: { title: "Enrolment", roles: ["Registry Officer", "Registrar"] },
+          meta: { fill: true, title: "Enrolment", roles: ["Registry Officer", "Registrar"] },
         },
       ],
     },
@@ -117,5 +117,7 @@ declare module "vue-router" {
     title?: string;
     /** shown to users with any of these roles */
     roles?: string[];
+    /** a queue: fills the window, list and record side by side (core/ui/SplitView) */
+    fill?: boolean;
   }
 }

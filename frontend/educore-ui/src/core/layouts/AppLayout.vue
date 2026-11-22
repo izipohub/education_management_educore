@@ -1,18 +1,33 @@
 <script setup lang="ts">
+import {
+  BookOpen,
+  ClipboardCheck,
+  FileText,
+  GraduationCap,
+  House,
+  ListChecks,
+  LogOut,
+  Settings,
+  UserCheck,
+  UserPlus,
+} from "@lucide/vue";
 import Avatar from "primevue/avatar";
 import Button from "primevue/button";
-import { computed } from "vue";
-import { useRouter } from "vue-router";
+import { type Component, computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useSession } from "@/core/auth/session";
 import { useBranding } from "@/core/branding";
 
 const session = useSession();
 const router = useRouter();
+const route = useRoute();
+/** queues fill the window (list and record side by side); other screens scroll as a page */
+const fill = computed(() => Boolean(route.meta.fill));
 const { branding } = useBranding();
 
 interface NavItem {
   label: string;
-  icon: string;
+  icon: Component;
   to: string;
   /** shown to users with any of these roles; omitted: everyone */
   roles?: string[];
@@ -23,15 +38,15 @@ const STAFF_HOME = ["University Staff", "Sponsor", "Guardian", "External Examine
 
 /** Each module adds its entry here as it is built; the server still checks every request */
 const NAV: NavItem[] = [
-  { label: "Home", icon: "⌂", to: "/", roles: STAFF_HOME },
-  { label: "My application", icon: "✉", to: "/application", roles: ["Applicant"] },
-  { label: "My studies", icon: "☰", to: "/my-studies", roles: ["Student"] },
-  { label: "Registration", icon: "✓", to: "/registration", roles: ["Student"] },
-  { label: "My teaching", icon: "✦", to: "/my-teaching", roles: ["Lecturer"] },
-  { label: "Admissions", icon: "✎", to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
-  { label: "Enrolment", icon: "✓", to: "/enrolment", roles: ["Registry Officer", "Registrar"] },
-  { label: "Registrations", icon: "☑", to: "/registrations", roles: ["Faculty Officer", "Registrar"] },
-  { label: "Admission setup", icon: "⚙", to: "/admission-setup", roles: ["Registrar", "System Manager"] },
+  { label: "Home", icon: House, to: "/", roles: STAFF_HOME },
+  { label: "My application", icon: FileText, to: "/application", roles: ["Applicant"] },
+  { label: "My studies", icon: BookOpen, to: "/my-studies", roles: ["Student"] },
+  { label: "Registration", icon: ClipboardCheck, to: "/registration", roles: ["Student"] },
+  { label: "My teaching", icon: GraduationCap, to: "/my-teaching", roles: ["Lecturer"] },
+  { label: "Admissions", icon: UserPlus, to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
+  { label: "Enrolment", icon: UserCheck, to: "/enrolment", roles: ["Registry Officer", "Registrar"] },
+  { label: "Registrations", icon: ListChecks, to: "/registrations", roles: ["Faculty Officer", "Registrar"] },
+  { label: "Admission setup", icon: Settings, to: "/admission-setup", roles: ["Registrar", "System Manager"] },
 ];
 
 const nav = computed(() => NAV.filter((item) => !item.roles || session.hasRole(...item.roles)));
@@ -64,18 +79,20 @@ async function signOut() {
           <span class="positions">{{ session.me?.positions.join(", ") }}</span>
         </div>
         <Avatar :label="initials" shape="circle" :image="session.me?.user_image || undefined" />
-        <Button label="Sign out" severity="secondary" text size="small" @click="signOut" />
+        <Button severity="secondary" text size="small" aria-label="Sign out" title="Sign out" @click="signOut">
+          <LogOut :size="18" aria-hidden="true" />
+        </Button>
       </div>
     </header>
 
     <div class="body">
       <nav class="sidebar" aria-label="Main">
         <RouterLink v-for="item in nav" :key="item.to" :to="item.to" class="nav-item" active-class="" exact-active-class="active">
-          <span aria-hidden="true">{{ item.icon }}</span>
+          <component :is="item.icon" :size="18" :stroke-width="1.75" aria-hidden="true" />
           {{ item.label }}
         </RouterLink>
       </nav>
-      <main class="content">
+      <main class="content" :class="{ fill }">
         <RouterView />
       </main>
     </div>
@@ -90,6 +107,8 @@ async function signOut() {
 }
 
 .topbar {
+  height: var(--ec-topbar-height);
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -140,7 +159,9 @@ async function signOut() {
 
 .nav-item {
   display: flex;
-  gap: 0.6rem;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.9rem;
   padding: 0.55rem 0.75rem;
   border-radius: 0.5rem;
   color: #374151;
@@ -158,8 +179,17 @@ async function signOut() {
 }
 
 .content {
-  padding: 2rem clamp(16px, 3vw, 2.5rem);
+  padding: 1.5rem clamp(16px, 3vw, 2rem);
   min-width: 0;
+}
+
+.content.fill {
+  height: calc(100vh - var(--ec-topbar-height));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow: hidden;
 }
 
 @media (max-width: 767px) {

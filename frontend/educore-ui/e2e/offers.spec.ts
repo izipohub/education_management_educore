@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { expand, listItem, openRecord, pane } from "./support";
 
 const PASSWORD = process.env.EDUCORE_DEMO_PASSWORD ?? "Campus-Demo-2026";
 
@@ -34,44 +35,43 @@ test("an applicant sees their offer, its conditions and deadline, and the letter
 test("admissions sees the offer awaiting a response", async ({ page }) => {
   await signIn(page, "admissions-officer.whk");
   await page.getByRole("link", { name: "Admissions" }).click();
-  await page.getByRole("radio", { name: /^Approved/ }).or(page.getByRole("button", { name: /^Approved/ })).first().click();
-  const tomas = page.getByRole("row").filter({ hasText: "Tomas Iipinge" });
-  await expect(tomas.getByText("Pending", { exact: true })).toBeVisible();
-  await expect(tomas.getByText(/^by /)).toBeVisible();
+  await page.getByText(/^Offered \d/).click();
+  await expect(listItem(page, "Tomas Iipinge").getByText("Pending", { exact: true })).toBeVisible();
   // paper applications are answered in person
-  await expect(page.getByRole("row").filter({ hasText: "Maria Kandjii" }).getByText("In person")).toBeVisible();
+  await expect(listItem(page, "Maria Kandjii").getByText("Paper")).toBeVisible();
 
-  await tomas.getByRole("button", { name: "Review" }).click();
-  const panel = page.getByRole("dialog");
-  await expect(panel.getByRole("button", { name: "Extend deadline" })).toBeVisible();
-  await expect(panel.getByText(/Conditions: Final NSSCAS results/)).toBeVisible();
+  await openRecord(page, "Tomas Iipinge");
+  await expect(pane(page).getByText(/^by /)).toBeVisible();
+  await expand(page, "Offer");
+  await expect(pane(page).getByRole("button", { name: "Extend deadline" })).toBeVisible();
+  await expect(pane(page).getByText(/Conditions: Final NSSCAS results/)).toBeVisible();
 });
 
 test("the registry enrols an online applicant only once they accept", async ({ page }) => {
   await signIn(page, "registry-officer.whk");
   await page.getByRole("link", { name: "Enrolment" }).click();
-  const tomas = page.getByRole("row").filter({ hasText: "Tomas Iipinge" });
-  await expect(tomas.getByText("Pending", { exact: true })).toBeVisible();
-  await expect(tomas.getByRole("button", { name: "Enrol" })).toHaveCount(0);
+  await expect(listItem(page, "Tomas Iipinge").getByText("Pending", { exact: true })).toBeVisible();
+  await openRecord(page, "Tomas Iipinge");
+  await expect(pane(page).getByText(/Waiting for the applicant to accept/)).toBeVisible();
+  await expect(pane(page).getByRole("button", { name: "Enrol" })).toHaveCount(0);
   // paper offers are enrolled as before
-  await expect(page.getByRole("row").filter({ hasText: "Maria Kandjii" }).getByRole("button", { name: "Enrol" })).toBeVisible();
-  await page.screenshot({ path: "e2e/results/offer-registry.png", fullPage: true });
+  await openRecord(page, "Maria Kandjii");
+  await expect(pane(page).getByRole("button", { name: "Enrol", exact: true })).toBeVisible();
+  await page.screenshot({ path: "e2e/results/offer-registry.png" });
 });
 
 test("approving lets admissions offer another of the applicant's choices", async ({ page }) => {
   // shown as ready for a decision (documents and fee are checked by the backend tests); nothing is saved here
-  await page.route("**/api/method/educore.api.v1.admissions.applications*", async (route) => {
+  await page.route("**/api/method/educore.api.v1.admissions.review*", async (route) => {
     const response = await route.fetch();
     const body = await response.json();
-    for (const row of body.message.rows) {
-      if (row.applicant === "Nangula Haufiku") Object.assign(row, { blockers: [], ready: true });
-    }
+    if (body.message.applicant === "Nangula Haufiku") Object.assign(body.message, { blockers: [], ready: true });
     await route.fulfill({ response, json: body });
   });
   await signIn(page, "admissions-officer.osh");
   await page.getByRole("link", { name: "Admissions" }).click();
-  const nangula = page.getByRole("row").filter({ hasText: "Nangula Haufiku" });
-  await nangula.getByRole("button", { name: "Approve", exact: true }).click();
+  await openRecord(page, "Nangula Haufiku");
+  await pane(page).getByRole("button", { name: "Make offer" }).click();
 
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("Programme to offer")).toBeVisible();
@@ -79,6 +79,6 @@ test("approving lets admissions offer another of the applicant's choices", async
   await dialog.getByRole("radio", { name: /2\. Diploma in Information Technology/ }).check();
   await expect(dialog.getByRole("button", { name: "Make offer" })).toBeEnabled();
   await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
-  await page.screenshot({ path: "e2e/results/offer-choice.png", fullPage: true });
+  await page.screenshot({ path: "e2e/results/offer-choice.png" });
   await dialog.getByRole("button", { name: "Cancel" }).click();
 });

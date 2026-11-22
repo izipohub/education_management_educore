@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageHeader from "@/core/ui/PageHeader.vue";
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
@@ -129,10 +130,7 @@ async function onSaveScale() {
 
 <template>
   <section class="setup">
-    <header class="head">
-      <h1>Admission setup</h1>
-      <p class="intro">The university's own admission rules. Changes apply from the next assessment.</p>
-    </header>
+    <PageHeader title="Admission setup" subtitle="The university's own admission rules. Changes apply from the next assessment." />
 
     <div v-if="!setup && !loadError" class="loading"><ProgressSpinner style="width: 2.5rem; height: 2.5rem" aria-label="Loading" /></div>
     <Message v-else-if="loadError" severity="error" :closable="false">{{ loadError }}</Message>
@@ -313,12 +311,6 @@ async function onSaveScale() {
   justify-self: start;
 }
 
-.card {
-  padding: 1.25rem;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-}
 
 .scale {
   display: grid;

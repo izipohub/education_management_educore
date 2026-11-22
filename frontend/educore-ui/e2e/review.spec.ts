@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { expand, listItem, openRecord, pane } from "./support";
 
 const PASSWORD = process.env.EDUCORE_DEMO_PASSWORD ?? "Campus-Demo-2026";
 
@@ -16,37 +17,29 @@ async function signIn(page: Page, login: string) {
 test("an admissions officer reviews an online application before deciding", async ({ page }) => {
   await signIn(page, "admissions-officer.osh");
   await page.getByRole("link", { name: "Admissions" }).click();
-  const nangula = page.getByRole("row").filter({ hasText: "Nangula Haufiku" });
-  await expect(nangula.getByText("Documents 0/3")).toBeVisible();
-  await expect(nangula.getByText("Fee unpaid")).toBeVisible();
-  // not ready: documents unchecked and the fee not received
-  await expect(nangula.getByRole("button", { name: "Approve", exact: true })).toBeDisabled();
+  const nangula = listItem(page, "Nangula Haufiku");
+  await expect(nangula.getByText("Docs 0/3")).toBeVisible();
+  await expect(nangula.getByText("Unpaid")).toBeVisible();
 
-  await nangula.getByRole("button", { name: "Review" }).click();
-  const panel = page.getByRole("dialog");
-  await expect(panel.getByText("Incomplete", { exact: true })).toBeVisible();
-  // one line: what is outstanding; the full list on request
-  await expect(panel.getByText(/3 documents awaiting verification · Application fee outstanding/)).toBeVisible();
-  await panel.getByRole("button", { name: "View all", exact: true }).click();
-  await expect(panel.getByText("Birth Certificate: verification outstanding")).toBeVisible();
-  await panel.getByRole("button", { name: "View all (6)" }).click();
-  await expect(panel.getByText("Business Studies")).toBeVisible();
-  await expect(panel.getByText(/Open .*\.pdf/).first()).toBeVisible();
-  // the panel slides in: wait for it to settle, then it must fit in the window
-  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
-  const box = await panel.boundingBox();
-  const viewport = page.viewportSize();
-  expect(box && viewport && box.x >= 0 && box.x + box.width <= viewport.width + 1).toBeTruthy();
-  await page.screenshot({ path: "e2e/results/review-panel.png", fullPage: true });
+  await openRecord(page, "Nangula Haufiku");
+  const record = pane(page);
+  // what is outstanding comes first; no offer until it is done
+  await expect(record.getByText("3 documents to verify · Application fee outstanding")).toBeVisible();
+  await expect(record.getByRole("button", { name: "Make offer" })).toBeDisabled();
+  await expect(record.getByRole("link", { name: "Open file" }).first()).toBeVisible();
+  await expand(page, "Results");
+  await expect(record.getByText("Business Studies")).toBeVisible();
+  await page.screenshot({ path: "e2e/results/review-panel.png" });
 
   // a rejection asks for the reason the applicant will see (cancelled: the demo data stays as it is)
-  const birth = panel.getByRole("article").filter({ hasText: "Birth Certificate" });
+  const birth = record.locator(".doc").filter({ hasText: "Birth Certificate" });
   await birth.getByRole("button", { name: "Reject" }).click();
-  await expect(birth.getByRole("button", { name: "Reject" }).last()).toBeDisabled();
+  await expect(birth.getByRole("button", { name: "Reject" })).toBeDisabled();
   await birth.getByRole("button", { name: "Cancel" }).click();
 
-  await panel.getByRole("button", { name: "Waive the fee" }).click();
-  await expect(panel.getByRole("button", { name: "Waive", exact: true })).toBeDisabled();
+  await expand(page, "Fee");
+  await record.getByRole("button", { name: "Waive the fee" }).click();
+  await expect(record.getByRole("button", { name: "Waive", exact: true })).toBeDisabled();
 });
 
 test("an applicant sees how to pay, with their application number as the reference", async ({ page }) => {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageHeader from "@/core/ui/PageHeader.vue";
 import Tag from "primevue/tag";
 import { computed } from "vue";
 import { useSession } from "@/core/auth/session";
@@ -15,8 +16,7 @@ const unitScope = computed(() =>
 
 <template>
   <section v-if="me" class="home">
-    <h1>Welcome, {{ me.first_name }}</h1>
-    <p class="intro">This is what EduCore knows about your access. Your screens appear here as each module is built.</p>
+    <PageHeader :title="`Welcome, ${me.first_name}`" subtitle="Your access in EduCore: positions, campuses and units." />
 
     <div class="cards">
       <article class="card">
@@ -62,12 +62,6 @@ h1 {
   gap: 1rem;
 }
 
-.card {
-  padding: 1.25rem;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-}
 
 .card h2 {
   margin: 0 0 0.75rem;
