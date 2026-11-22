@@ -53,6 +53,18 @@ export const router = createRouter({
           meta: { title: "My teaching", roles: ["Lecturer"] },
         },
         {
+          path: "registration",
+          name: "registration",
+          component: () => import("@/modules/registration/MyRegistrationView.vue"),
+          meta: { title: "Registration", roles: ["Student"] },
+        },
+        {
+          path: "registrations",
+          name: "registrations",
+          component: () => import("@/modules/registration/RegistrationsView.vue"),
+          meta: { title: "Registrations", roles: ["Faculty Officer", "Registrar"] },
+        },
+        {
           path: "admission-setup",
           name: "admission-setup",
           component: () => import("@/modules/setup/AdmissionSetupView.vue"),

@@ -19,7 +19,7 @@ from contextlib import contextmanager
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, getdate
+from frappe.utils import add_days, flt, getdate
 
 #: category, income account, description
 FEE_CATEGORIES = (
@@ -27,6 +27,7 @@ FEE_CATEGORIES = (
 	("Registration Fee", "Other Student Fees", "Annual registration"),
 	("Examination Fee", "Other Student Fees", "Examinations for the academic year"),
 	("Technology Levy", "Other Student Fees", "Computer labs, network and learning platforms"),
+	("Late Registration Fee", "Other Student Fees", "Registering after the registration period closed"),
 )
 STUDENT_DEBTORS = "Student Debtors"
 CENTRAL_BANK = "Central Bank Account"
@@ -186,16 +187,19 @@ def ensure_fiscal_year(date, company: str):
 def _as_system():
 	"""Run as Administrator, then switch back. The enrolment invoice is an automatic consequence of
 	enrolling a student, not an accounting action of the registry officer who enrols: ERPNext would refuse
-	it for lack of accounting rights, which registry staff rightly do not have. Yields the real user."""
+	it for lack of accounting rights, which registry staff rightly do not have. Yields the real user, also when
+	such actions nest (an approval that submits an enrolment that invoices)."""
 	user = frappe.session.user
 	if user == "Administrator":
-		yield user
+		yield frappe.flags.get("educore_real_user") or user
 		return
+	frappe.flags.educore_real_user = user
 	frappe.set_user("Administrator")
 	try:
 		yield user
 	finally:
 		frappe.set_user(user)
+		frappe.flags.educore_real_user = None
 
 
 def invoice_enrollment(enrollment) -> str | None:
@@ -261,9 +265,32 @@ def _invoice_enrollment(enrollment, enrolled_by: str) -> str | None:
 				),
 			},
 		)
+	late_fee = _late_fee(enrollment)
+	if late_fee:
+		invoice.append(
+			"items",
+			{
+				"item_code": "Late Registration Fee",
+				"item_name": "Late Registration Fee",
+				"description": _("Late registration, {0}").format(enrollment.academic_year),
+				"qty": 1,
+				"rate": late_fee,
+				"cost_center": structure.cost_center,
+				"income_account": frappe.db.get_value(
+					"Fee Category Default", {"parent": "Late Registration Fee", "company": structure.company}, "income_account"
+				),
+			},
+		)
 	invoice.insert(ignore_permissions=True)
 	invoice.submit()
 	return invoice.name
+
+
+def _late_fee(enrollment) -> float:
+	"""A returning student who registered after the period closed pays the period's late fee"""
+	if not enrollment.get("educore_late"):
+		return 0
+	return flt(frappe.db.get_value("Registration Period", enrollment.academic_year, "late_fee"))
 
 
 # --- Payments ------------------------------------------------------------------------------------------

@@ -1,0 +1,100 @@
+{
+ "actions": [],
+ "creation": "2026-11-22 16:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "fees_section",
+  "max_outstanding",
+  "deposit_type",
+  "deposit_value",
+  "rules_column",
+  "max_credits",
+  "approval_needed"
+ ],
+ "fields": [
+  {
+   "fieldname": "fees_section",
+   "fieldtype": "Section Break",
+   "label": "Fees"
+  },
+  {
+   "fieldname": "max_outstanding",
+   "fieldtype": "Currency",
+   "label": "Largest Outstanding Balance Allowed",
+   "default": "0",
+   "options": "NAD",
+   "description": "Fees owed from earlier years above this amount block registration."
+  },
+  {
+   "fieldname": "deposit_type",
+   "fieldtype": "Select",
+   "label": "Registration Deposit",
+   "options": "None\nAmount\nPercent of the year's fees",
+   "default": "Percent of the year's fees"
+  },
+  {
+   "fieldname": "deposit_value",
+   "fieldtype": "Float",
+   "label": "Deposit (amount or percent)",
+   "default": "20",
+   "depends_on": "eval:doc.deposit_type != 'None'",
+   "description": "Paid in advance before registering."
+  },
+  {
+   "fieldname": "rules_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "max_credits",
+   "fieldtype": "Int",
+   "label": "Most Credits per Year",
+   "default": "0",
+   "description": "0: no limit."
+  },
+  {
+   "fieldname": "approval_needed",
+   "fieldtype": "Check",
+   "label": "Faculty Officer Approves",
+   "default": "1",
+   "description": "Off: a submitted registration is approved at once."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Academics",
+ "name": "Registration Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "description": "What a returning student needs before registering for a new academic year.",
+ "issingle": 1,
+ "track_changes": 1
+}

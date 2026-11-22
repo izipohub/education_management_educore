@@ -46,12 +46,12 @@ class TestEnrolmentInvoice(IntegrationTestCase):
 	def setUp(self):
 		_skip_without_demo(self)
 		self.enrollment = frappe.get_doc(
-			"Program Enrollment", frappe.db.get_value("Program Enrollment", {"student_name": "Martha Shilongo"})
+			"Program Enrollment", frappe.db.get_value("Program Enrollment", {"student_name": "Tangeni Iiyambo", "academic_year": "2026", "docstatus": 1})
 		)
 
 	def test_the_enrolment_is_invoiced_to_the_campus_cost_center(self):
 		invoice = frappe.get_doc("Sales Invoice", invoice_enrollment(self.enrollment))
-		structure = frappe.get_doc("Fee Structure", fee_structure_for("BCS-OSH-FT", "2026"))
+		structure = frappe.get_doc("Fee Structure", fee_structure_for("BEDP-OSH-FT", "2026"))
 		self.assertEqual(invoice.docstatus, 1)
 		self.assertEqual(invoice.student, self.enrollment.student)
 		self.assertEqual(invoice.campus, "Oshakati Campus")

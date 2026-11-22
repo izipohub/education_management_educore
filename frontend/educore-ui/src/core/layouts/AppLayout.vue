@@ -26,9 +26,11 @@ const NAV: NavItem[] = [
   { label: "Home", icon: "⌂", to: "/", roles: STAFF_HOME },
   { label: "My application", icon: "✉", to: "/application", roles: ["Applicant"] },
   { label: "My studies", icon: "☰", to: "/my-studies", roles: ["Student"] },
+  { label: "Registration", icon: "✓", to: "/registration", roles: ["Student"] },
   { label: "My teaching", icon: "✦", to: "/my-teaching", roles: ["Lecturer"] },
   { label: "Admissions", icon: "✎", to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
   { label: "Enrolment", icon: "✓", to: "/enrolment", roles: ["Registry Officer", "Registrar"] },
+  { label: "Registrations", icon: "☑", to: "/registrations", roles: ["Faculty Officer", "Registrar"] },
   { label: "Admission setup", icon: "⚙", to: "/admission-setup", roles: ["Registrar", "System Manager"] },
 ];
 

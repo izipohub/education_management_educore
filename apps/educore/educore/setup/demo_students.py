@@ -126,6 +126,11 @@ def create():
 
 	for online in create_online_application():
 		print(f"online application {online} (see educore.setup.demo_online)")
+
+	from educore.setup.demo_registration import create as create_registration
+
+	create_registration()
+	print("2027 registration period open; see educore.setup.demo_registration")
 	frappe.db.commit()
 	print(
 		f"{enrolled} students enrolled for 2026; for 2027: {len(APPLICANTS)} applications pending, "
