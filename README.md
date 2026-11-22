@@ -9,7 +9,9 @@ university, many campuses. Architecture, decisions and the roadmap are in [AGENT
 |---|---|
 | `apps/educore` | The EduCore Frappe app: institution (campuses, faculties), academics (programmes, offerings, admissions, enrolment), student fees, roles and positions |
 | `apps/educore_theme` | Login page, logos and colours; each university can override them in EduCore Branding |
+| `frontend/educore-ui` | The Vue app every university user works in (Vue 3, TypeScript, Vite, PrimeVue 4.5.5, Tailwind) |
 | `docker/frappe` | Development stack: Frappe 16 bench with ERPNext, HRMS, Education and the apps above |
+| `docker/frontend` | The Vue app's Vite dev server, forwarding Frappe's paths to the bench |
 | `docs/` | Architecture notes, such as roles and positions |
 
 ## Development
@@ -39,6 +41,19 @@ docker compose exec frappe bash -lc 'cd frappe-bench && \
 ```
 
 Development logins are kept in a local, git-ignored `CREDS.md`.
+
+### Vue app
+
+```
+cd docker/frontend
+docker compose up -d            # Vite with hot reload; needs the Frappe stack running
+```
+
+Add an NPM proxy host for `app.educore.localhost` → `educore-ui:5173` with websockets on, then open
+http://app.educore.localhost. Vite forwards `/api`, `/assets`, `/files` and `/socket.io` to Frappe, so the app
+and Frappe share one origin and Frappe's session cookie works.
+
+On the host: `cd frontend/educore-ui && npm ci && npm test` (Vitest), `npm run typecheck`, `npm run build`.
 
 ## Tests
 
