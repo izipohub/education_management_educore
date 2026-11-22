@@ -20,7 +20,29 @@ env:
   BENCH: /home/runner/frappe-bench
 
 jobs:
+  frontend:
+    name: Vue app
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend/educore-ui
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/educore-ui/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
   test:
+    name: Frappe apps
     runs-on: ubuntu-24.04
     timeout-minutes: 60
 
@@ -41,6 +63,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # the workflow's token is not left in git config, where it would be sent with the bench's
+          # clones of Frappe's public repositories
+          persist-credentials: false
 
       - uses: actions/setup-python@v5
         with:
@@ -73,17 +99,25 @@ jobs:
           restore-keys: bench-v16-${{ runner.os }}-
 
       - name: Bench with Frappe, ERPNext, HRMS and Education (version-16)
+        working-directory: /home/runner
         run: |
           pip install --quiet uv frappe-bench
-          bench init --skip-redis-config-generation --skip-assets --no-backups \
-            --frappe-branch version-16 --python "$(which python)" "$BENCH"
+          # GitHub occasionally refuses a clone (HTTP 403/5xx); try the download three times
+          for attempt in 1 2 3; do
+            bench init --skip-redis-config-generation --skip-assets --no-backups \
+              --frappe-branch version-16 --python "$(which python)" "$BENCH" && break
+            [ "$attempt" = 3 ] && exit 1
+            echo "bench init failed (attempt $attempt); retrying in 20 s"
+            rm -rf "$BENCH"; sleep 20
+          done
           cd "$BENCH"
           bench set-mariadb-host 127.0.0.1
           bench set-redis-cache-host redis://127.0.0.1:6379
           bench set-redis-queue-host redis://127.0.0.1:6379
           bench set-redis-socketio-host redis://127.0.0.1:6379
           for app in erpnext hrms education; do
-            bench get-app --skip-assets --branch version-16 "$app"
+            bench get-app --skip-assets --branch version-16 "$app" \
+              || { sleep 20; rm -rf "apps/$app"; bench get-app --skip-assets --branch version-16 "$app"; }
           done
 
       - name: EduCore's apps from this checkout
