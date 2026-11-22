@@ -5,7 +5,8 @@ specialist back-office work (finance, payroll and HR administration, procurement
 administration.
 
 - Only users with the Desk Access role (positions in roles.py) or System Manager can open the Desk. Anyone
-  else who reaches /desk (for example straight after Frappe's own login page) is sent to the Vue app.
+  else who reaches /desk (for example straight after Frappe's own login page), portal users included, is sent
+  to the Vue app (redirect_from_desk).
   Frappe's API stays open to every signed-in user: the Vue app is built on it.
 - Desk users get the EduCore Back Office Module Profile, which hides the modules a university does not use.
   ICT Administrators (System Manager) see everything.
@@ -43,15 +44,35 @@ def app_url() -> str:
 	return frappe.conf.get("educore_app_url") or "/"
 
 
-def redirect_from_desk(context):
-	"""update_website_context hook: the Desk page sends users without Desk Access to the Vue app"""
-	path = (frappe.request.path if getattr(frappe, "request", None) else "") or ""
-	if not (path == "/desk" or path.startswith("/desk/")):
+def desk_redirect(path: str, user: str | None = None) -> str | None:
+	"""Where a request for this path goes instead: the Vue app, for a signed-in user without Desk Access
+	opening the Desk (/desk, /app). None: leave the request alone (guests get Frappe's own login redirect)."""
+	top = (path or "").strip("/ ").split("/", 1)[0]
+	user = user or frappe.session.user
+	if top in ("desk", "app") and user != "Guest" and not has_desk_access(user):
+		return app_url()
+	return None
+
+
+def website_user_home_page(user: str | None = None) -> str:
+	"""get_website_user_home_page hook: portal users (applicants, students) who sign in on Frappe's own login page
+	land on the Desk route, which sends them on to the Vue app, not on Frappe's or Education's portal pages"""
+	return "desk"
+
+
+def redirect_from_desk():
+	"""before_request hook. It has to run this early: Frappe routes /desk ahead of any app's pages and refuses
+	portal users (applicants, students) there with an error before any later hook could redirect them."""
+	request = getattr(frappe, "request", None)
+	if not request or request.method != "GET" or request.path.startswith("/api/"):
 		return
-	user = frappe.session.user
-	if user == "Guest" or has_desk_access(user):
-		return  # guests get Frappe's own login redirect
-	frappe.redirect(app_url())
+	target = desk_redirect(request.path)
+	if target:
+		from werkzeug.exceptions import HTTPException
+		from werkzeug.utils import redirect
+
+		# Frappe returns an HTTPException's own response as it is
+		raise HTTPException(response=redirect(target, 302))
 
 
 def ensure_module_profile():

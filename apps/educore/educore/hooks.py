@@ -31,7 +31,8 @@ scheduler_events = {
 }
 
 # Only back-office positions (Desk Access) and System Managers open the Desk; others go to the Vue app
-update_website_context = ["educore.access.desk.redirect_from_desk"]
+before_request = ["educore.access.desk.redirect_from_desk"]
+get_website_user_home_page = "educore.access.desk.website_user_home_page"
 
 doc_events = {
 	# Desk users get the back-office Module Profile
