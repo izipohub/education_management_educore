@@ -26,8 +26,9 @@ What this shows, and where EduCore can do better:
    slips to applications. A unique payment reference per application, matched automatically against the bank
    statement in ERPNext, removes that work; card payment removes it entirely.
 2. **Certified copies of scans add cost, not trust.** An applicant pays a commissioner of oaths, then uploads a
-   scan of the stamp, which proves little. Checking originals once, at registration, is cheaper for applicants
-   and stronger for the university (**Decide**, section 4).
+   scan of the stamp, which proves little. Checking originals once, at registration, would be cheaper for
+   applicants. *Decided: certified copies stay required at application (section 4); EduCore makes checking the
+   stamp part of each document's verification.*
 3. **Self-reported results are re-checked by eye.** Results typed by the applicant must be compared with the
    uploaded certificate. Structured entry lets EduCore compute the points and flag eligibility at once; a
    reviewer then only confirms the certificate matches.
@@ -83,7 +84,7 @@ Create account (email verified)
 ### 3.4 Application fee
 - Amount by intake and applicant type (Namibian / international), non-refundable; late fee in the late window.
 - **EFT**: each application gets a unique reference; ERPNext's bank statement import matches it and marks the fee
-  paid (no proof-of-payment upload). **Card**: through a payment gateway (**Decide**, section 4).
+  paid (no proof-of-payment upload). **Card**: through **DPO** (decided, section 4).
 - **Waivers**: recorded with a reason and approver (e.g. a scheme for marginalised applicants).
 - Accounting: an application-fee income account, posted to the campus cost center of the first choice, money into
   the central bank account (AGENT.md 5.1.2).
@@ -103,14 +104,31 @@ Create account (email verified)
 - Applicant data is personal data: private files, campus-scoped staff access (already enforced), a retention
   period for unsuccessful applications (**Decide**), and every decision and verification logged.
 
-## 4. Decisions needed
+### 3.8 Secondary schools
+- How ITS does it: ITS Integrator keeps its own secondary-school code table, maintained by university staff
+  ("Maintain Secondary School Information", SSCHL-1), offered as a pick-list on the application form.
+- EduCore: a **Secondary School** list maintained by admissions: name, region, town, Ministry **EMIS number**,
+  DNEA **examination centre number** (as printed on NSSC results), government / private, active.
+- Loaded from the Ministry of Education's school register; no current downloadable register with codes was found
+  publicly, so ask the Ministry's EMIS unit and DNEA for it.
+- Applicants search and pick their school; "my school is not listed" takes a typed name, flagged for admissions to
+  add or merge. Foreign schools: country and name.
+
+## 4. Decisions
+
+Decided 2026-11-22 by the product owner:
+
+| # | Decision | Outcome |
+|---|---|---|
+| 1 | Certified copies at application? | **Required.** Admissions checks the certification stamp when verifying each document; a maximum age of the certification date is configurable |
+| 2 | Payment methods | **Card through DPO** and **EFT** with the application's unique reference |
+| 3 | Card payment gateway | **DPO** (holds a payment facilitator licence in Namibia). The university opens a DPO merchant account; API tokens and NAD settlement terms come from DPO at onboarding |
+| 4 | Number of choices per application | **3, ranked** |
+
+Still open:
 
 | # | Decision | Recommendation |
 |---|---|---|
-| 1 | Certified copies at application? | Accept plain scans; check **originals at registration**, once |
-| 2 | Payment methods | EFT with unique reference from day one; add card once a gateway is chosen |
-| 3 | Card payment gateway | To be selected: I could not confirm which gateways Namibian universities use; ask the university's bank |
-| 4 | Number of choices per application | 3, ranked |
 | 5 | Points scale and requirements | Load the university's own published scale; do not copy UNAM's or NUST's |
 | 6 | Results verification | Reviewer compares with the uploaded statement; ask DNEA whether a results file or service is available to universities (not found publicly) |
 | 7 | Pathways online in phase 1 | School leaver, international; then mature age, advanced standing, postgraduate |
@@ -120,13 +138,16 @@ Create account (email verified)
 
 ## 5. Phases
 
-1. **Applicant portal**: account, intake, pathway, choices, results with points and eligibility flags, document
-   upload, submit, status checklist.
-2. **Fee and verification**: EFT reference with bank-statement matching, waivers, per-document verification and
-   re-upload, completeness in the staff queue.
+1. **Applicant portal**: account, intake, pathway, three ranked choices, secondary school from the school list,
+   results with points and eligibility flags, document upload (certified copies), submit, status checklist.
+2. **Fee and verification**: DPO card payment, EFT reference with bank-statement matching, waivers, per-document
+   verification (including the certification stamp) and re-upload, completeness in the staff queue.
 3. **Offers**: offer letters, accept/decline, deadline release of places, notifications.
 4. **More pathways**: mature age, advanced standing / RPL, postgraduate, resumption.
-5. **Integrations**: card gateway, DNEA results (if offered), NQA, SMS.
+5. **Integrations**: DNEA results (if offered), NQA, SMS; the Ministry's school register as a refreshable feed.
+
+Before phase 2 the university needs a **DPO merchant account** (API tokens, NAD settlement terms). Before phase 1
+goes live it needs the **school register** from the Ministry's EMIS unit and DNEA, and its own **points scale**.
 
 ## Sources
 
@@ -144,6 +165,10 @@ Create account (email verified)
   [ITWeb: UJ online registration](https://www.itweb.co.za/article/uj-registered-over-5-000-students-on-one-day/Kjlyr7wL8P4Mk6am)
 - Other: [DNEA, Ministry of Education](https://moe.gov.na/index.php/dep/dep-sfe/directorate-of-national-examinations-and-assessment-dnea),
   [IUM online application guide](https://ium.edu.na/Files/Online%20Application%20Guide.pdf)
+- Schools: [ITS "Maintain Secondary School Information" (CPUT manual)](https://alecto.cput.ac.za/manuals/documents/sschl-1.html),
+  [List of schools in Namibia](https://en.wikipedia.org/wiki/List_of_schools_in_Namibia)
+- DPO: [DPO receives payment facilitator licence in Namibia (New Era)](https://neweralive.na/posts/dpo-receives-payment-facilitator-licence-in-namibia),
+  [DPO Group in Namibia (The Namibian)](https://www.namibian.com.na/dpo-group-offers-innovative-payment-solutions/)
 
 Fees, dates and minimums change each cycle and some published documents disagree (for example N$ 150 vs N$ 240
 at NUST); treat the figures above as examples, not policy.
