@@ -5,8 +5,8 @@ import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
 import Select from "primevue/select";
 import Textarea from "primevue/textarea";
-import { computed } from "vue";
-import { fromIsoDate, toIsoDate } from "@/core/format";
+import { computed, reactive, watch } from "vue";
+import { formatDate, fromIsoDate, toIsoDate } from "@/core/format";
 import type { Employment, Evidence, PriorQualification, Referee } from "./api";
 
 /** The evidence a pathway is judged on, besides school results: what applies is set by the pathway */
@@ -27,10 +27,44 @@ const showWork = computed(() => props.evidence === "Work experience" || props.ev
 const showReferees = computed(() => props.refereesRequired > 0);
 const thisYear = new Date().getFullYear();
 
-const addPrior = () =>
+/**
+ * Saved rows show as one line; a row opens as a form when added, when Edit is clicked, or while it is incomplete.
+ * Keys are "<list>-<index>".
+ */
+const opened = reactive(new Set<string>());
+// saved: the parent hands over fresh lists, and every row folds back to its line
+watch([prior, employment, referees], () => opened.clear());
+const isOpen = (list: string, index: number, complete: boolean) => opened.has(`${list}-${index}`) || !complete;
+const open = (list: string, index: number) => opened.add(`${list}-${index}`);
+function removeRow<T>(rows: T[], list: string, index: number) {
+  rows.splice(index, 1);
+  // indexes after it shift: close them all rather than open the wrong one
+  [...opened].filter((key) => key.startsWith(`${list}-`)).forEach((key) => opened.delete(key));
+}
+
+const priorDone = (r: PriorQualification) => Boolean(r.qualification && r.institution);
+const jobDone = (r: Employment) => Boolean(r.employer && r.position && r.from_date);
+const refereeDone = (r: Referee) => Boolean(r.full_name && r.email);
+
+const priorLine = (r: PriorQualification) =>
+  [r.qualification, r.institution, r.nqf_level ? `NQF ${r.nqf_level}` : "", r.year_completed ? String(r.year_completed) : "not finished", r.average != null ? `${r.average}%` : ""]
+    .filter(Boolean)
+    .join(" · ");
+const jobLine = (r: Employment) => `${r.position}, ${r.employer} · ${formatDate(r.from_date)} to ${r.to_date ? formatDate(r.to_date) : "now"}`;
+const refereeLine = (r: Referee) => [r.full_name, r.position, r.institution, r.email].filter(Boolean).join(" · ");
+
+function addPrior() {
   prior.value.push({ qualification: "", institution: "", country: props.homeCountry, nqf_level: null, year_completed: null, average: null });
-const addJob = () => employment.value.push({ employer: "", position: "", from_date: null, to_date: null, duties: null });
-const addReferee = () => referees.value.push({ full_name: "", position: null, institution: null, email: "", phone: null });
+  open("prior", prior.value.length - 1);
+}
+function addJob() {
+  employment.value.push({ employer: "", position: "", from_date: null, to_date: null, duties: null });
+  open("job", employment.value.length - 1);
+}
+function addReferee() {
+  referees.value.push({ full_name: "", position: null, institution: null, email: "", phone: null });
+  open("ref", referees.value.length - 1);
+}
 
 const date = (value: string | null) => (value ? fromIsoDate(value) : null);
 const iso = (value: Date | Date[] | (Date | null)[] | null | undefined) => (value instanceof Date ? toIsoDate(value) : null);
@@ -44,7 +78,7 @@ const iso = (value: Date | Date[] | (Date | null)[] | null | undefined) => (valu
       <div class="field narrow">
         <label for="previous-number">Your student number</label>
         <InputText id="previous-number" v-model="previousNumber" fluid />
-        <small class="sub">From your student card or an old statement. Admissions checks your record and standing.</small>
+        <small class="sub">As shown on your student card or academic record.</small>
       </div>
     </section>
 
@@ -53,9 +87,15 @@ const iso = (value: Date | Date[] | (Date | null)[] | null | undefined) => (valu
       <h2>{{ evidence === "Prior qualification" ? "Your qualifications" : "Your studies after school" }}</h2>
       <p class="sub">
         <template v-if="evidence === 'Prior qualification'">Your highest completed qualification first. The NQF level is on your certificate or academic record.</template>
-        <template v-else>Every university or college you studied at, finished or not: the faculty decides which courses earn credit.</template>
+        <template v-else>List all institutions attended, including incomplete studies. Credit is determined by the faculty.</template>
       </p>
-      <div v-for="(row, index) in prior" :key="index" class="row-card">
+      <template v-for="(row, index) in prior" :key="index">
+      <div v-if="!isOpen('prior', index, priorDone(row))" class="row-line">
+        <span>{{ priorLine(row) }}</span>
+        <Button label="Edit" text size="small" :aria-label="`Edit qualification ${index + 1}`" @click="open('prior', index)" />
+        <Button label="Remove" text severity="danger" size="small" :aria-label="`Remove qualification ${index + 1}`" @click="removeRow(prior, 'prior', index)" />
+      </div>
+      <div v-else class="row-card">
         <div class="grid">
           <div class="field"><label :for="`q-${index}`">Qualification</label><InputText :id="`q-${index}`" v-model="row.qualification" placeholder="e.g. Bachelor of Commerce" fluid /></div>
           <div class="field"><label :for="`inst-${index}`">Institution</label><InputText :id="`inst-${index}`" v-model="row.institution" fluid /></div>
@@ -76,8 +116,9 @@ const iso = (value: Date | Date[] | (Date | null)[] | null | undefined) => (valu
             <InputNumber v-model="row.average" :input-id="`avg-${index}`" :min="0" :max="100" :max-fraction-digits="1" suffix="%" fluid />
           </div>
         </div>
-        <Button label="Remove" text severity="danger" size="small" :aria-label="`Remove qualification ${index + 1}`" @click="prior.splice(index, 1)" />
+        <Button label="Remove" text severity="danger" size="small" :aria-label="`Remove qualification ${index + 1}`" @click="removeRow(prior, 'prior', index)" />
       </div>
+      </template>
       <Button :label="prior.length ? 'Add another' : 'Add a qualification'" text @click="addPrior" />
     </section>
 
@@ -88,10 +129,16 @@ const iso = (value: Date | Date[] | (Date | null)[] | null | undefined) => (valu
         <span v-if="workYears" class="sub">· {{ workYears }} years</span>
       </h2>
       <p class="sub">
-        <template v-if="evidence === 'Work experience'">Every job, most recent first: mature age entry is decided on your experience.</template>
-        <template v-else>If you have worked: some programmes ask for experience.</template>
+        <template v-if="evidence === 'Work experience'">List your employment history, most recent first. Mature age applications are assessed on work experience.</template>
+        <template v-else>If applicable. Some programmes require work experience.</template>
       </p>
-      <div v-for="(row, index) in employment" :key="index" class="row-card">
+      <template v-for="(row, index) in employment" :key="index">
+      <div v-if="!isOpen('job', index, jobDone(row))" class="row-line">
+        <span>{{ jobLine(row) }}</span>
+        <Button label="Edit" text size="small" :aria-label="`Edit job ${index + 1}`" @click="open('job', index)" />
+        <Button label="Remove" text severity="danger" size="small" :aria-label="`Remove job ${index + 1}`" @click="removeRow(employment, 'job', index)" />
+      </div>
+      <div v-else class="row-card">
         <div class="grid">
           <div class="field"><label :for="`emp-${index}`">Employer</label><InputText :id="`emp-${index}`" v-model="row.employer" fluid /></div>
           <div class="field"><label :for="`pos-${index}`">Position</label><InputText :id="`pos-${index}`" v-model="row.position" fluid /></div>
@@ -105,16 +152,23 @@ const iso = (value: Date | Date[] | (Date | null)[] | null | undefined) => (valu
           </div>
         </div>
         <div class="field"><label :for="`duties-${index}`">Main duties</label><Textarea :id="`duties-${index}`" v-model="row.duties" rows="2" auto-resize fluid /></div>
-        <Button label="Remove" text severity="danger" size="small" :aria-label="`Remove job ${index + 1}`" @click="employment.splice(index, 1)" />
+        <Button label="Remove" text severity="danger" size="small" :aria-label="`Remove job ${index + 1}`" @click="removeRow(employment, 'job', index)" />
       </div>
+      </template>
       <Button :label="employment.length ? 'Add another job' : 'Add a job'" text @click="addJob" />
     </section>
 
     <!-- referees -->
     <section v-if="showReferees" class="block">
       <h2>Referees <span class="sub">· {{ refereesRequired }} needed</span></h2>
-      <p class="sub">People who know your studies or work, such as a lecturer or manager. Admissions may contact them.</p>
-      <div v-for="(row, index) in referees" :key="index" class="row-card">
+      <p class="sub">Academic or professional referees, such as a lecturer or manager. The Admissions Office may contact them.</p>
+      <template v-for="(row, index) in referees" :key="index">
+      <div v-if="!isOpen('ref', index, refereeDone(row))" class="row-line">
+        <span>{{ refereeLine(row) }}</span>
+        <Button label="Edit" text size="small" :aria-label="`Edit referee ${index + 1}`" @click="open('ref', index)" />
+        <Button label="Remove" text severity="danger" size="small" :aria-label="`Remove referee ${index + 1}`" @click="removeRow(referees, 'ref', index)" />
+      </div>
+      <div v-else class="row-card">
         <div class="grid">
           <div class="field"><label :for="`ref-${index}`">Name</label><InputText :id="`ref-${index}`" v-model="row.full_name" fluid /></div>
           <div class="field"><label :for="`ref-pos-${index}`">Position</label><InputText :id="`ref-pos-${index}`" v-model="row.position" fluid /></div>
@@ -122,8 +176,9 @@ const iso = (value: Date | Date[] | (Date | null)[] | null | undefined) => (valu
           <div class="field"><label :for="`ref-email-${index}`">Email</label><InputText :id="`ref-email-${index}`" v-model="row.email" type="email" fluid /></div>
           <div class="field"><label :for="`ref-phone-${index}`">Phone</label><InputText :id="`ref-phone-${index}`" v-model="row.phone" type="tel" fluid /></div>
         </div>
-        <Button label="Remove" text severity="danger" size="small" :aria-label="`Remove referee ${index + 1}`" @click="referees.splice(index, 1)" />
+        <Button label="Remove" text severity="danger" size="small" :aria-label="`Remove referee ${index + 1}`" @click="removeRow(referees, 'ref', index)" />
       </div>
+      </template>
       <Button v-if="referees.length < Math.max(refereesRequired, 3)" label="Add a referee" text @click="addReferee" />
     </section>
   </div>
@@ -169,6 +224,21 @@ h2 {
   background: #f9fafb;
   border: 1px solid #f3f4f6;
   border-radius: 0.5rem;
+}
+
+.row-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #f3f4f6;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.row-line > span {
+  flex: 1 1 16rem;
 }
 
 .row-card > .grid,

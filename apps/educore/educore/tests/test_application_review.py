@@ -156,7 +156,7 @@ class TestApplicationReview(IntegrationTestCase):
 		for document in DOCUMENTS:
 			admissions.verify_document(name, document, "Verified")
 		data = admissions.review(name)
-		self.assertEqual(data["blockers"], ["The application fee is not paid or waived"])
+		self.assertEqual(data["blockers"], ["Application fee outstanding"])
 		self.assertRaises(frappe.ValidationError, admissions.decide, name, "Approve")
 		admissions.waive_fee(name, "Staff dependant")
 		self.assertTrue(admissions.review(name)["ready"])

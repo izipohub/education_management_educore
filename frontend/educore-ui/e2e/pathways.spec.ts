@@ -19,7 +19,11 @@ test("a mature age applicant enters work experience instead of school results", 
 
   await page.getByText("2 · Work experience").click();
   await expect(page.getByRole("heading", { name: /Your work experience/ })).toBeVisible();
-  await expect(page.getByLabel("Employer").first()).toHaveValue("Demo Retail Group");
+  // saved jobs are one line each; Edit opens the form
+  await expect(page.getByText(/Store Manager, Demo Retail Group/)).toBeVisible();
+  await expect(page.getByLabel("Employer")).toHaveCount(0);
+  await page.getByRole("button", { name: "Edit job 1" }).click();
+  await expect(page.getByLabel("Employer")).toHaveValue("Demo Retail Group");
   await expect(page.getByLabel("Secondary school")).toHaveCount(0);
   await page.screenshot({ path: "e2e/results/pathway-mature-work.png", fullPage: true });
 
@@ -46,7 +50,10 @@ test("an admissions officer sees a postgraduate applicant's qualifications and r
   await row.getByRole("button", { name: "Review" }).click();
   const panel = page.getByRole("dialog");
   await expect(panel.getByText("Postgraduate · 2027 Intake")).toBeVisible();
-  await expect(panel.getByRole("cell", { name: /Bachelor of Accounting/ })).toBeVisible();
+  // one line per section; the rest on request
+  await expect(panel.getByText(/Bachelor of Accounting/).first()).toBeVisible();
+  await expect(panel.getByRole("cell", { name: "NQF 7", exact: true })).toHaveCount(0);
+  await panel.getByRole("button", { name: "View all (1)" }).first().click();
   await expect(panel.getByRole("cell", { name: "NQF 7", exact: true })).toBeVisible();
   await expect(panel.getByText("Meets requirements")).toBeVisible();
   await expect(panel.getByText("Dr Demo Referee One")).toBeVisible();

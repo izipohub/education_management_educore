@@ -71,9 +71,6 @@ const programmes = computed(() => {
             <h2>Programmes</h2>
             <InputText v-model="search" placeholder="Search programmes" aria-label="Search programmes" />
           </div>
-          <Message v-if="options.scale_is_placeholder" severity="warn" :closable="false" class="note">
-            Demo: the points scale is a sample, not the university's published scale.
-          </Message>
           <article v-for="{ offering, places } in programmes" :key="offering.program" class="programme">
             <div class="programme-head">
               <h3>{{ offering.program }}</h3>

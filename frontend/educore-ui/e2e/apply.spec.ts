@@ -33,8 +33,8 @@ test("an applicant works through their draft application", async ({ page }) => {
   // an applicant's home is their application
   await expect(page).toHaveURL(/\/application$/);
   await expect(page.getByRole("heading", { name: "Your application" })).toBeVisible();
-  await expect(page.getByText("Draft: not submitted yet")).toBeVisible();
-  await expect(page.getByText("✓ Complete: ready to submit")).toBeVisible();
+  await expect(page.getByText("Draft", { exact: true })).toBeVisible();
+  await expect(page.getByText("✓ Complete and ready to submit")).toBeVisible();
   await expect(page.getByText(/Your points:\s*29/)).toBeVisible();
   await page.screenshot({ path: "e2e/results/application-about-you.png", fullPage: true });
 

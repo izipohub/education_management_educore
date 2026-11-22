@@ -24,8 +24,12 @@ test("an admissions officer reviews an online application before deciding", asyn
 
   await nangula.getByRole("button", { name: "Review" }).click();
   const panel = page.getByRole("dialog");
-  await expect(panel.getByText("Not ready yet")).toBeVisible();
-  await expect(panel.getByText("The application fee is not paid or waived")).toBeVisible();
+  await expect(panel.getByText("Incomplete", { exact: true })).toBeVisible();
+  // one line: what is outstanding; the full list on request
+  await expect(panel.getByText(/3 documents awaiting verification · Application fee outstanding/)).toBeVisible();
+  await panel.getByRole("button", { name: "View all", exact: true }).click();
+  await expect(panel.getByText("Birth Certificate: verification outstanding")).toBeVisible();
+  await panel.getByRole("button", { name: "View all (6)" }).click();
   await expect(panel.getByText("Business Studies")).toBeVisible();
   await expect(panel.getByText(/Open .*\.pdf/).first()).toBeVisible();
   // the panel slides in: wait for it to settle, then it must fit in the window
@@ -47,7 +51,7 @@ test("an admissions officer reviews an online application before deciding", asyn
 
 test("an applicant sees how to pay, with their application number as the reference", async ({ page }) => {
   await signIn(page, "online.applicant");
-  await expect(page.getByText("Submitted: being reviewed")).toBeVisible();
+  await expect(page.getByText("Under review")).toBeVisible();
   await expect(page.getByText("Application fee N$ 150.00")).toBeVisible();
   await expect(page.getByText("Not received yet")).toBeVisible();
   await expect(page.locator(".reference")).toHaveText(/^EDU-APP-\d{4}-\d{5}$/);

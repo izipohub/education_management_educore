@@ -124,14 +124,14 @@ class TestPathways(IntegrationTestCase):
 	def test_postgraduate_asks_for_referees_and_its_documents(self):
 		self._as_new_applicant()
 		data = self._save(pathway="Postgraduate", prior_qualifications=[BACHELOR], choices=["MBA-WHK-PT"])
-		self.assertIn("2 referees", data["missing"])
+		self.assertIn("Details of 2 referees", data["missing"])
 		required = {d["document_type"] for d in data["documents"] if d["required"]}
 		self.assertTrue({"Degree or Diploma Certificate", "Academic Record", "Curriculum Vitae"} <= required)
 		self.assertNotIn("NSSC Statement of Results or Certificate", required)
 		self.assertNotIn("Your school results", data["missing"])
 
 		data = self._save(referees=REFEREES)
-		self.assertNotIn("2 referees", data["missing"])
+		self.assertNotIn("Details of 2 referees", data["missing"])
 
 	# --- mature age entry ------------------------------------------------------------------------------
 

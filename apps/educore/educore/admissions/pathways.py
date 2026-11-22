@@ -50,7 +50,7 @@ DEFAULT_PATHWAYS = {
 		"min_age": 23,
 		"sort_order": 20,
 		"description": "Your school results do not meet the requirements, but your work experience does. "
-		"Admissions may ask you to write an entry test or come for an interview.",
+		"An entry test or interview may be required.",
 		"documents": (
 			("Curriculum Vitae", "Everyone", 1),
 			("Proof of Employment", "Everyone", 1),

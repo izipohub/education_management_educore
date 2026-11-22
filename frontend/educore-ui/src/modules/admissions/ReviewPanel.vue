@@ -6,7 +6,7 @@ import Message from "primevue/message";
 import ProgressSpinner from "primevue/progressspinner";
 import Tag from "primevue/tag";
 import { useToast } from "primevue/usetoast";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { formatDate, formatMoney, shortUser } from "@/core/format";
 import { type Review, getReview, verifyDocument, waiveFee } from "./api";
 
@@ -21,6 +21,24 @@ const rejecting = ref<string | null>(null);
 const rejectReason = ref("");
 const waiving = ref(false);
 const waiveReason = ref("");
+/** sections shown in full; the rest show one line and "View all" */
+const expanded = ref(new Set<string>());
+const toggle = (section: string) => {
+  const next = new Set(expanded.value);
+  if (next.has(section)) next.delete(section);
+  else next.add(section);
+  expanded.value = next;
+};
+const shows = (section: string) => expanded.value.has(section);
+/** e.g. "6 documents awaiting verification · Application fee outstanding" */
+const blockerSummary = computed(() => {
+  const list = review.value?.blockers ?? [];
+  const pending = (b: string) => b.endsWith(": verification outstanding");
+  const documents = list.filter(pending).length;
+  return [documents ? `${documents} ${documents === 1 ? "document" : "documents"} awaiting verification` : "", ...list.filter((b) => !pending(b))]
+    .filter(Boolean)
+    .join(" · ");
+});
 
 watch(
   () => props.name,
@@ -29,6 +47,7 @@ watch(
     error.value = "";
     rejecting.value = null;
     waiving.value = false;
+    expanded.value = new Set();
     if (!name) return;
     try {
       review.value = await getReview(name);
@@ -92,10 +111,14 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
       <section class="block">
         <div class="state">
           <Tag v-if="review.ready" severity="success" value="Ready for a decision" />
-          <Tag v-else severity="warn" value="Not ready yet" />
+          <Tag v-else severity="warn" value="Incomplete" />
           <span class="sub">{{ review.pathway }}<template v-if="review.international"> (international)</template> · {{ review.intake }}<template v-if="review.submitted_on"> · submitted {{ formatDate(review.submitted_on) }}</template></span>
         </div>
-        <ul v-if="review.blockers.length" class="blockers">
+        <p v-if="review.blockers.length > 2 && !shows('blockers')" class="blockers summary">
+          {{ blockerSummary }}
+          <Button label="View all" text size="small" @click="toggle('blockers')" />
+        </p>
+        <ul v-else-if="review.blockers.length" class="blockers">
           <li v-for="b in review.blockers" :key="b">{{ b }}</li>
         </ul>
       </section>
@@ -105,11 +128,14 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
         <dl class="facts">
           <div><dt>Email</dt><dd>{{ review.personal.email }}</dd></div>
           <div><dt>Date of birth</dt><dd>{{ formatDate(review.personal.date_of_birth) }}<span v-if="review.age !== null" class="sub"> · {{ review.age }} on 1 January</span></dd></div>
-          <div><dt>Gender</dt><dd>{{ review.personal.gender }}</dd></div>
-          <div><dt>Nationality</dt><dd>{{ review.personal.nationality }}</dd></div>
-          <div><dt>Mobile</dt><dd>{{ review.personal.mobile }}</dd></div>
-          <div><dt>Town</dt><dd>{{ review.personal.city }}</dd></div>
+          <template v-if="shows('applicant')">
+            <div><dt>Gender</dt><dd>{{ review.personal.gender }}</dd></div>
+            <div><dt>Nationality</dt><dd>{{ review.personal.nationality }}</dd></div>
+            <div><dt>Mobile</dt><dd>{{ review.personal.mobile }}</dd></div>
+            <div><dt>Town</dt><dd>{{ review.personal.city }}</dd></div>
+          </template>
         </dl>
+        <Button :label="shows('applicant') ? 'Hide details' : 'Show details'" text size="small" @click="toggle('applicant')" />
       </section>
 
       <section v-if="review.school" class="block">
@@ -121,7 +147,11 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
         <Message v-if="review.school.added_by_applicant" severity="warn" :closable="false">
           The applicant typed this school in: it is not on the school list yet.
         </Message>
-        <table class="results">
+        <p class="sub">
+          {{ review.results.length }} subjects
+          <Button :label="shows('results') ? 'Hide' : `View all (${review.results.length})`" text size="small" @click="toggle('results')" />
+        </p>
+        <table v-if="shows('results')" class="results">
           <tbody>
             <tr v-for="r in review.results" :key="`${r.subject}-${r.level}`">
               <td>{{ r.subject }}</td>
@@ -140,7 +170,15 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
 
       <section v-if="review.prior_qualifications.length" class="block">
         <h3>Qualifications after school</h3>
-        <table class="results">
+        <p>
+          {{ review.prior_qualifications[0]!.qualification }}
+          <span class="sub">
+            · {{ review.prior_qualifications[0]!.nqf_level ? `NQF ${review.prior_qualifications[0]!.nqf_level}` : "NQF ?" }}
+            <template v-if="review.prior_qualifications[0]!.average != null"> · {{ review.prior_qualifications[0]!.average }}%</template>
+          </span>
+          <Button :label="shows('prior') ? 'Hide' : `View all (${review.prior_qualifications.length})`" text size="small" @click="toggle('prior')" />
+        </p>
+        <table v-if="shows('prior')" class="results">
           <tbody>
             <tr v-for="q in review.prior_qualifications" :key="q.qualification + q.institution">
               <td>{{ q.qualification }}<br /><span class="sub">{{ q.institution }}<template v-if="q.country">, {{ q.country }}</template></span></td>
@@ -154,7 +192,11 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
 
       <section v-if="review.employment.length" class="block">
         <h3>Work <span v-if="review.work_years" class="sub">· {{ review.work_years }} years</span></h3>
-        <div v-for="job in review.employment" :key="job.employer + job.from_date" class="job">
+        <p>
+          {{ review.employment[0]!.position }}, {{ review.employment[0]!.employer }}
+          <Button :label="shows('work') ? 'Hide' : `View all (${review.employment.length})`" text size="small" @click="toggle('work')" />
+        </p>
+        <div v-for="job in shows('work') ? review.employment : []" :key="job.employer + job.from_date" class="job">
           <strong>{{ job.position }}</strong>, {{ job.employer }}
           <span class="sub"> · {{ formatDate(job.from_date) }} to {{ job.to_date ? formatDate(job.to_date) : "now" }}</span>
           <p v-if="job.duties" class="sub">{{ job.duties }}</p>
@@ -163,7 +205,11 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
 
       <section v-if="review.referees.length" class="block">
         <h3>Referees</h3>
-        <div v-for="ref in review.referees" :key="ref.email" class="job">
+        <p>
+          {{ review.referees.map((r) => r.full_name).join(", ") }}
+          <Button :label="shows('referees') ? 'Hide' : 'Contact details'" text size="small" @click="toggle('referees')" />
+        </p>
+        <div v-for="ref in shows('referees') ? review.referees : []" :key="ref.email" class="job">
           <strong>{{ ref.full_name }}</strong><template v-if="ref.position">, {{ ref.position }}</template><template v-if="ref.institution">, {{ ref.institution }}</template>
           <p class="sub"><a :href="`mailto:${ref.email}`">{{ ref.email }}</a><template v-if="ref.phone"> · {{ ref.phone }}</template></p>
         </div>
@@ -264,6 +310,10 @@ p {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+}
+
+.blockers.summary {
+  padding-left: 0;
 }
 
 .blockers {

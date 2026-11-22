@@ -365,10 +365,10 @@ const statusSeverity = computed(() =>
 const statusText = computed(
   () =>
     ({
-      Draft: "Draft: not submitted yet",
-      Applied: "Submitted: being reviewed",
+      Draft: "Draft",
+      Applied: "Under review",
       Approved: "Offered a place",
-      Rejected: "Not successful",
+      Rejected: "Unsuccessful",
       Admitted: "Admitted",
     })[app.value?.status ?? "Draft"],
 );
@@ -402,7 +402,8 @@ const statusText = computed(
               <input v-model="start.pathway" type="radio" name="pathway" :value="p.name" />
               <span>
                 <strong>{{ p.name }}<span v-if="p.min_age" class="sub"> · aged {{ p.min_age }} or older</span></strong>
-                <small v-if="p.description" class="sub">{{ p.description }}</small>
+                <!-- only the chosen route says more: the list stays short -->
+                <small v-if="p.description && start.pathway === p.name" class="sub">{{ p.description }}</small>
               </span>
             </label>
           </template>
@@ -425,9 +426,6 @@ const statusText = computed(
         </div>
         <Tag :severity="statusSeverity" :value="statusText" />
       </header>
-      <Message v-if="options?.scale_is_placeholder && usesResults" severity="warn" :closable="false" class="note">
-        Demo: points use a sample scale, not the university's published one.
-      </Message>
 
       <!-- submitted: read only -->
       <template v-if="!app.editable">
@@ -475,8 +473,8 @@ const statusText = computed(
       <!-- draft: the steps -->
       <div v-else class="layout">
         <aside class="checklist card">
-          <h2>Still needed</h2>
-          <p v-if="!app.missing.length" class="ready">✓ Complete: ready to submit</p>
+          <h2>Outstanding</h2>
+          <p v-if="!app.missing.length" class="ready">✓ Complete and ready to submit</p>
           <ul v-else>
             <li v-for="gap in app.missing" :key="gap">{{ gap }}</li>
           </ul>
@@ -627,7 +625,7 @@ const statusText = computed(
             <div v-for="doc in app.documents" :key="doc.document_type" class="document">
               <div class="doc-head">
                 <strong>{{ doc.document_type }}</strong>
-                <Tag :value="doc.required ? 'Required' : 'If it applies'" :severity="doc.required ? 'warn' : 'secondary'" />
+                <Tag :value="doc.required ? 'Required' : 'If applicable'" :severity="doc.required ? 'warn' : 'secondary'" />
               </div>
               <p v-if="guidance(doc.document_type)" class="sub">{{ guidance(doc.document_type) }}</p>
               <div v-if="doc.uploaded" class="uploaded">
@@ -777,7 +775,7 @@ h2 {
   display: flex;
   align-items: flex-start;
   gap: 0.6rem;
-  padding: 0.7rem 0.8rem;
+  padding: 0.55rem 0.8rem;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   cursor: pointer;
