@@ -4,6 +4,12 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "rules_section",
+  "home_country",
+  "max_choices",
+  "rules_column",
+  "approval_needs_verified_documents",
+  "approval_needs_fee",
   "scale_section",
   "scale_is_placeholder",
   "best_subjects",
@@ -24,6 +30,42 @@
   "card_payments_enabled"
  ],
  "fields": [
+  {
+   "fieldname": "rules_section",
+   "fieldtype": "Section Break",
+   "label": "Application Rules",
+   "description": "Each university decides these. EduCore's defaults follow common Namibian practice."
+  },
+  {
+   "fieldname": "home_country",
+   "fieldtype": "Link",
+   "label": "Home Country",
+   "options": "Country",
+   "default": "Namibia",
+   "description": "Applicants from anywhere else are international: other documents and fee."
+  },
+  {
+   "fieldname": "max_choices",
+   "fieldtype": "Int",
+   "label": "Programme Choices Allowed",
+   "default": "3"
+  },
+  {
+   "fieldname": "rules_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "approval_needs_verified_documents",
+   "fieldtype": "Check",
+   "label": "Approve Only Once Required Documents Are Verified",
+   "default": "1"
+  },
+  {
+   "fieldname": "approval_needs_fee",
+   "fieldtype": "Check",
+   "label": "Approve Only Once the Fee Is Paid or Waived",
+   "default": "1"
+  },
   {
    "fieldname": "scale_section",
    "fieldtype": "Section Break",

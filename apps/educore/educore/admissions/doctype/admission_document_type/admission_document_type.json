@@ -23,10 +23,11 @@
    "fieldname": "required_for",
    "fieldtype": "Select",
    "label": "Required For",
-   "options": "All applicants\nNamibian applicants\nInternational applicants\nOptional",
+   "options": "All applicants\nNamibian applicants\nInternational applicants\nOptional\nPathway only",
    "default": "All applicants",
    "reqd": 1,
-   "in_list_view": 1
+   "in_list_view": 1,
+   "description": "Pathway only: asked for only by the pathways that list it."
   },
   {
    "fieldname": "must_be_certified",

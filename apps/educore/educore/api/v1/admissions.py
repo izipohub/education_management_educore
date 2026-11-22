@@ -13,6 +13,7 @@ from frappe.model.workflow import apply_workflow, get_transitions
 from frappe.utils import add_months, getdate, now_datetime, nowdate
 
 from educore.admissions import application as rules
+from educore.admissions import pathways
 from educore.admissions import fees
 
 STATUSES = ("Applied", "Approved", "Rejected", "Admitted")
@@ -201,6 +202,8 @@ def review(name: str) -> dict:
 		"status": doc.application_status,
 		"intake": doc.student_admission,
 		"pathway": doc.get("educore_pathway"),
+		"international": bool(doc.get("educore_international")),
+		"age": pathways.age_on_intake(doc),
 		"submitted_on": str(doc.educore_submitted_on) if doc.get("educore_submitted_on") else None,
 		"personal": {
 			"email": doc.student_email_id,
@@ -215,6 +218,22 @@ def review(name: str) -> dict:
 		"exam_year": doc.get("educore_exam_year"),
 		"results": [{"subject": r.subject, "level": r.level, "grade": r.grade, "points": r.points} for r in doc.educore_results],
 		"points": doc.get("educore_points"),
+		"prior_qualifications": [
+			{"qualification": r.qualification, "institution": r.institution, "country": r.country,
+			 "nqf_level": r.nqf_level, "year_completed": r.year_completed, "average": r.average}
+			for r in doc.get("educore_prior_qualifications") or []
+		],
+		"previous_student_number": doc.get("educore_previous_student_number"),
+		"employment": [
+			{"employer": r.employer, "position": r.position, "from_date": str(r.from_date) if r.from_date else None,
+			 "to_date": str(r.to_date) if r.to_date else None, "duties": r.duties}
+			for r in doc.get("educore_employment") or []
+		],
+		"work_years": doc.get("educore_work_years"),
+		"referees": [
+			{"full_name": r.full_name, "position": r.position, "institution": r.institution, "email": r.email, "phone": r.phone}
+			for r in doc.get("educore_referees") or []
+		],
 		"choices": [
 			{"rank": c.rank, "offering": c.programme_offering, "program": c.program, "campus": c.campus,
 			 "eligibility": c.eligibility, "eligibility_note": c.eligibility_note}

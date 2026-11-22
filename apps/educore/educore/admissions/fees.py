@@ -20,15 +20,14 @@ from frappe import _
 from frappe.utils import flt, getdate, now_datetime
 
 from educore.admissions import application as rules
+from educore.admissions import pathways
 
 #: An application number in free text, e.g. "EDU-APP-2026-00016" (Education's naming series)
 REFERENCE = re.compile(r"\b[A-Z][A-Z0-9]*-APP-\d{4}-\d{3,}\b", re.IGNORECASE)
 
 
 def is_international(doc) -> bool:
-	return doc.get("educore_pathway") == "International" or bool(
-		doc.nationality and doc.nationality.strip().lower() not in ("namibian", "namibia")
-	)
+	return pathways.is_international(doc)
 
 
 def fee_for(doc) -> float:
@@ -37,7 +36,7 @@ def fee_for(doc) -> float:
 
 
 def set_fee(doc):
-	"""An online application's fee, while unpaid (it follows the applicant's nationality)"""
+	"""An online application's fee, while unpaid (home or international, Admission Settings)"""
 	if doc.get("educore_applicant_user") and (doc.get("educore_fee_status") or "Unpaid") == "Unpaid":
 		doc.educore_fee_status = "Unpaid"
 		doc.educore_fee_amount = fee_for(doc)

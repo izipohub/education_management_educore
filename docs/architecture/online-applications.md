@@ -1,7 +1,8 @@
 # Online applications — proposal
 
-Status (2026-11-22): **phases 1 and 2 built** (EFT fee matching and document verification; DPO cards wait for the merchant account) (applicant portal: `educore.api.v1.apply`, `educore/admissions`, the Vue
-pages `/apply`, `/apply/register`, `/application`). Phases 2–5 are proposals. Decisions still open are marked
+Status (2026-11-22): **phases 1, 2 and 4 built**: applicant portal, EFT fee matching and document verification (DPO
+cards wait for the merchant account), and the pathways (applicant portal: `educore.api.v1.apply`,
+`educore/admissions`, the Vue pages `/apply`, `/apply/register`, `/application`). Phases 3 and 5 are proposals. Decisions still open are marked
 **Decide**.
 
 ## 1. How Namibian universities do it today
@@ -123,7 +124,10 @@ Decided 2026-11-22 by the product owner:
 | 1 | Certified copies at application? | **Required.** Admissions checks the certification stamp when verifying each document; a maximum age of the certification date is configurable |
 | 2 | Payment methods | **Card through DPO** and **EFT** with the application's unique reference |
 | 3 | Card payment gateway | **DPO** (holds a payment facilitator licence in Namibia). The university opens a DPO merchant account; API tokens and NAD settlement terms come from DPO at onboarding |
-| 4 | Number of choices per application | **3, ranked** |
+| 4 | Number of choices per application | **3, ranked** (Admission Settings: the university can change it) |
+| 7 | Pathways | **All online**: school leaver, mature age entry, advanced standing / transfer, resumption of studies (undergraduate); postgraduate. International is the applicant's status, on any pathway |
+| 11 | Mature age entry | **From 23** (on 1 January of the intake's year), set on the pathway |
+| 12 | Postgraduate eligibility | **Automatic check** of the prior qualification's NQF level and average against the programme's minimums; anything unusual (foreign, NQF or average missing) is "Needs review" |
 
 Still open:
 
@@ -131,7 +135,6 @@ Still open:
 |---|---|---|
 | 5 | Points scale and requirements | Load the university's own published scale; do not copy UNAM's or NUST's |
 | 6 | Results verification | Reviewer compares with the uploaded statement; ask DNEA whether a results file or service is available to universities (not found publicly) |
-| 7 | Pathways online in phase 1 | School leaver, international; then mature age, advanced standing, postgraduate |
 | 8 | Who decides | Admissions officers and the registrar (as now); faculty officers comment |
 | 9 | SMS notifications | Optional, later; email first |
 | 10 | Retention of unsuccessful applications | Ask the university's legal/records office |
@@ -143,11 +146,38 @@ Still open:
 2. **Fee and verification**: DPO card payment, EFT reference with bank-statement matching, waivers, per-document
    verification (including the certification stamp) and re-upload, completeness in the staff queue.
 3. **Offers**: offer letters, accept/decline, deadline release of places, notifications.
-4. **More pathways**: mature age, advanced standing / RPL, postgraduate, resumption.
+4. **More pathways** (built): see section 6.
 5. **Integrations**: DNEA results (if offered), NQA, SMS; the Ministry's school register as a refreshable feed.
 
 Before phase 2 the university needs a **DPO merchant account** (API tokens, NAD settlement terms). Before phase 1
 goes live it needs the **school register** from the Ministry's EMIS unit and DNEA, and its own **points scale**.
+
+## 6. Pathways (built)
+
+Each university decides its own admission rules; EduCore reads them from settings and never fixes them in code.
+Five pathways are installed once, as a starting point (`educore.admissions.pathways.ensure_defaults`), and are then
+the university's to change, add to or close:
+
+| Pathway | Level | Judged on | Eligibility | Asks for |
+|---|---|---|---|---|
+| School leaver | Undergraduate | School results | Points and subject requirements (international: Needs review) | School, NSSC results; foreign school certificate and NQA evaluation if international |
+| Mature age entry | Undergraduate | Work experience | Minimum age is a rule (23); otherwise Needs review (test or interview) | Jobs; CV, proof of employment, motivation letter |
+| Advanced standing / transfer | Undergraduate | Studies elsewhere | Needs review: the faculty decides credits | School results and studies after school; academic record, course outlines |
+| Resumption of studies | Undergraduate | Studies here | Needs review: standing, exclusion, fees; the earlier student record is found | Previous student number |
+| Postgraduate | Postgraduate | Prior qualification | Programme's minimum NQF level and average | Qualifications, 2 referees; degree certificate, academic record, CV, motivation letter |
+
+What the university sets, and where:
+
+| Rule | Where |
+|---|---|
+| Home country (others are international: other documents and fee), number of choices, fees, certification age, file size, points scale | Admission Settings |
+| Whether approval waits for verified documents, and for the fee | Admission Settings |
+| Each pathway: level, evidence, minimum age, referees, documents (for everyone, home or international applicants; required or optional), open or closed, order | Admission Pathway |
+| Identity documents for everyone, home or international applicants | Admission Document Type ("Pathway only": asked for only by the pathways that list it) |
+| Level of study, minimum points and subjects, minimum prior NQF level and average | The programme (Entry Requirements) |
+
+Choices must be at the pathway's level; changing to a pathway at the other level removes the programmes chosen (the
+applicant is told before saving).
 
 ## Sources
 

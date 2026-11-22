@@ -124,9 +124,8 @@ def create():
 
 	from educore.setup.demo_online import create as create_online_application
 
-	online = create_online_application()
-	if online:
-		print(f"online application {online} submitted (documents to check, fee not received)")
+	for online in create_online_application():
+		print(f"online application {online} (see educore.setup.demo_online)")
 	frappe.db.commit()
 	print(
 		f"{enrolled} students enrolled for 2026; for 2027: {len(APPLICANTS)} applications pending, "

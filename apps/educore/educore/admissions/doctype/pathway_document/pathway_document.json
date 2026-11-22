@@ -1,0 +1,51 @@
+{
+ "actions": [],
+ "creation": "2026-11-22 16:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "document_type",
+  "applies_to",
+  "required"
+ ],
+ "fields": [
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Link",
+   "label": "Document",
+   "options": "Admission Document Type",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "applies_to",
+   "fieldtype": "Select",
+   "label": "Asked Of",
+   "options": "Everyone\nHome applicants\nInternational applicants",
+   "default": "Everyone",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "required",
+   "fieldtype": "Check",
+   "label": "Required",
+   "default": "1",
+   "in_list_view": 1,
+   "description": "Not required: offered as optional."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admissions",
+ "name": "Pathway Document",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 1
+}

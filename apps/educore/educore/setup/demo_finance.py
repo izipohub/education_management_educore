@@ -10,7 +10,7 @@ from frappe.utils import flt
 from educore.finance.student_fees import CENTRAL_BANK, fee_structure_for, invoice_enrollment
 
 #: annual tuition (NAD), full-time, by programme code (else by qualification)
-TUITION = {"BNS": 32_000, "BEDP": 30_000}
+TUITION = {"BNS": 32_000, "BEDP": 30_000, "MBA": 45_000}
 TUITION_BY_QUALIFICATION = {"Bachelor's Degree": 28_000, "Honours Degree": 30_000, "Diploma": 22_000}
 MODE_FACTOR = {"Full-time": 1.0, "Part-time": 0.6, "Distance": 0.5, "Blended": 0.8}
 OTHER_FEES = {"Registration Fee": 1_500, "Examination Fee": 1_200, "Technology Levy": 800}

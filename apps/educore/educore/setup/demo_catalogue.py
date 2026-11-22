@@ -26,6 +26,9 @@ COURSES = [
 	("NUR1511", "Fundamentals of Nursing", "NURS", 16, 5),
 	("ANA1511", "Anatomy and Physiology", "NURS", 16, 5),
 	("NUR2511", "Community Health Nursing", "NURS", 16, 6),
+	("MBA9511", "Strategic Management", "MGMT", 20, 9),
+	("MBA9521", "Financial Management for Managers", "MGMT", 20, 9),
+	("MBA9531", "Research Methods", "MGMT", 20, 9),
 ]
 
 #: code, name, unit code, qualification, NQF level, credits, years, courses, offerings (campus, mode)
@@ -70,7 +73,15 @@ PROGRAMMES = [
 		["NUR1511", "ANA1511", "NUR2511"],
 		[("WHK", "Full-time")],
 	),
+	(
+		"MBA", "Master of Business Administration", "MGMT", "Master's Degree", 9, 240, 2,
+		["MBA9511", "MBA9521", "MBA9531"],
+		[("WHK", "Part-time")],
+	),
 ]
+
+#: postgraduate programmes: code: (minimum NQF level of the prior qualification, minimum average %)
+POSTGRADUATE = {"MBA": (7, 60)}
 
 
 #: First-year places per intake, by mode, with exceptions per (programme, campus)
@@ -80,6 +91,7 @@ INTAKE_CAPACITY = {
 	("BCS", "OSH"): 40,
 	# tiny, so the capacity rule can be tried by hand: two places, both taken in the demo data
 	("BSAMS", "WHK"): 2,
+	("MBA", "WHK"): 25,
 }
 
 
@@ -128,6 +140,9 @@ def create_catalogue() -> dict:
 						"educore_nqf_level": level,
 						"educore_credits": credits,
 						"educore_duration_years": years,
+						"educore_study_level": "Postgraduate" if code in POSTGRADUATE else "Undergraduate",
+						"educore_min_prior_nqf": POSTGRADUATE.get(code, (None, None))[0],
+						"educore_min_prior_average": POSTGRADUATE.get(code, (None, None))[1],
 						"courses": [
 							{"course": course_by_code[c], "course_name": course_by_code[c], "required": 1}
 							for c in courses

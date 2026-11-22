@@ -13,10 +13,16 @@ import { useToast } from "primevue/usetoast";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { formatDate, fromIsoDate, toIsoDate } from "@/core/format";
 import FeePanel from "./FeePanel.vue";
+import StudiesAndWork from "./StudiesAndWork.vue";
 import {
   type Application,
   type ApplyOptions,
   type DraftChanges,
+  type Employment,
+  type Evidence,
+  type Pathway,
+  type PriorQualification,
+  type Referee,
   LEVELS,
   type Level,
   type Result,
@@ -51,10 +57,23 @@ function go(offset: number) {
   const index = ORDER.indexOf(step.value) + offset;
   if (index >= 0 && index < ORDER.length) step.value = ORDER[index]!;
 }
+const pathwayByName = computed(() => new Map((options.value?.pathways ?? []).map((p) => [p.name, p])));
+const pathway = computed<Pathway | undefined>(() => (app.value?.pathway ? pathwayByName.value.get(app.value.pathway) : undefined));
+const evidence = computed<Evidence>(() => pathway.value?.evidence ?? "School results");
+/** school details and NSSC results: school leavers and transfers from home schools */
+const usesSchool = computed(() => ["School results", "Studies elsewhere"].includes(evidence.value));
+const usesResults = computed(() => usesSchool.value && !app.value?.international);
+const STEP_TWO: Record<Evidence, string> = {
+  "School results": "School and results",
+  "Studies elsewhere": "School and studies",
+  "Work experience": "Work experience",
+  "Studies here": "Earlier studies",
+  "Prior qualification": "Qualifications",
+};
 const steps = computed(() => {
   const list: { label: string; value: Step }[] = [
     { label: "1 · About you", value: "personal" },
-    { label: app.value?.pathway === "International" ? "2 · School" : "2 · School and results", value: "school" },
+    { label: `2 · ${STEP_TWO[evidence.value]}`, value: "school" },
     { label: "3 · Programmes", value: "choices" },
     { label: "4 · Documents", value: "documents" },
     { label: "5 · Submit", value: "submit" },
@@ -92,13 +111,23 @@ async function save(changes: DraftChanges, message = "Saved") {
 
 // --- starting ------------------------------------------------------------------------------------------
 
-const start = reactive({ intake: "", pathway: "School leaver" as Application["pathway"] });
+const start = reactive({ intake: "", pathway: "", international: false });
 watch(options, (o) => {
   if (o?.intakes.length && !start.intake) start.intake = o.intakes[0]!.name;
+  if (o?.pathways.length && !start.pathway) start.pathway = o.pathways[0]!.name;
 });
+const pathwayGroups = computed(() =>
+  (["Undergraduate", "Postgraduate"] as const)
+    .map((level) => ({ level, pathways: (options.value?.pathways ?? []).filter((p) => p.level === level) }))
+    .filter((g) => g.pathways.length),
+);
+const RESIDENCY = [
+  { label: "Yes", value: false },
+  { label: "No, I am international", value: true },
+];
 
 async function startApplication() {
-  await save({ intake: start.intake, pathway: start.pathway }, "Application started");
+  await save({ intake: start.intake, pathway: start.pathway, international: start.international }, "Application started");
 }
 
 // --- the forms, copied from the application so edits can be saved or dropped ---------------------------
@@ -113,7 +142,13 @@ const personal = reactive({
   student_mobile_number: "",
   address_line_1: "",
   city: "",
-  pathway: "School leaver" as Application["pathway"],
+  pathway: "",
+  international: false,
+});
+/** choosing a route at another level drops the programmes already chosen: said before saving */
+const levelChange = computed(() => {
+  const next = pathwayByName.value.get(personal.pathway);
+  return Boolean(app.value?.choices.length && next && pathway.value && next.level !== pathway.value.level);
 });
 const school = reactive({
   selected: null as School | null,
@@ -124,6 +159,10 @@ const school = reactive({
   examYear: null as number | null,
 });
 const results = ref<Result[]>([]);
+const prior = ref<PriorQualification[]>([]);
+const employment = ref<Employment[]>([]);
+const referees = ref<Referee[]>([]);
+const previousNumber = ref("");
 const choices = ref<(string | null)[]>([null, null, null]);
 
 function resetForms() {
@@ -140,7 +179,8 @@ function resetForms() {
     student_mobile_number: p.student_mobile_number ?? "",
     address_line_1: p.address_line_1 ?? "",
     city: p.city ?? "",
-    pathway: a.pathway,
+    pathway: a.pathway ?? "",
+    international: a.international,
   });
   Object.assign(school, {
     selected: a.school,
@@ -152,13 +192,18 @@ function resetForms() {
   });
   results.value = a.results.map((r) => ({ ...r }));
   if (!results.value.length) results.value = [{ subject: "", level: "NSSCO", grade: "" }];
+  prior.value = a.prior_qualifications.map((r) => ({ ...r }));
+  employment.value = a.employment.map((r) => ({ ...r }));
+  referees.value = a.referees.map((r) => ({ ...r }));
+  previousNumber.value = a.previous_student_number ?? "";
   const max = options.value?.max_choices ?? 3;
   choices.value = Array.from({ length: max }, (_, i) => a.choices[i]?.offering ?? null);
 }
 
 async function savePersonal() {
   const ok = await save({
-    pathway: personal.pathway,
+    pathway: personal.pathway || undefined,
+    international: personal.international,
     personal: {
       first_name: personal.first_name,
       middle_name: personal.middle_name,
@@ -188,24 +233,38 @@ function addResult() {
   results.value.push({ subject: "", level: "NSSCO", grade: "" });
 }
 
-async function saveSchool() {
-  const chosen = school.notListed
-    ? { school_name: school.typedName.trim(), town: school.typedTown.trim() }
-    : school.selected
-      ? { name: school.selected.name }
-      : null;
-  const ok = await save({
-    school: chosen,
-    exam_number: school.examNumber.trim() || null,
-    exam_year: school.examYear,
-    results: results.value.filter((r) => r.subject && r.level && r.grade),
-  });
+/** step 2: whatever this pathway is judged on */
+async function saveBackground() {
+  const changes: DraftChanges = {};
+  if (usesSchool.value) {
+    changes.school = school.notListed
+      ? { school_name: school.typedName.trim(), town: school.typedTown.trim() }
+      : school.selected
+        ? { name: school.selected.name }
+        : null;
+    if (usesResults.value) {
+      changes.exam_number = school.examNumber.trim() || null;
+      changes.exam_year = school.examYear;
+      changes.results = results.value.filter((r) => r.subject && r.level && r.grade);
+    }
+  }
+  if (evidence.value !== "School results") {
+    changes.prior_qualifications = prior.value;
+    changes.employment = employment.value;
+    changes.referees = referees.value;
+    changes.previous_student_number = previousNumber.value.trim() || null;
+  } else if ((pathway.value?.referees_required ?? 0) > 0) {
+    changes.referees = referees.value;
+  }
+  const ok = await save(changes);
   if (ok) step.value = "choices";
 }
 
 // choices
 const offeringOptions = computed(() =>
-  (options.value?.offerings ?? []).map((o) => ({
+  (options.value?.offerings ?? [])
+    .filter((o) => o.level === (pathway.value?.level ?? "Undergraduate"))
+    .map((o) => ({
     value: o.name,
     label: `${o.program} — ${o.campus.replace(" Campus", "")}, ${o.mode_of_study}`,
   })),
@@ -214,11 +273,21 @@ const offeringByName = computed(() => new Map((options.value?.offerings ?? []).m
 function requirementText(name: string | null) {
   const o = name ? offeringByName.value.get(name) : undefined;
   if (!o) return "";
+  if (o.level === "Postgraduate") {
+    return [
+      o.min_prior_nqf ? `a qualification at NQF level ${o.min_prior_nqf} or higher` : "",
+      o.min_prior_average ? `an average of at least ${o.min_prior_average}%` : "",
+    ]
+      .filter(Boolean)
+      .join(", with ");
+  }
   const parts = [o.min_points ? `at least ${o.min_points} points` : ""].concat(
     o.subject_requirements.map((r) => `${r.subject} at least ${r.grade} (${r.level})`),
   );
   return parts.filter(Boolean).join("; ");
 }
+/** published entry requirements are for school leavers and postgraduates; other routes are decided by a person */
+const showsEntry = computed(() => ["School results", "Studies elsewhere", "Prior qualification"].includes(evidence.value));
 function eligibilityFor(name: string | null) {
   return app.value?.choices.find((c) => c.offering === name);
 }
@@ -325,17 +394,24 @@ const statusText = computed(
             fluid
           />
         </div>
+        <fieldset class="pathways">
+          <legend>How are you applying?</legend>
+          <template v-for="group in pathwayGroups" :key="group.level">
+            <p class="group">{{ group.level }}</p>
+            <label v-for="p in group.pathways" :key="p.name" class="pathway" :class="{ chosen: start.pathway === p.name }">
+              <input v-model="start.pathway" type="radio" name="pathway" :value="p.name" />
+              <span>
+                <strong>{{ p.name }}<span v-if="p.min_age" class="sub"> · aged {{ p.min_age }} or older</span></strong>
+                <small v-if="p.description" class="sub">{{ p.description }}</small>
+              </span>
+            </label>
+          </template>
+        </fieldset>
         <div class="field">
-          <label>Which describes you?</label>
-          <SelectButton
-            v-model="start.pathway"
-            :options="['School leaver', 'International']"
-            :allow-empty="false"
-            aria-label="Pathway"
-          />
-          <small class="sub">School leaver: you have Namibian NSSC results. International: your school qualifications are from another country.</small>
+          <label>Are you a citizen or permanent resident of {{ options.home_country }}?</label>
+          <SelectButton v-model="start.international" :options="RESIDENCY" option-label="label" option-value="value" :allow-empty="false" aria-label="Residency" />
         </div>
-        <Button label="Start application" :loading="saving" :disabled="!start.intake" @click="startApplication" />
+        <Button label="Start application" :loading="saving" :disabled="!start.intake || !start.pathway" @click="startApplication" />
       </template>
       <Message v-else severity="info" :closable="false">Applications are closed at the moment.</Message>
     </article>
@@ -349,7 +425,7 @@ const statusText = computed(
         </div>
         <Tag :severity="statusSeverity" :value="statusText" />
       </header>
-      <Message v-if="options?.scale_is_placeholder" severity="warn" :closable="false" class="note">
+      <Message v-if="options?.scale_is_placeholder && usesResults" severity="warn" :closable="false" class="note">
         Demo: points use a sample scale, not the university's published one.
       </Message>
 
@@ -404,10 +480,11 @@ const statusText = computed(
           <ul v-else>
             <li v-for="gap in app.missing" :key="gap">{{ gap }}</li>
           </ul>
+          <p class="points">Pathway: <strong>{{ app.pathway }}</strong><template v-if="app.international"> · international</template></p>
           <p v-if="app.fee.amount" class="points">
             Application fee: <strong>{{ app.fee.status === 'Unpaid' ? 'not received yet' : app.fee.status.toLowerCase() }}</strong>
           </p>
-          <p v-if="app.points !== null && app.pathway !== 'International'" class="points">
+          <p v-if="app.points !== null && usesResults" class="points">
             Your points: <strong>{{ app.points }}</strong>
             <span class="sub"> (best {{ options?.best_subjects }} subjects)</span>
           </p>
@@ -426,22 +503,33 @@ const statusText = computed(
                 <label for="dob">Date of birth</label>
                 <DatePicker v-model="personal.date_of_birth" input-id="dob" date-format="dd-mm-yy" show-icon fluid :max-date="new Date()" />
               </div>
-              <div class="field"><label for="gender">Gender</label><Select v-model="personal.gender" input-id="gender" :options="GENDERS" fluid /></div>
+              <div class="field"><label id="gender-label" for="gender">Gender</label><Select v-model="personal.gender" input-id="gender" aria-labelledby="gender-label" :options="GENDERS" fluid /></div>
               <div class="field"><label for="nat">Nationality</label><InputText id="nat" v-model="personal.nationality" fluid /></div>
               <div class="field"><label for="mobile">Mobile number</label><InputText id="mobile" v-model="personal.student_mobile_number" type="tel" fluid /></div>
               <div class="field"><label for="address">Address</label><InputText id="address" v-model="personal.address_line_1" fluid /></div>
               <div class="field"><label for="city">Town / city</label><InputText id="city" v-model="personal.city" fluid /></div>
             </div>
-            <div class="field">
-              <label>Pathway</label>
-              <SelectButton v-model="personal.pathway" :options="['School leaver', 'International']" :allow-empty="false" aria-label="Pathway" />
+            <div class="grid">
+              <div class="field">
+                <label id="pathway-label" for="pathway">Pathway</label>
+                <Select v-model="personal.pathway" input-id="pathway" aria-labelledby="pathway-label" :options="options?.pathways ?? []" option-label="name" option-value="name" fluid />
+                <small class="sub">{{ pathwayByName.get(personal.pathway)?.description }}</small>
+              </div>
+              <div class="field">
+                <label>Citizen or permanent resident of {{ options?.home_country }}?</label>
+                <SelectButton v-model="personal.international" :options="RESIDENCY" option-label="label" option-value="value" :allow-empty="false" aria-label="Residency" />
+              </div>
             </div>
+            <Message v-if="levelChange" severity="warn" :closable="false">
+              {{ personal.pathway }} is for {{ pathwayByName.get(personal.pathway)?.level.toLowerCase() }} programmes: saving removes the
+              programmes you chose.
+            </Message>
             <div class="step-nav"><Button label="Save and continue" :loading="saving" @click="savePersonal" /></div>
           </article>
 
           <!-- 2 school and results -->
           <article v-else-if="step === 'school'" class="card form">
-            <div class="field">
+            <div v-if="usesSchool" class="field">
               <label for="school">Secondary school</label>
               <AutoComplete
                 v-if="!school.notListed"
@@ -462,7 +550,7 @@ const statusText = computed(
                 <div class="field"><label for="typed-town">Town</label><InputText id="typed-town" v-model="school.typedTown" fluid /></div>
               </div>
             </div>
-            <template v-if="app.pathway !== 'International'">
+            <template v-if="usesResults">
               <div class="grid">
                 <div class="field"><label for="exam-no">Examination number</label><InputText id="exam-no" v-model="school.examNumber" fluid /></div>
                 <div class="field">
@@ -481,10 +569,22 @@ const statusText = computed(
               </div>
               <Button label="Add a subject" text @click="addResult" />
             </template>
-            <Message v-else severity="info" :closable="false">The admissions office assesses foreign qualifications: upload them with your documents.</Message>
+            <Message v-else-if="usesSchool" severity="info" :closable="false">The admissions office assesses foreign school qualifications: upload them with your documents.</Message>
+            <StudiesAndWork
+              v-if="evidence !== 'School results' || (pathway?.referees_required ?? 0) > 0"
+              v-model:prior="prior"
+              v-model:employment="employment"
+              v-model:referees="referees"
+              v-model:previous-number="previousNumber"
+              :evidence="evidence"
+              :referees-required="pathway?.referees_required ?? 0"
+              :home-country="options?.home_country ?? ''"
+              :countries="options?.countries ?? []"
+              :work-years="app.work_years"
+            />
             <div class="step-nav">
               <Button label="Back" severity="secondary" text @click="go(-1)" />
-              <Button label="Save and continue" :loading="saving" @click="saveSchool" />
+              <Button label="Save and continue" :loading="saving" @click="saveBackground" />
             </div>
           </article>
 
@@ -492,10 +592,11 @@ const statusText = computed(
           <article v-else-if="step === 'choices'" class="card form">
             <p class="sub">Up to {{ options?.max_choices }} programmes, in order of preference. Your first choice is considered first.</p>
             <div v-for="(_, index) in choices" :key="index" class="field choice">
-              <label :for="`choice-${index}`">Choice {{ index + 1 }}</label>
+              <label :id="`choice-label-${index}`" :for="`choice-${index}`">Choice {{ index + 1 }}</label>
               <Select
                 v-model="choices[index]"
                 :input-id="`choice-${index}`"
+                :aria-labelledby="`choice-label-${index}`"
                 :options="offeringOptions"
                 option-label="label"
                 option-value="value"
@@ -504,13 +605,13 @@ const statusText = computed(
                 filter
                 fluid
               />
-              <small v-if="choices[index]" class="sub">Entry: {{ requirementText(choices[index]) }}</small>
+              <small v-if="choices[index] && showsEntry" class="sub">Entry: {{ requirementText(choices[index]) }}</small>
               <div v-if="eligibilityFor(choices[index])" class="eligibility">
                 <Tag :severity="eligibilitySeverity(eligibilityFor(choices[index])?.eligibility)" :value="eligibilityFor(choices[index])?.eligibility ?? ''" />
                 <span class="sub">{{ eligibilityFor(choices[index])?.eligibility_note }}</span>
               </div>
             </div>
-            <p class="sub">Eligibility is a first check on your results; the admissions office decides.</p>
+            <p class="sub">Eligibility is a first check on what you entered; the admissions office decides.</p>
             <div class="step-nav">
               <Button label="Back" severity="secondary" text @click="go(-1)" />
               <Button label="Save and continue" :loading="saving" @click="saveChoices" />
@@ -571,7 +672,11 @@ const statusText = computed(
             <h2>Check and submit</h2>
             <ul class="summary">
               <li>{{ app.personal.first_name }} {{ app.personal.last_name }} · {{ app.personal.student_email_id }}</li>
-              <li v-if="app.school">{{ app.school.school_name }}<template v-if="app.points !== null"> · {{ app.points }} points</template></li>
+              <li>{{ app.pathway }}<template v-if="app.international"> · international applicant</template></li>
+              <li v-if="app.school && usesSchool">{{ app.school.school_name }}<template v-if="app.points !== null && usesResults"> · {{ app.points }} points</template></li>
+              <li v-for="q in app.prior_qualifications" :key="q.qualification + q.institution">{{ q.qualification }}, {{ q.institution }}<template v-if="q.year_completed"> ({{ q.year_completed }})</template></li>
+              <li v-if="app.employment.length">{{ app.employment.length }} {{ app.employment.length === 1 ? "job" : "jobs" }}<template v-if="app.work_years"> · {{ app.work_years }} years of work</template></li>
+              <li v-if="app.referees.length">Referees: {{ app.referees.map((r) => r.full_name).join(", ") }}</li>
               <li v-for="c in app.choices" :key="c.offering">Choice {{ c.rank }}: {{ c.program }} — {{ c.campus }}</li>
               <li>{{ app.documents.filter((d) => d.uploaded).length }} documents uploaded</li>
             </ul>
@@ -644,6 +749,53 @@ h2 {
   max-width: 36rem;
   display: grid;
   gap: 1rem;
+}
+
+.pathways {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pathways legend {
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.group {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.pathway {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.pathway > span {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.pathway input {
+  margin-top: 0.2rem;
+  accent-color: var(--color-brand-navy);
+}
+
+.pathway.chosen {
+  border-color: var(--color-brand-navy);
+  background: #f8fafc;
 }
 
 .layout {

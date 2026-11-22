@@ -5,6 +5,7 @@ Course and HR's Employee already link to (AGENT.md 5.1.1): University units → 
 Department. EduCore adds what that tree lacks: the kind of unit, a short code, and the campuses it works on.
 """
 
+import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 UNIT_TYPES = ("Faculty", "School", "Academic Department", "Administrative Division", "Support Unit")
@@ -118,11 +119,22 @@ CUSTOM_FIELDS = {
 			"insert_after": "educore_duration_years",
 		},
 		{
+			"fieldname": "educore_study_level",
+			"label": "Level of Study",
+			"fieldtype": "Select",
+			"options": "Undergraduate\nPostgraduate",
+			"default": "Undergraduate",
+			"insert_after": "educore_entry_section",
+			"in_standard_filter": 1,
+			"description": "Which application pathways can choose it.",
+		},
+		{
 			"fieldname": "educore_min_points",
 			"label": "Minimum Points",
 			"fieldtype": "Int",
-			"insert_after": "educore_entry_section",
-			"description": "On the university's points scale (Admission Settings), over the best subjects counted.",
+			"insert_after": "educore_study_level",
+			"depends_on": "eval:doc.educore_study_level != 'Postgraduate'",
+			"description": "School leavers, on the university's points scale (Admission Settings), over the best subjects counted.",
 		},
 		{
 			"fieldname": "educore_subject_requirements",
@@ -130,6 +142,26 @@ CUSTOM_FIELDS = {
 			"fieldtype": "Table",
 			"options": "Programme Subject Requirement",
 			"insert_after": "educore_min_points",
+			"depends_on": "eval:doc.educore_study_level != 'Postgraduate'",
+		},
+		{
+			"fieldname": "educore_prior_column",
+			"fieldtype": "Column Break",
+			"insert_after": "educore_subject_requirements",
+		},
+		{
+			"fieldname": "educore_min_prior_nqf",
+			"label": "Prior Qualification: NQF Level at Least",
+			"fieldtype": "Int",
+			"insert_after": "educore_prior_column",
+			"description": "Postgraduate, advanced standing: e.g. 7 for an honours or master's that needs a bachelor's degree.",
+		},
+		{
+			"fieldname": "educore_min_prior_average",
+			"label": "Prior Qualification: Average at Least (%)",
+			"fieldtype": "Percent",
+			"insert_after": "educore_min_prior_nqf",
+			"description": "Empty: no minimum average.",
 		},
 	],
 	"Course": [
@@ -238,17 +270,25 @@ CUSTOM_FIELDS = {
 		{
 			"fieldname": "educore_pathway",
 			"label": "Pathway",
-			"fieldtype": "Select",
-			"options": "School leaver\nInternational",
-			"default": "School leaver",
+			"fieldtype": "Link",
+			"options": "Admission Pathway",
+			"in_standard_filter": 1,
 			"insert_after": "educore_applicant_user",
+		},
+		{
+			"fieldname": "educore_international",
+			"label": "International Applicant",
+			"fieldtype": "Check",
+			"insert_after": "educore_pathway",
+			"in_standard_filter": 1,
+			"description": "Not a citizen or permanent resident of the home country (Admission Settings): other documents and fee.",
 		},
 		{
 			"fieldname": "educore_submitted_on",
 			"label": "Submitted On",
 			"fieldtype": "Datetime",
 			"read_only": 1,
-			"insert_after": "educore_pathway",
+			"insert_after": "educore_international",
 		},
 		{
 			"fieldname": "educore_declaration",
@@ -306,10 +346,52 @@ CUSTOM_FIELDS = {
 			"insert_after": "educore_points",
 		},
 		{
+			"fieldname": "educore_background_section",
+			"label": "Studies and Work",
+			"fieldtype": "Section Break",
+			"insert_after": "educore_results",
+		},
+		{
+			"fieldname": "educore_prior_qualifications",
+			"label": "Qualifications After School",
+			"fieldtype": "Table",
+			"options": "Applicant Prior Qualification",
+			"insert_after": "educore_background_section",
+		},
+		{
+			"fieldname": "educore_previous_student_number",
+			"label": "Previous Student Number Here",
+			"fieldtype": "Data",
+			"insert_after": "educore_prior_qualifications",
+			"description": "Resumption of studies: the student number they studied under.",
+		},
+		{
+			"fieldname": "educore_employment",
+			"label": "Employment",
+			"fieldtype": "Table",
+			"options": "Applicant Employment",
+			"insert_after": "educore_previous_student_number",
+		},
+		{
+			"fieldname": "educore_work_years",
+			"label": "Years of Work",
+			"fieldtype": "Float",
+			"precision": "1",
+			"read_only": 1,
+			"insert_after": "educore_employment",
+		},
+		{
+			"fieldname": "educore_referees",
+			"label": "Referees",
+			"fieldtype": "Table",
+			"options": "Applicant Referee",
+			"insert_after": "educore_work_years",
+		},
+		{
 			"fieldname": "educore_fee_section",
 			"label": "Application Fee",
 			"fieldtype": "Section Break",
-			"insert_after": "educore_results",
+			"insert_after": "educore_referees",
 		},
 		{
 			"fieldname": "educore_fee_amount",
@@ -537,6 +619,17 @@ PROPERTY_SETTERS = (
 def sync():
 	from frappe.custom.doctype.property_setter.property_setter import make_property_setter
 
+	_pathway_select_to_link()
 	create_custom_fields(CUSTOM_FIELDS, update=True)
 	for doctype, field, prop, value, prop_type in PROPERTY_SETTERS:
 		make_property_setter(doctype, field, prop, value, prop_type, validate_fields_for_doctype=False)
+
+
+def _pathway_select_to_link():
+	"""The applicant's pathway was a Select (School leaver / International) before pathways were records. Frappe
+	refuses to change a field's type through the form; both are the same varchar column, so the field record is
+	converted once (educore.admissions.pathways.ensure_defaults then moves the old values)."""
+	name = "Student Applicant-educore_pathway"
+	if frappe.db.get_value("Custom Field", name, "fieldtype") == "Select":
+		frappe.db.set_value("Custom Field", name, {"fieldtype": "Link", "options": "Admission Pathway", "default": None})
+		frappe.clear_cache(doctype="Student Applicant")

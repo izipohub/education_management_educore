@@ -1,4 +1,5 @@
 import { get, post } from "@/core/api/client";
+import type { Employment, PriorQualification, Referee } from "@/modules/apply/api";
 
 export const STATUSES = ["Applied", "Approved", "Rejected", "Admitted"] as const;
 export type Status = (typeof STATUSES)[number];
@@ -52,7 +53,10 @@ export interface Review {
   applicant: string;
   status: string;
   intake: string;
-  pathway: string;
+  pathway: string | null;
+  international: boolean;
+  /** on 1 January of the intake's year */
+  age: number | null;
   submitted_on: string | null;
   personal: { email: string; date_of_birth: string | null; gender: string | null; nationality: string | null; mobile: string | null; city: string | null };
   school: { school_name: string; town: string | null; region: string | null; centre_number: string | null; emis_number: string | null; added_by_applicant: 0 | 1 } | null;
@@ -60,6 +64,11 @@ export interface Review {
   exam_year: number | null;
   results: { subject: string; level: string; grade: string; points: number | null }[];
   points: number | null;
+  prior_qualifications: PriorQualification[];
+  previous_student_number: string | null;
+  employment: Employment[];
+  work_years: number | null;
+  referees: Referee[];
   choices: { rank: number; offering: string; program: string; campus: string; eligibility: string | null; eligibility_note: string | null }[];
   documents: ReviewDocument[];
   missing_documents: string[];

@@ -21,8 +21,26 @@ export interface OfferingOption {
   nqf_level: number | null;
   duration_years: number | null;
   faculty: string;
+  level: StudyLevel;
   min_points: number | null;
+  /** postgraduate: the prior qualification's minimum NQF level and average */
+  min_prior_nqf: number | null;
+  min_prior_average: number | null;
   subject_requirements: { subject: string; level: Level; grade: string }[];
+}
+
+export type StudyLevel = "Undergraduate" | "Postgraduate";
+export type Evidence = "School results" | "Work experience" | "Studies elsewhere" | "Studies here" | "Prior qualification";
+
+/** A route into the university; every setting is the university's (Admission Pathway) */
+export interface Pathway {
+  name: string;
+  level: StudyLevel;
+  evidence: Evidence;
+  min_age: number;
+  referees_required: number;
+  description: string | null;
+  documents: { document_type: string; applies_to: string; required: boolean }[];
 }
 
 export interface DocumentType {
@@ -43,6 +61,9 @@ export interface ApplyOptions {
   certification_max_age_months: number;
   max_file_size_mb: number;
   max_choices: number;
+  home_country: string;
+  countries: string[];
+  pathways: Pathway[];
 }
 
 export interface School {
@@ -67,6 +88,33 @@ export interface Choice {
   campus: string;
   eligibility: string | null;
   eligibility_note: string | null;
+}
+
+export interface PriorQualification {
+  qualification: string;
+  institution: string;
+  country: string | null;
+  nqf_level: number | null;
+  /** empty: still studying */
+  year_completed: number | null;
+  average: number | null;
+}
+
+export interface Employment {
+  employer: string;
+  position: string;
+  from_date: string | null;
+  /** empty: current */
+  to_date: string | null;
+  duties: string | null;
+}
+
+export interface Referee {
+  full_name: string;
+  position: string | null;
+  institution: string | null;
+  email: string;
+  phone: string | null;
 }
 
 export interface ApplicationDocument {
@@ -101,13 +149,20 @@ export interface Application {
   editable: boolean;
   intake: string;
   academic_year: string;
-  pathway: "School leaver" | "International";
+  pathway: string | null;
+  /** not a citizen or permanent resident of the home country */
+  international: boolean;
   personal: Personal;
   school: School | null;
   exam_number: string | null;
   exam_year: number | null;
   results: Result[];
   points: number | null;
+  prior_qualifications: PriorQualification[];
+  previous_student_number: string | null;
+  employment: Employment[];
+  work_years: number | null;
+  referees: Referee[];
   choices: Choice[];
   documents: ApplicationDocument[];
   /** what still stops submitting; empty: ready */
@@ -132,7 +187,12 @@ export interface Fee {
 /** What the browser may send: the server takes only these fields */
 export interface DraftChanges {
   intake?: string;
-  pathway?: Application["pathway"];
+  pathway?: string;
+  international?: boolean;
+  prior_qualifications?: PriorQualification[];
+  previous_student_number?: string | null;
+  employment?: Employment[];
+  referees?: Referee[];
   personal?: Partial<Personal>;
   school?: { name?: string; school_name?: string; town?: string } | null;
   exam_number?: string | null;

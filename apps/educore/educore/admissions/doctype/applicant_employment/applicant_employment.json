@@ -1,0 +1,61 @@
+{
+ "actions": [],
+ "creation": "2026-11-22 16:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "employer",
+  "position",
+  "from_date",
+  "to_date",
+  "duties"
+ ],
+ "fields": [
+  {
+   "fieldname": "employer",
+   "fieldtype": "Data",
+   "label": "Employer",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "position",
+   "fieldtype": "Data",
+   "label": "Position",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To",
+   "in_list_view": 1,
+   "description": "Empty: current."
+  },
+  {
+   "fieldname": "duties",
+   "fieldtype": "Small Text",
+   "label": "Main Duties"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admissions",
+ "name": "Applicant Employment",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 1
+}

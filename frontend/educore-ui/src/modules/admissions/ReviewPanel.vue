@@ -93,7 +93,7 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
         <div class="state">
           <Tag v-if="review.ready" severity="success" value="Ready for a decision" />
           <Tag v-else severity="warn" value="Not ready yet" />
-          <span class="sub">{{ review.pathway }} · {{ review.intake }}<template v-if="review.submitted_on"> · submitted {{ formatDate(review.submitted_on) }}</template></span>
+          <span class="sub">{{ review.pathway }}<template v-if="review.international"> (international)</template> · {{ review.intake }}<template v-if="review.submitted_on"> · submitted {{ formatDate(review.submitted_on) }}</template></span>
         </div>
         <ul v-if="review.blockers.length" class="blockers">
           <li v-for="b in review.blockers" :key="b">{{ b }}</li>
@@ -104,7 +104,7 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
         <h3>Applicant</h3>
         <dl class="facts">
           <div><dt>Email</dt><dd>{{ review.personal.email }}</dd></div>
-          <div><dt>Date of birth</dt><dd>{{ formatDate(review.personal.date_of_birth) }}</dd></div>
+          <div><dt>Date of birth</dt><dd>{{ formatDate(review.personal.date_of_birth) }}<span v-if="review.age !== null" class="sub"> · {{ review.age }} on 1 January</span></dd></div>
           <div><dt>Gender</dt><dd>{{ review.personal.gender }}</dd></div>
           <div><dt>Nationality</dt><dd>{{ review.personal.nationality }}</dd></div>
           <div><dt>Mobile</dt><dd>{{ review.personal.mobile }}</dd></div>
@@ -131,6 +131,42 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
             </tr>
           </tbody>
         </table>
+      </section>
+
+      <section v-if="review.previous_student_number" class="block">
+        <h3>Earlier studies here</h3>
+        <p>Student number {{ review.previous_student_number }}</p>
+      </section>
+
+      <section v-if="review.prior_qualifications.length" class="block">
+        <h3>Qualifications after school</h3>
+        <table class="results">
+          <tbody>
+            <tr v-for="q in review.prior_qualifications" :key="q.qualification + q.institution">
+              <td>{{ q.qualification }}<br /><span class="sub">{{ q.institution }}<template v-if="q.country">, {{ q.country }}</template></span></td>
+              <td>{{ q.nqf_level ? `NQF ${q.nqf_level}` : "NQF ?" }}</td>
+              <td>{{ q.year_completed ?? "not finished" }}</td>
+              <td class="num">{{ q.average != null ? `${q.average}%` : "" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section v-if="review.employment.length" class="block">
+        <h3>Work <span v-if="review.work_years" class="sub">· {{ review.work_years }} years</span></h3>
+        <div v-for="job in review.employment" :key="job.employer + job.from_date" class="job">
+          <strong>{{ job.position }}</strong>, {{ job.employer }}
+          <span class="sub"> · {{ formatDate(job.from_date) }} to {{ job.to_date ? formatDate(job.to_date) : "now" }}</span>
+          <p v-if="job.duties" class="sub">{{ job.duties }}</p>
+        </div>
+      </section>
+
+      <section v-if="review.referees.length" class="block">
+        <h3>Referees</h3>
+        <div v-for="ref in review.referees" :key="ref.email" class="job">
+          <strong>{{ ref.full_name }}</strong><template v-if="ref.position">, {{ ref.position }}</template><template v-if="ref.institution">, {{ ref.institution }}</template>
+          <p class="sub"><a :href="`mailto:${ref.email}`">{{ ref.email }}</a><template v-if="ref.phone"> · {{ ref.phone }}</template></p>
+        </div>
       </section>
 
       <section class="block">
@@ -268,7 +304,8 @@ p {
   text-align: right;
 }
 
-.choice {
+.choice,
+.job {
   margin-bottom: 0.4rem;
 }
 

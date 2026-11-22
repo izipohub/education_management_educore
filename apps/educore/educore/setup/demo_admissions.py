@@ -49,13 +49,12 @@ REQUIREMENTS = {
 	"BNS": (28, [("English", "NSSCO", "D"), ("Biology", "NSSCO", "C")]),
 }
 
-#: document: (required for, must be certified, guidance)
+#: identity documents: (required for, must be certified, guidance); the evidence documents (school results,
+#: academic records ...) come with the pathways (educore.admissions.pathways)
 DOCUMENTS = {
 	"National ID or Passport": ("All applicants", 1, "Both sides of your Namibian ID card, or your passport's photo page."),
 	"Birth Certificate": ("Namibian applicants", 1, "Your full birth certificate."),
-	"NSSC Statement of Results or Certificate": ("Namibian applicants", 1, "Your latest NSSCO / NSSCAS / NSSCH results."),
 	"Study Permit or Visa": ("International applicants", 1, "Or your application for one."),
-	"NQA Evaluation of Foreign Qualifications": ("International applicants", 0, "The Namibia Qualifications Authority's evaluation of your school qualifications."),
 	"Marriage Certificate": ("Optional", 1, "Only if your surname differs from the one on your school results."),
 }
 
@@ -177,7 +176,16 @@ def create_admissions_setup():
 			doc.append("educore_subject_requirements", {"subject": subject, "level": level, "grade": grade})
 		doc.save(ignore_permissions=True)
 
-	if not frappe.db.exists("Student Admission", INTAKE):
+	if frappe.db.exists("Student Admission", INTAKE):
+		# programmes added after the intake was created (e.g. the MBA)
+		intake = frappe.get_doc("Student Admission", INTAKE)
+		listed = {row.program for row in intake.program_details}
+		for program in frappe.get_all("Program", filters={"educore_programme_code": ("is", "set")}, pluck="name"):
+			if program not in listed:
+				intake.append("program_details", {"program": program, "application_fee": 150, "min_age": 16})
+		if len(intake.program_details) > len(listed):
+			intake.save(ignore_permissions=True)
+	else:
 		frappe.get_doc(
 			{
 				"doctype": "Student Admission",

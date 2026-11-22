@@ -16,6 +16,7 @@ from frappe.rate_limiter import rate_limit
 from frappe.utils import cint, getdate, nowdate, validate_email_address
 
 from educore.admissions import application as rules
+from educore.admissions import pathways
 
 ALLOWED_FILE_TYPES = {".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
 
@@ -33,6 +34,10 @@ PERSONAL_FIELDS = (
 	"city",
 	"country",
 )
+
+PRIOR_FIELDS = ("qualification", "institution", "country", "nqf_level", "year_completed", "average")
+EMPLOYMENT_FIELDS = ("employer", "position", "from_date", "to_date", "duties")
+REFEREE_FIELDS = ("full_name", "position", "institution", "email", "phone")
 
 
 # --- account -------------------------------------------------------------------------------------------
@@ -88,7 +93,10 @@ def options() -> dict:
 				"nqf_level": program.get("educore_nqf_level"),
 				"duration_years": program.get("educore_duration_years"),
 				"faculty": (program.department or "").rsplit(" - ", 1)[0],
+				"level": program.get("educore_study_level") or pathways.UNDERGRADUATE,
 				"min_points": program.get("educore_min_points"),
+				"min_prior_nqf": program.get("educore_min_prior_nqf"),
+				"min_prior_average": program.get("educore_min_prior_average"),
 				"subject_requirements": [
 					{"subject": r.subject, "level": r.level, "grade": r.grade}
 					for r in program.get("educore_subject_requirements") or []
@@ -116,7 +124,10 @@ def options() -> dict:
 		),
 		"certification_max_age_months": settings.certification_max_age_months,
 		"max_file_size_mb": settings.max_file_size_mb,
-		"max_choices": rules.MAX_CHOICES,
+		"max_choices": rules.max_choices(),
+		"home_country": settings.home_country or "Namibia",
+		"countries": frappe.get_all("Country", pluck="name", order_by="name asc"),
+		"pathways": pathways.active(),
 	}
 
 
@@ -170,12 +181,23 @@ def _serialise(doc) -> dict:
 		"intake": doc.student_admission,
 		"academic_year": doc.academic_year,
 		"pathway": doc.get("educore_pathway"),
+		"international": bool(doc.get("educore_international")),
 		"personal": {field: doc.get(field) for field in (*PERSONAL_FIELDS, "student_email_id")},
 		"school": school,
 		"exam_number": doc.get("educore_exam_number"),
 		"exam_year": doc.get("educore_exam_year"),
 		"results": [{"subject": r.subject, "level": r.level, "grade": r.grade, "points": r.points} for r in doc.educore_results],
 		"points": doc.get("educore_points"),
+		"prior_qualifications": [
+			{field: row.get(field) for field in PRIOR_FIELDS} for row in doc.get("educore_prior_qualifications") or []
+		],
+		"previous_student_number": doc.get("educore_previous_student_number"),
+		"employment": [
+			{field: str(row.get(field)) if row.get(field) and "date" in field else row.get(field) for field in EMPLOYMENT_FIELDS}
+			for row in doc.get("educore_employment") or []
+		],
+		"work_years": doc.get("educore_work_years"),
+		"referees": [{field: row.get(field) for field in REFEREE_FIELDS} for row in doc.get("educore_referees") or []],
 		"choices": [
 			{
 				"rank": c.rank,
@@ -196,9 +218,9 @@ def _serialise(doc) -> dict:
 				"certified_on": str(documents[name].certified_on) if name in documents and documents[name].certified_on else None,
 				"status": documents[name].status if name in documents else None,
 				"rejection_reason": documents[name].rejection_reason if name in documents else None,
-				"required": name in rules.required_documents(doc),
+				"required": required,
 			}
-			for name in _documents_in_order(doc)
+			for name, required in _documents_in_order(doc)
 		],
 		"missing": rules.missing(doc) if doc.application_status == "Draft" else [],
 		"declaration": bool(doc.get("educore_declaration")),
@@ -234,11 +256,12 @@ def _file_name(row) -> str:
 	return os.path.basename(row.file or "")
 
 
-def _documents_in_order(doc) -> list[str]:
-	"""Required documents first, then the ones that apply only to some applicants"""
-	required = set(rules.required_documents(doc))
-	names = frappe.get_all("Admission Document Type", filters={"active": 1}, pluck="name", order_by="name asc")
-	return sorted(names, key=lambda name: (name not in required, name))
+def _documents_in_order(doc) -> list[tuple[str, bool]]:
+	"""What this applicant is asked for (required first), then anything uploaded that no longer is (after
+	changing pathway): shown so it can be removed"""
+	plan = rules.document_plan(doc)
+	extra = [d.document_type for d in doc.get("educore_documents") or [] if d.document_type not in plan]
+	return [*plan.items(), *((name, False) for name in extra)]
 
 
 @frappe.whitelist(methods=["GET"])
@@ -277,6 +300,8 @@ def save(data: dict | str) -> dict:
 				"student_admission": intake,
 				"academic_year": academic_year,
 				"academic_term": _first_term(academic_year),
+				# the first route the university lists (usually school leaver) until the applicant picks another
+				"educore_pathway": next((p["name"] for p in pathways.active()), None),
 			}
 		)
 
@@ -286,8 +311,10 @@ def save(data: dict | str) -> dict:
 			doc.set(field, (personal[field] or None) if not isinstance(personal[field], str) else personal[field].strip() or None)
 	if doc.get("date_of_birth") and getdate(doc.date_of_birth) >= getdate(nowdate()):
 		frappe.throw(_("Check your date of birth"))
-	if data.get("pathway") in ("School leaver", "International"):
-		doc.educore_pathway = data["pathway"]
+	if "international" in data:
+		doc.educore_international = 1 if data.get("international") else 0
+	if data.get("pathway") and data["pathway"] != doc.get("educore_pathway"):
+		_change_pathway(doc, data["pathway"])
 
 	if "school" in data:
 		doc.educore_secondary_school = _school(data.get("school") or {})
@@ -306,12 +333,51 @@ def save(data: dict | str) -> dict:
 			if offering:
 				doc.append("educore_choices", {"rank": rank, "programme_offering": offering})
 
+	if "previous_student_number" in data:
+		doc.educore_previous_student_number = (data.get("previous_student_number") or "").strip() or None
+	_set_rows(doc, data, "prior_qualifications", "educore_prior_qualifications", PRIOR_FIELDS, ("qualification", "institution"))
+	_set_rows(doc, data, "employment", "educore_employment", EMPLOYMENT_FIELDS, ("employer", "position", "from_date"))
+	_set_rows(doc, data, "referees", "educore_referees", REFEREE_FIELDS, ("full_name", "email"))
+	for row in doc.get("educore_referees") or []:
+		validate_email_address(row.email, throw=True)
+	for row in doc.get("educore_employment") or []:
+		if row.to_date and getdate(row.to_date) < getdate(row.from_date):
+			frappe.throw(_("{0}: the end date is before the start date").format(row.employer))
+
 	doc.flags.ignore_permissions = True
 	if doc.is_new():
 		_insert_draft(doc)
 	else:
 		doc.save()
 	return _serialise(doc)
+
+
+def _change_pathway(doc, pathway: str):
+	"""A pathway the university has open; choices at the other level no longer apply and are dropped"""
+	if not frappe.db.exists("Admission Pathway", {"name": pathway, "active": 1}):
+		frappe.throw(_("Choose one of the pathways listed"))
+	doc.educore_pathway = pathway
+	level = pathways.level(doc)
+	doc.set("educore_choices", [c for c in doc.get("educore_choices") or [] if _level_of(c.programme_offering) == level])
+
+
+def _level_of(offering: str) -> str:
+	program = frappe.db.get_value("Programme Offering", offering, "program")
+	return frappe.get_cached_value("Program", program, "educore_study_level") or pathways.UNDERGRADUATE
+
+
+def _set_rows(doc, data, key: str, table: str, fields: tuple, needed: tuple):
+	"""Replace a table with the rows sent, keeping only the fields listed; rows missing a needed field are skipped"""
+	if key not in data:
+		return
+	doc.set(table, [])
+	for row in data.get(key) or []:
+		clean = {}
+		for field in fields:
+			value = row.get(field)
+			clean[field] = value.strip() or None if isinstance(value, str) else value
+		if all(clean.get(field) for field in needed):
+			doc.append(table, clean)
 
 
 def _insert_draft(doc):

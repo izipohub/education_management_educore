@@ -1,0 +1,144 @@
+{
+ "actions": [],
+ "creation": "2026-11-22 16:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "pathway_name",
+  "level",
+  "evidence",
+  "column_break_pathway",
+  "min_age",
+  "referees_required",
+  "sort_order",
+  "active",
+  "section_description",
+  "description",
+  "documents"
+ ],
+ "fields": [
+  {
+   "fieldname": "pathway_name",
+   "fieldtype": "Data",
+   "label": "Pathway",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "level",
+   "fieldtype": "Select",
+   "label": "Level",
+   "options": "Undergraduate\nPostgraduate",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "evidence",
+   "fieldtype": "Select",
+   "label": "Evidence",
+   "options": "School results\nWork experience\nStudies elsewhere\nStudies here\nPrior qualification",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "What eligibility is judged on. School results: points and subjects. Work experience: the minimum age, then admissions decides. Studies elsewhere / here: admissions and the faculty decide credits or return. Prior qualification: the programme's minimum NQF level and average."
+  },
+  {
+   "fieldname": "column_break_pathway",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "min_age",
+   "fieldtype": "Int",
+   "label": "Minimum Age",
+   "description": "On 1 January of the intake's year. 0: none."
+  },
+  {
+   "fieldname": "referees_required",
+   "fieldtype": "Int",
+   "label": "Referees Required",
+   "default": "0"
+  },
+  {
+   "fieldname": "sort_order",
+   "fieldtype": "Int",
+   "label": "Order Shown",
+   "default": "10"
+  },
+  {
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Open for Applications",
+   "default": "1"
+  },
+  {
+   "fieldname": "section_description",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Who It Is For",
+   "description": "Shown to applicants when they choose a pathway."
+  },
+  {
+   "fieldname": "documents",
+   "fieldtype": "Table",
+   "label": "Documents for This Pathway",
+   "options": "Pathway Document",
+   "description": "In addition to the identity documents every applicant uploads."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admissions",
+ "name": "Admission Pathway",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "Admissions Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "University Staff",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "description": "A route into the university: who it is for, the evidence it needs and its documents.",
+ "autoname": "field:pathway_name",
+ "naming_rule": "By fieldname",
+ "track_changes": 1
+}

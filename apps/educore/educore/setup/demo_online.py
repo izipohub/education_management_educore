@@ -1,5 +1,6 @@
-"""A submitted online application for the demo (development only): Nangula Haufiku applies for BACC at Oshakati
-through the applicant API, with her documents waiting to be checked and the fee not received yet.
+"""Online applications for the demo (development only), one per kind of route, made through the applicant API:
+Nangula Haufiku (school leaver, BACC at Oshakati) and Ndinelao Shikongo (postgraduate, the MBA) have submitted,
+with documents waiting to be checked and the fee not received; Festus Nangolo (mature age entry) has a draft.
 
 Called from demo_students.create, after the users exist. Re-running changes nothing once it is there.
 """
@@ -38,47 +39,104 @@ def demo_pdf(text: str = "DEMO CERTIFIED COPY") -> bytes:
 	return out.getvalue()
 
 
-def create():
+#: login: (first name, last name, application, documents, submit); each made through the applicant API
+APPLICATIONS = {
+	LOGIN: (
+		"Nangula",
+		"Haufiku",
+		{
+			"pathway": "School leaver",
+			"personal": {"date_of_birth": "2007-11-02", "gender": "Female", "nationality": "Namibian", "city": "Ongwediva"},
+			"school": {"centre_number": "DEMO-201"},
+			"exam_number": "DEMO-201-0107",
+			"exam_year": 2026,
+			"results": [
+				{"subject": "English Second Language", "level": "NSSCO", "grade": "B"},
+				{"subject": "Mathematics", "level": "NSSCO", "grade": "C"},
+				{"subject": "Accounting", "level": "NSSCO", "grade": "B"},
+				{"subject": "Economics", "level": "NSSCO", "grade": "C"},
+				{"subject": "Business Studies", "level": "NSSCO", "grade": "A"},
+				{"subject": "Geography", "level": "NSSCO", "grade": "D"},
+			],
+			"choices": ["BACC-OSH-FT", "DIT-OSH-FT"],
+		},
+		("National ID or Passport", "Birth Certificate", "NSSC Statement of Results or Certificate"),
+		True,
+	),
+	# postgraduate: a bachelor's with 68%, for the MBA (needs NQF 7 and 60%)
+	f"postgrad.applicant@{DOMAIN}": (
+		"Ndinelao",
+		"Shikongo",
+		{
+			"pathway": "Postgraduate",
+			"personal": {"date_of_birth": "1994-03-15", "gender": "Female", "nationality": "Namibian", "city": "Windhoek"},
+			"prior_qualifications": [
+				{"qualification": "Bachelor of Accounting", "institution": "EduCore Demo University", "country": "Namibia",
+				 "nqf_level": 7, "year_completed": 2016, "average": 68},
+			],
+			"employment": [
+				{"employer": "Demo Mining Ltd", "position": "Financial Accountant", "from_date": "2017-02-01", "duties": "Month-end, audits"},
+			],
+			"referees": [
+				{"full_name": "Dr Demo Referee One", "position": "Senior Lecturer", "institution": "EduCore Demo University", "email": "referee.one@example.com"},
+				{"full_name": "Demo Referee Two", "position": "Finance Manager", "institution": "Demo Mining Ltd", "email": "referee.two@example.com"},
+			],
+			"choices": ["MBA-WHK-PT"],
+		},
+		("National ID or Passport", "Birth Certificate", "Degree or Diploma Certificate", "Academic Record",
+		 "Curriculum Vitae", "Motivation Letter"),
+		True,
+	),
+	# mature age entry, still a draft: school results short of the points, ten years in retail
+	f"mature.applicant@{DOMAIN}": (
+		"Festus",
+		"Nangolo",
+		{
+			"pathway": "Mature age entry",
+			"personal": {"date_of_birth": "1990-07-21", "gender": "Male", "nationality": "Namibian", "city": "Keetmanshoop"},
+			"employment": [
+				{"employer": "Demo Retail Group", "position": "Store Manager", "from_date": "2016-01-11", "duties": "Staff, stock, cash-up"},
+				{"employer": "Demo Supermarket", "position": "Cashier", "from_date": "2009-03-01", "to_date": "2015-12-31"},
+			],
+			"choices": ["BBA-KMP-PT", "DAF-KMP-FT"],
+		},
+		("National ID or Passport", "Birth Certificate", "Curriculum Vitae"),
+		False,
+	),
+}
+
+
+def create() -> list[str]:
+	return [name for login, spec in APPLICATIONS.items() if (name := _create(login, *spec))]
+
+
+def _create(login, first_name, last_name, application, documents, submit) -> str | None:
 	from unittest.mock import patch
 
 	from werkzeug.datastructures import FileStorage
 
 	from educore.api.v1 import apply
 
-	if frappe.db.exists("Student Applicant", {"educore_applicant_user": LOGIN}):
+	if frappe.db.exists("Student Applicant", {"educore_applicant_user": login}):
 		return None
-	if not frappe.db.exists("User", LOGIN):
+	if not frappe.db.exists("User", login):
 		frappe.flags.in_import = True
 		try:
-			new_user(email=LOGIN, first_name="Nangula", last_name="Haufiku", password="Campus-Demo-2026", positions=["Applicant"])
+			new_user(email=login, first_name=first_name, last_name=last_name, password="Campus-Demo-2026", positions=["Applicant"])
 		finally:
 			frappe.flags.in_import = False
 
-	frappe.set_user(LOGIN)
+	application = {**application, "intake": "2027 Intake"}
+	if "school" in application:
+		application["school"] = {"name": frappe.db.get_value("Secondary School", application["school"])}
+	frappe.set_user(login)
 	try:
-		apply.save(
-			{
-				"intake": "2027 Intake",
-				"personal": {"date_of_birth": "2007-11-02", "gender": "Female", "nationality": "Namibian", "city": "Ongwediva"},
-				"school": {"name": frappe.db.get_value("Secondary School", {"centre_number": "DEMO-201"})},
-				"exam_number": "DEMO-201-0107",
-				"exam_year": 2026,
-				"results": [
-					{"subject": "English Second Language", "level": "NSSCO", "grade": "B"},
-					{"subject": "Mathematics", "level": "NSSCO", "grade": "C"},
-					{"subject": "Accounting", "level": "NSSCO", "grade": "B"},
-					{"subject": "Economics", "level": "NSSCO", "grade": "C"},
-					{"subject": "Business Studies", "level": "NSSCO", "grade": "A"},
-					{"subject": "Geography", "level": "NSSCO", "grade": "D"},
-				],
-				"choices": ["BACC-OSH-FT", "DIT-OSH-FT"],
-			}
-		)
-		for document in ("National ID or Passport", "Birth Certificate", "NSSC Statement of Results or Certificate"):
+		apply.save(application)
+		for document in documents:
 			upload = FileStorage(stream=io.BytesIO(demo_pdf(document.upper())), filename="scan.pdf")
 			with patch.object(frappe, "request", frappe._dict(files={"file": upload}), create=True):
 				apply.upload_document(document, add_days(nowdate(), -7))
-		name = apply.submit(declaration=True)["name"]
+		result = apply.submit(declaration=True) if submit else apply.my_application()
 	finally:
 		frappe.set_user("Administrator")
-	return name
+	return result["name"]
