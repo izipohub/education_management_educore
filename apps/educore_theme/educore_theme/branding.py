@@ -211,6 +211,32 @@ def website_context(context):
 	}
 
 
+@frappe.whitelist(allow_guest=True, methods=["GET"])
+def public_branding() -> dict:
+	"""What the login page shows, for the Vue app: name, logos, colours and login text (public by nature)"""
+	brand = get_branding()
+	return {
+		key: brand[key]
+		for key in (
+			"institution_name",
+			"login_subtitle",
+			"logo",
+			"logo_on_dark",
+			"mark",
+			"favicon",
+			"primary_color",
+			"accent_color",
+			"background_color",
+			"text_on_accent",
+			"login_heading",
+			"login_heading_accent",
+			"login_text",
+			"facts",
+			"login_background",
+		)
+	}
+
+
 def boot_session(bootinfo):
 	"""In the desk, ERPNext (and any app showing Frappe's or ERPNext's stock logo) shows the brand's icon"""
 	mark = get_branding()["mark"]

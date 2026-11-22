@@ -240,6 +240,15 @@ These are the selected architectural recommendations. Verify
 compatibility and choose pinned, mutually compatible versions when
 bootstrapping the repository.
 
+**PrimeVue licence (Confirmed, 2026-11-22):** PrimeVue 5 and later are
+commercial (PrimeTek's PrimeUI licence). EduCore uses **PrimeVue 4.5.5
+with `@primeuix/themes` 1.2.5, the last MIT-licensed release**, pinned
+exactly. Do not upgrade PrimeVue to 5.x without a licence decision. If
+4.x stops receiving fixes, the alternatives are a paid PrimeVue licence or
+an MIT library such as Reka UI. Every dependency's licence must be checked
+before it is added; the pinned versions live in
+`frontend/educore-ui/package.json`.
+
 ### 3.3 Design system
 
 Create one EduCore design system shared by all modules.

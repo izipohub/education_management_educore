@@ -1,0 +1,35 @@
+# EduCore's Vue app in development: the Vite dev server, with hot reload, reached through Nginx Proxy Manager.
+#
+#   http://app.educore.localhost -> NPM proxy host -> educore-ui:5173 (websockets on, for hot reload)
+#
+# Vite serves the app and forwards Frappe's paths (/api, /assets, /files, /private, /socket.io) to the
+# bench (docker/frappe, alias educore-frappe on the same proxy network). The browser sees one origin, so
+# Frappe's session cookie and CSRF checks work as behind the production reverse proxy.
+#
+# Start the Frappe stack first, then: docker compose up -d     Logs: docker compose logs -f ui
+name: educore-ui
+services:
+  ui:
+    image: node:24-alpine
+    working_dir: /app
+    command: sh -c "npm ci --no-audit --no-fund && npm run dev"
+    environment:
+      FRAPPE_URL: http://educore-frappe:8000
+      FRAPPE_REALTIME_URL: http://educore-frappe:9000
+      FRAPPE_SITE: educore.localhost
+      APP_HOST: app.educore.localhost
+    volumes:
+      - ../../frontend/educore-ui:/app
+      # the container's own node_modules (Linux/musl builds), not the host's
+      - node_modules:/app/node_modules
+    restart: unless-stopped
+    networks:
+      proxy:
+        # "Forward Hostname" in NPM: educore-ui, port 5173
+        aliases: [educore-ui]
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-proxy}
+volumes:
+  node_modules:
