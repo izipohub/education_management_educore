@@ -48,16 +48,22 @@ class TestOffers(IntegrationTestCase):
 		frappe.set_user("Administrator")
 		return name
 
-	def _offered(self, conditions: str | None = None) -> str:
-		"""Submitted online, checked by admissions and approved; the session is the applicant's again"""
+	def _ready(self) -> str:
+		"""Submitted online, documents verified and fee settled: ready for a decision (session: Administrator)"""
 		name = self._submitted()
 		doc = frappe.get_doc("Student Applicant", name)
 		for row in doc.educore_documents:
 			row.status = "Verified"
 		doc.save(ignore_permissions=True)
 		admissions.waive_fee(name, "Test")
+		return name
+
+	def _offered(self, conditions: str | None = None) -> str:
+		"""Submitted online, checked by admissions and approved; the session is the applicant's again"""
+		name = self._ready()
+		applicant_user = frappe.db.get_value("Student Applicant", name, "educore_applicant_user")
 		admissions.decide(name, "Approve", conditions=conditions)
-		frappe.set_user(doc.educore_applicant_user)
+		frappe.set_user(applicant_user)
 		return name
 
 	def _events(self):
@@ -121,6 +127,26 @@ class TestOffers(IntegrationTestCase):
 		self.assertEqual(admissions.decide(name, "Reconsider")["status"], "Applied")
 		frappe.set_user("Administrator")
 		self.assertIsNone(frappe.db.get_value("Student Applicant", name, "educore_offer_status"))
+
+	# --- offering another choice --------------------------------------------------------------------
+
+	def test_admissions_can_offer_a_later_choice(self):
+		# choices: BCS-OSH-FT, BNS-WHK-FT, DIT-OSH-FT
+		name = self._ready()
+		frappe.set_user("admissions-officer.osh@educore.localhost")
+		row = admissions.decide(name, "Approve", offering="DIT-OSH-FT")
+		self.assertEqual((row["status"], row["offering"]), ("Approved", "DIT-OSH-FT"))
+		frappe.set_user("Administrator")
+		self.assertEqual(frappe.db.get_value("Student Applicant", name, "program"), "Diploma in Information Technology")
+		self.assertIn("Offer of a place: Diploma in Information Technology", self._events())
+
+	def test_a_choice_at_another_campus_is_offered_by_its_own_officers(self):
+		name = self._ready()
+		frappe.set_user("admissions-officer.osh@educore.localhost")
+		self.assertRaises(frappe.PermissionError, admissions.decide, name, "Approve", offering="BNS-WHK-FT")
+		self.assertRaises(frappe.ValidationError, admissions.decide, name, "Approve", offering="BACC-KMP-PT")  # not a choice
+		frappe.set_user("registrar@educore.localhost")
+		self.assertEqual(admissions.decide(name, "Approve", offering="BNS-WHK-FT")["offering"], "BNS-WHK-FT")
 
 	# --- the deadline ----------------------------------------------------------------------------------
 

@@ -35,7 +35,15 @@ export const useSession = defineStore("session", () => {
   }
 
   async function login(usr: string, pwd: string) {
-    await post("login", { usr, pwd });
+    try {
+      await post("login", { usr, pwd });
+    } catch (error) {
+      // a server fault (not wrong details, not too many attempts) is retried once: Frappe's login can fail when the
+      // same user signs in twice at the same moment (a deadlock on the User row; Frappe v16.60), and a second try
+      // goes through
+      if (!(error instanceof ApiError) || error.status < 500) throw error;
+      await post("login", { usr, pwd });
+    }
     await load();
     if (!me.value) throw new ApiError("Signed in, but the session could not be loaded. Try again.", 0, null);
   }

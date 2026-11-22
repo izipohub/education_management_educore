@@ -55,6 +55,19 @@ describe("session", () => {
     await expect(useSession().load()).rejects.toThrow("Server error");
   });
 
+  it("retries a sign-in once when the server fails, not when the details are wrong", async () => {
+    api.get.mockResolvedValue(officer);
+    // Frappe can fail a login when the same user signs in twice at once: the second try goes through
+    api.post.mockRejectedValueOnce(new ApiError("(1305, 'SAVEPOINT x does not exist')", 500, null)).mockResolvedValueOnce("Logged In");
+    await useSession().login("registry-officer.osh@educore.localhost", "secret");
+    expect(api.post).toHaveBeenCalledTimes(2);
+
+    api.post.mockReset();
+    api.post.mockRejectedValue(new ApiError("Incorrect password", 401, "AuthenticationError"));
+    await expect(useSession().login("registry-officer.osh@educore.localhost", "wrong")).rejects.toThrow("Incorrect password");
+    expect(api.post).toHaveBeenCalledTimes(1);
+  });
+
   it("signs in through Frappe and then loads the user", async () => {
     api.post.mockResolvedValue("Logged In");
     api.get.mockResolvedValue(officer);

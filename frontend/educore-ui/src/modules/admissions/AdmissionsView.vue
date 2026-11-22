@@ -13,7 +13,7 @@ import ReviewPanel from "./ReviewPanel.vue";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, ref, watch } from "vue";
 import { ApiError } from "@/core/api/client";
-import { offerLabel } from "@/core/status";
+import { eligibilityLabel, offerLabel } from "@/core/status";
 import { formatDate, shortUser } from "@/core/format";
 import {
   type Action,
@@ -115,10 +115,14 @@ const reason = ref("");
 /** approving an online application makes an offer: conditions are optional */
 const offering = computed(() => reasonFor.value?.action === "Approve");
 
+/** which of the applicant's choices is offered: the one under decision unless the officer picks another */
+const offerChoice = ref("");
+
 function start(row: Application, action: Action) {
   if (NEEDS_REASON.includes(action) || (action === "Approve" && row.online)) {
     reasonFor.value = { row, action };
     reason.value = "";
+    offerChoice.value = row.offering;
   } else {
     void run(row, action);
   }
@@ -128,9 +132,12 @@ async function confirmWithReason() {
   if (!reasonFor.value || (!offering.value && !reason.value.trim())) return;
   const { row, action } = reasonFor.value;
   reasonFor.value = null;
-  if (action === "Approve") await run(row, action, undefined, reason.value.trim() || undefined);
+  if (action === "Approve") await run(row, action, undefined, reason.value.trim() || undefined, offerChoice.value);
   else await run(row, action, reason.value.trim());
 }
+
+const eligibilitySeverity = (value: string | null) =>
+  value === "Meets requirements" ? "success" : value === "Does not meet requirements" ? "danger" : "warn";
 
 const OFFER_SEVERITY: Record<string, string> = { "Awaiting response": "warn", Accepted: "success", Declined: "danger", Lapsed: "secondary" };
 
@@ -141,10 +148,10 @@ const PAST_TENSE: Record<Action, string> = {
   Reconsider: "reopened",
 };
 
-async function run(row: Application, action: Action, why?: string, conditions?: string) {
+async function run(row: Application, action: Action, why?: string, conditions?: string, offering?: string) {
   busy.value.add(row.name);
   try {
-    await decide(row.name, action, why, conditions);
+    await decide(row.name, action, why, conditions, offering);
     toast.add({ severity: "success", summary: `${row.applicant}: ${PAST_TENSE[action]}`, life: 4000 });
     await load();
   } catch (error) {
@@ -273,12 +280,19 @@ function actionSeverity(action: Action) {
     <Dialog
       :visible="reasonFor !== null"
       modal
-      :header="reasonFor ? `${reasonFor.action}: ${reasonFor.row.applicant}` : ''"
+      :header="reasonFor ? `${offering ? 'Offer a place' : reasonFor.action}: ${reasonFor.row.applicant}` : ''"
       :style="{ width: 'min(32rem, calc(100vw - 32px))' }"
       @update:visible="(open: boolean) => !open && (reasonFor = null)"
     >
       <template v-if="offering">
-        <p class="sub">The applicant is offered {{ reasonFor?.row.program }} and asked to respond in the portal.</p>
+        <fieldset v-if="(reasonFor?.row.choices.length ?? 0) > 1" class="choices">
+          <legend class="reason-label">Programme to offer</legend>
+          <label v-for="c in reasonFor?.row.choices" :key="c.offering" class="choice-option">
+            <input v-model="offerChoice" type="radio" name="offer-choice" :value="c.offering" />
+            <span class="choice-name">{{ c.rank }}. {{ c.program }} <span class="sub">{{ c.campus }}</span></span>
+            <Tag :severity="eligibilitySeverity(c.eligibility)" :value="eligibilityLabel(c.eligibility)" class="nowrap" />
+          </label>
+        </fieldset>
         <label for="reason" class="reason-label">Offer conditions (optional, shown in the offer letter)</label>
       </template>
       <label v-else for="reason" class="reason-label">Reason (kept on the application)</label>
@@ -370,6 +384,37 @@ h1 {
   margin: 1rem 0;
   text-align: center;
   color: #6b7280;
+}
+
+.choices {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  border: 0;
+}
+
+.choice-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.choice-option {
+  flex-wrap: nowrap;
+}
+
+.choice-name {
+  flex: 1;
+}
+
+.choice-option input {
+  accent-color: var(--color-brand-navy);
 }
 
 .reason-label {

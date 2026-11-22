@@ -1214,6 +1214,14 @@ Do not present these open items as already implemented or confirmed.
 
 ------------------------------------------------------------------------
 
+### 14.1 Known upstream issues
+
+Bugs in Frappe or its apps that EduCore works around. Report each upstream; remove the workaround once fixed.
+
+| Issue | Seen in | Workaround |
+|---|---|---|
+| Login fails with `(1305, 'SAVEPOINT … does not exist')` when the same user signs in twice at the same moment: `frappe.sessions.update_user_metadata` wraps the User row update in a savepoint to absorb deadlocks, but MariaDB rolls back the whole transaction on a deadlock, so rolling back to the savepoint fails | Frappe v16.60.2 | The Vue app retries a sign-in once on a server error (`core/auth/session.ts`) and never shows the raw message |
+
 ## 15. Core architectural principles
 
 1.  **The right interface per user:** the Vue app for students,

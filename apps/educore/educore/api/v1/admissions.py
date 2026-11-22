@@ -73,6 +73,10 @@ def _row(row) -> dict:
 	row["applicant"] = row.get("title") or " ".join(p for p in (row.get("first_name"), row.get("last_name")) if p)
 	doc = frappe.get_doc("Student Applicant", row["name"])
 	row["actions"] = _actions(doc)
+	row["choices"] = [
+		{"rank": c.rank, "offering": c.programme_offering, "program": c.program, "campus": c.campus, "eligibility": c.eligibility}
+		for c in doc.get("educore_choices") or []
+	]
 	row.update(_completeness(doc))
 	return row
 
@@ -145,11 +149,16 @@ def _capacity(offerings: set[str], years: set[str]) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-def decide(name: str, action: str, reason: str | None = None, conditions: str | None = None) -> dict:
-	"""Approve (optionally with offer conditions), Reject, Withdraw Offer or Reconsider an application"""
+def decide(
+	name: str, action: str, reason: str | None = None, conditions: str | None = None, offering: str | None = None
+) -> dict:
+	"""Approve (optionally another of the applicant's choices, and with offer conditions), Reject, Withdraw Offer
+	or Reconsider an application"""
 	doc = frappe.get_doc("Student Applicant", name)
 	# campus scope and role: before anything is written
 	doc.check_permission("write")
+	if action == "Approve" and offering and offering != doc.educore_programme_offering:
+		_offer_choice(doc, offering)
 	if action == "Approve":
 		# saved first, like the reason: the workflow action reloads the applicant
 		doc.db_set("educore_offer_conditions", (conditions or "").strip() or None)
@@ -161,6 +170,21 @@ def decide(name: str, action: str, reason: str | None = None, conditions: str | 
 	apply_workflow(doc, action)
 	row = frappe.get_list("Student Applicant", filters={"name": name}, fields=FIELDS, limit=1)[0]
 	return _row(row)
+
+
+def _offer_choice(doc, offering: str):
+	"""Offer another of the applicant's choices (e.g. the second, when the first is full): it becomes the offering
+	under decision. Saved first, like the reason: the workflow action reloads the applicant."""
+	choice = next((c for c in doc.get("educore_choices") or [] if c.programme_offering == offering), None)
+	if not choice:
+		frappe.throw(_("{0} is not one of the applicant's choices").format(offering))
+	campus = frappe.db.get_value("Programme Offering", offering, "campus")
+	# the officer's own campuses (their User Permissions): another campus's officers offer its places
+	if campus not in frappe.get_list("Campus", pluck="name", limit=0):
+		frappe.throw(_("{0} is at {1}: an officer there makes this offer").format(offering, campus), frappe.PermissionError)
+	program = frappe.db.get_value("Programme Offering", offering, "program")
+	doc.db_set({"educore_programme_offering": offering, "program": program, "campus": campus})
+	doc.add_comment("Info", _("Offer made on choice {0}: {1}").format(choice.rank, offering))
 
 
 # --- reviewing an online application --------------------------------------------------------------------

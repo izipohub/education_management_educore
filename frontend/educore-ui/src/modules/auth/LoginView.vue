@@ -17,6 +17,15 @@ const { branding } = useBranding();
 const email = ref("");
 const password = ref("");
 const error = ref("");
+
+/** what went wrong, in words for the person signing in (never a raw server message) */
+function loginError(e: unknown): string {
+  if (!(e instanceof ApiError)) return "Sign-in did not go through. Check your connection and try again.";
+  if (e.status === 401) return "The email or password is not correct.";
+  if (e.status === 429) return "Too many attempts. Wait a few minutes, then try again.";
+  if (e.status >= 500 || e.status === 0) return "Sign-in did not go through. Please try again.";
+  return e.message;
+}
 const busy = ref(false);
 
 /** The university's colours, as CSS variables for this page */
@@ -35,7 +44,7 @@ async function signIn() {
     const redirect = typeof route.query.redirect === "string" && route.query.redirect.startsWith("/") ? route.query.redirect : "/";
     await router.replace(redirect);
   } catch (e) {
-    error.value = e instanceof ApiError && e.status === 401 ? "The email or password is not correct." : e instanceof Error ? e.message : String(e);
+    error.value = loginError(e);
   } finally {
     busy.value = false;
   }

@@ -38,6 +38,8 @@ export interface Application {
   /** online offers: the applicant's response */
   offer_status: OfferStatus | null;
   offer_deadline: string | null;
+  /** the applicant's ranked choices; approving may offer any of them */
+  choices: { rank: number; offering: string; program: string; campus: string; eligibility: string | null }[];
 }
 
 export type OfferStatus = "Awaiting response" | "Accepted" | "Declined" | "Lapsed";
@@ -129,8 +131,8 @@ export function listApplications(params: { status: Status; academic_year?: strin
   return get<ApplicationsPage>("educore.api.v1.admissions.applications", params);
 }
 
-export function decide(name: string, action: Action, reason?: string, conditions?: string) {
-  return post<Application>("educore.api.v1.admissions.decide", { name, action, reason, conditions });
+export function decide(name: string, action: Action, reason?: string, conditions?: string, offering?: string) {
+  return post<Application>("educore.api.v1.admissions.decide", { name, action, reason, conditions, offering });
 }
 
 export function extendOffer(name: string, deadline: string) {

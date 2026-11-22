@@ -57,3 +57,28 @@ test("the registry enrols an online applicant only once they accept", async ({ p
   await expect(page.getByRole("row").filter({ hasText: "Maria Kandjii" }).getByRole("button", { name: "Enrol" })).toBeVisible();
   await page.screenshot({ path: "e2e/results/offer-registry.png", fullPage: true });
 });
+
+test("approving lets admissions offer another of the applicant's choices", async ({ page }) => {
+  // shown as ready for a decision (documents and fee are checked by the backend tests); nothing is saved here
+  await page.route("**/api/method/educore.api.v1.admissions.applications*", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    for (const row of body.message.rows) {
+      if (row.applicant === "Nangula Haufiku") Object.assign(row, { blockers: [], ready: true });
+    }
+    await route.fulfill({ response, json: body });
+  });
+  await signIn(page, "admissions-officer.osh");
+  await page.getByRole("link", { name: "Admissions" }).click();
+  const nangula = page.getByRole("row").filter({ hasText: "Nangula Haufiku" });
+  await nangula.getByRole("button", { name: "Approve", exact: true }).click();
+
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("Programme to offer")).toBeVisible();
+  await expect(dialog.getByRole("radio", { name: /1\. Bachelor of Accounting/ })).toBeChecked();
+  await dialog.getByRole("radio", { name: /2\. Diploma in Information Technology/ }).check();
+  await expect(dialog.getByRole("button", { name: "Make offer" })).toBeEnabled();
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+  await page.screenshot({ path: "e2e/results/offer-choice.png", fullPage: true });
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+});
