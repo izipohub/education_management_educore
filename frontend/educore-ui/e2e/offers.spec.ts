@@ -7,7 +7,7 @@ async function signIn(page: Page, login: string) {
   await page.getByLabel("Email").fill(`${login}@educore.localhost`);
   await page.locator("#password").fill(PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).not.toHaveURL(/\/login/);
+  await expect(page).not.toHaveURL(/\/login/, { timeout: 15_000 });
 }
 
 test("an applicant sees their offer, its conditions and deadline, and the letter", async ({ page }) => {

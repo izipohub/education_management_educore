@@ -29,6 +29,7 @@ const NAV: NavItem[] = [
   { label: "My teaching", icon: "✦", to: "/my-teaching", roles: ["Lecturer"] },
   { label: "Admissions", icon: "✎", to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
   { label: "Enrolment", icon: "✓", to: "/enrolment", roles: ["Registry Officer", "Registrar"] },
+  { label: "Admission setup", icon: "⚙", to: "/admission-setup", roles: ["Registrar", "System Manager"] },
 ];
 
 const nav = computed(() => NAV.filter((item) => !item.roles || session.hasRole(...item.roles)));

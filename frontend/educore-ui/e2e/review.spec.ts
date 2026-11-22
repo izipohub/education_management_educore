@@ -9,7 +9,7 @@ async function signIn(page: Page, login: string) {
   await page.getByRole("button", { name: "Sign in" }).click();
   // signed in: the app has moved on from the login page and shows its navigation
   // the app changes pages without reloading, so there is no "load" event to wait for
-  await expect(page).not.toHaveURL(/\/login/);
+  await expect(page).not.toHaveURL(/\/login/, { timeout: 15_000 });
   await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
 }
 

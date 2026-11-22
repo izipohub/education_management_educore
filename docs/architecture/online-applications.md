@@ -166,7 +166,10 @@ the university's to change, add to or close:
 | Resumption of studies | Undergraduate | Studies here | Needs review: standing, exclusion, fees; the earlier student record is found | Previous student number |
 | Postgraduate | Postgraduate | Prior qualification | Programme's minimum NQF level and average | Qualifications, 2 referees; degree certificate, academic record, CV, motivation letter |
 
-What the university sets, and where:
+The Registrar sets all of it in the Vue app's **Admission setup** screen (`/admission-setup`,
+`educore.api.v1.admission_setup`): rules, offers, fees, pathways, documents, each programme's entry requirements
+and the points scale. Saving the university's own scale clears the placeholder flag. What the university sets, and
+where it is stored:
 
 | Rule | Where |
 |---|---|
