@@ -247,17 +247,72 @@ CUSTOM_FIELDS = {
 		},
 		{
 			"fieldname": "educore_decided_on",
+			"read_only": 1,
 			"label": "Decided On",
 			"fieldtype": "Datetime",
-			"read_only": 1,
 			"insert_after": "educore_decided_by",
 		},
-		# the online application (educore/admissions/application.py)
+		{
+			"fieldname": "educore_offer_section",
+			"label": "Offer",
+			"fieldtype": "Section Break",
+			"insert_after": "educore_decided_on",
+			"depends_on": "eval:['Approved','Declined','Lapsed','Admitted'].includes(doc.application_status)",
+		},
+		{
+			"fieldname": "educore_offer_status",
+			"label": "Offer Response",
+			"fieldtype": "Select",
+			"options": "\nAwaiting response\nAccepted\nDeclined\nLapsed",
+			"read_only": 1,
+			"in_standard_filter": 1,
+			"insert_after": "educore_offer_section",
+		},
+		{
+			"fieldname": "educore_offer_deadline",
+			"label": "Respond By",
+			"fieldtype": "Date",
+			"insert_after": "educore_offer_status",
+		},
+		{
+			"fieldname": "educore_offer_responded_on",
+			"label": "Responded On",
+			"fieldtype": "Datetime",
+			"read_only": 1,
+			"insert_after": "educore_offer_deadline",
+		},
+		{
+			"fieldname": "educore_offer_reminded",
+			"label": "Reminder Sent",
+			"fieldtype": "Check",
+			"read_only": 1,
+			"insert_after": "educore_offer_responded_on",
+		},
+		{
+			"fieldname": "educore_offer_column",
+			"fieldtype": "Column Break",
+			"insert_after": "educore_offer_reminded",
+		},
+		{
+			"fieldname": "educore_offer_conditions",
+			"label": "Offer Conditions",
+			"fieldtype": "Small Text",
+			"insert_after": "educore_offer_column",
+			"description": "Shown in the offer letter, e.g. final results to be submitted by a date.",
+		},
+		{
+			"fieldname": "educore_offer_decline_reason",
+			"label": "Reason Declined",
+			"fieldtype": "Small Text",
+			"read_only": 1,
+			"insert_after": "educore_offer_conditions",
+		},
+				# the online application (educore/admissions/application.py)
 		{
 			"fieldname": "educore_application_section",
 			"label": "Online Application",
 			"fieldtype": "Section Break",
-			"insert_after": "educore_decided_on",
+			"insert_after": "educore_offer_decline_reason",
 		},
 		{
 			"fieldname": "educore_applicant_user",
@@ -609,7 +664,7 @@ CUSTOM_FIELDS = {
 #: (DocType, field, property, value, type): changes to upstream fields, as Property Setters
 PROPERTY_SETTERS = (
 	# an online application is a Draft until the applicant submits it (workflow "EduCore Admission Decision")
-	("Student Applicant", "application_status", "options", "Draft\nApplied\nApproved\nRejected\nAdmitted", "Text"),
+	("Student Applicant", "application_status", "options", "Draft\nApplied\nApproved\nRejected\nDeclined\nLapsed\nAdmitted", "Text"),
 	("Student Applicant", "application_status", "default", "Draft", "Data"),
 	# a draft has no offering yet; the first choice sets it, and submitting requires it
 	("Student Applicant", "program", "reqd", "0", "Check"),

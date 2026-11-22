@@ -20,6 +20,7 @@ import {
   type ApplicationsPage,
   NEEDS_REASON,
   type Places,
+  OCCASIONAL,
   STATUSES,
   type Status,
   decide,
@@ -38,7 +39,10 @@ const loadError = ref("");
 const busy = ref(new Set<string>());
 
 const statusOptions = computed(() =>
-  STATUSES.map((s) => ({ label: `${s} (${page.value?.counts[s] ?? 0})`, value: s })),
+  STATUSES.filter((s) => !OCCASIONAL.includes(s) || (page.value?.counts[s] ?? 0) > 0 || s === status.value).map((s) => ({
+    label: `${s} (${page.value?.counts[s] ?? 0})`,
+    value: s,
+  })),
 );
 
 async function load() {
@@ -107,9 +111,11 @@ function placesSeverity(p: Places | undefined) {
 
 const reasonFor = ref<{ row: Application; action: Action } | null>(null);
 const reason = ref("");
+/** approving an online application makes an offer: conditions are optional */
+const offering = computed(() => reasonFor.value?.action === "Approve");
 
 function start(row: Application, action: Action) {
-  if (NEEDS_REASON.includes(action)) {
+  if (NEEDS_REASON.includes(action) || (action === "Approve" && row.online)) {
     reasonFor.value = { row, action };
     reason.value = "";
   } else {
@@ -118,11 +124,14 @@ function start(row: Application, action: Action) {
 }
 
 async function confirmWithReason() {
-  if (!reasonFor.value || !reason.value.trim()) return;
+  if (!reasonFor.value || (!offering.value && !reason.value.trim())) return;
   const { row, action } = reasonFor.value;
   reasonFor.value = null;
-  await run(row, action, reason.value.trim());
+  if (action === "Approve") await run(row, action, undefined, reason.value.trim() || undefined);
+  else await run(row, action, reason.value.trim());
 }
+
+const OFFER_SEVERITY: Record<string, string> = { "Awaiting response": "warn", Accepted: "success", Declined: "danger", Lapsed: "secondary" };
 
 const PAST_TENSE: Record<Action, string> = {
   Approve: "approved",
@@ -131,10 +140,10 @@ const PAST_TENSE: Record<Action, string> = {
   Reconsider: "reopened",
 };
 
-async function run(row: Application, action: Action, why?: string) {
+async function run(row: Application, action: Action, why?: string, conditions?: string) {
   busy.value.add(row.name);
   try {
-    await decide(row.name, action, why);
+    await decide(row.name, action, why, conditions);
     toast.add({ severity: "success", summary: `${row.applicant}: ${PAST_TENSE[action]}`, life: 4000 });
     await load();
   } catch (error) {
@@ -218,6 +227,16 @@ function actionSeverity(action: Action) {
         </template>
       </Column>
 
+      <Column v-if="status === 'Approved'" header="Offer">
+        <template #body="{ data }">
+          <template v-if="data.offer_status">
+            <Tag :severity="OFFER_SEVERITY[data.offer_status]" :value="data.offer_status" />
+            <div v-if="data.offer_status === 'Awaiting response' && data.offer_deadline" class="sub nowrap">by {{ formatDate(data.offer_deadline) }}</div>
+          </template>
+          <span v-else class="sub">In person</span>
+        </template>
+      </Column>
+
       <Column v-if="status !== 'Applied'" header="Decision">
         <template #body="{ data }">
           <div v-if="data.decided_by">
@@ -257,11 +276,20 @@ function actionSeverity(action: Action) {
       :style="{ width: 'min(32rem, calc(100vw - 32px))' }"
       @update:visible="(open: boolean) => !open && (reasonFor = null)"
     >
-      <label for="reason" class="reason-label">Reason (kept on the application)</label>
+      <template v-if="offering">
+        <p class="sub">The applicant is offered {{ reasonFor?.row.program }} and asked to respond in the portal.</p>
+        <label for="reason" class="reason-label">Offer conditions (optional, shown in the offer letter)</label>
+      </template>
+      <label v-else for="reason" class="reason-label">Reason (kept on the application)</label>
       <Textarea id="reason" v-model="reason" rows="4" fluid auto-resize />
       <template #footer>
         <Button label="Cancel" severity="secondary" text @click="reasonFor = null" />
-        <Button :label="reasonFor?.action ?? ''" severity="danger" :disabled="!reason.trim()" @click="confirmWithReason" />
+        <Button
+          :label="offering ? 'Make offer' : (reasonFor?.action ?? '')"
+          :severity="offering ? undefined : 'danger'"
+          :disabled="!offering && !reason.trim()"
+          @click="confirmWithReason"
+        />
       </template>
     </Dialog>
   </section>

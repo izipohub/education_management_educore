@@ -16,7 +16,7 @@ from frappe.rate_limiter import rate_limit
 from frappe.utils import cint, getdate, nowdate, validate_email_address
 
 from educore.admissions import application as rules
-from educore.admissions import pathways
+from educore.admissions import notify, offers, pathways
 
 ALLOWED_FILE_TYPES = {".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
 
@@ -227,6 +227,34 @@ def _serialise(doc) -> dict:
 		"submitted_on": str(doc.educore_submitted_on) if doc.get("educore_submitted_on") else None,
 		"decision_reason": doc.get("educore_decision_reason") if doc.application_status == "Rejected" else None,
 		"fee": _fee(doc),
+		"offer": _offer(doc),
+	}
+
+
+def _offer(doc) -> dict | None:
+	"""The offer letter's content, once there is an offer (online applications only)"""
+	if not doc.get("educore_offer_status"):
+		return None
+	from educore.finance.student_fees import fee_structure_for
+
+	offering = frappe.db.get_value(
+		"Programme Offering", doc.educore_programme_offering, ["program", "campus", "mode_of_study"], as_dict=True
+	)
+	structure = fee_structure_for(doc.educore_programme_offering, doc.academic_year)
+	start = frappe.db.get_value("Academic Term", doc.academic_term, "term_start_date") if doc.academic_term else None
+	return {
+		"status": doc.educore_offer_status,
+		"programme": offering.program,
+		"campus": offering.campus,
+		"mode_of_study": offering.mode_of_study,
+		"academic_year": doc.academic_year,
+		"starts_on": str(start) if start else None,
+		"annual_fees": frappe.db.get_value("Fee Structure", structure, "total_amount") if structure else None,
+		"conditions": doc.get("educore_offer_conditions"),
+		"deadline": str(doc.educore_offer_deadline) if doc.get("educore_offer_deadline") else None,
+		"responded_on": str(doc.educore_offer_responded_on) if doc.get("educore_offer_responded_on") else None,
+		"decided_on": str(doc.educore_decided_on) if doc.get("educore_decided_on") else None,
+		"university": notify.university(),
 	}
 
 
@@ -527,3 +555,21 @@ def submit(declaration: bool | str = False) -> dict:
 	doc.save()
 	doc.add_comment("Workflow", _("Submitted online"))
 	return _serialise(doc)
+
+
+@frappe.whitelist(methods=["POST"])
+def accept_offer() -> dict:
+	doc = _own_application(for_update=True)
+	if not doc:
+		frappe.throw(_("There is no offer awaiting your response"))
+	offers.accept(doc)
+	return _serialise(frappe.get_doc("Student Applicant", doc.name))
+
+
+@frappe.whitelist(methods=["POST"])
+def decline_offer(reason: str | None = None) -> dict:
+	doc = _own_application(for_update=True)
+	if not doc:
+		frappe.throw(_("There is no offer awaiting your response"))
+	offers.decline(doc, reason)
+	return _serialise(frappe.get_doc("Student Applicant", doc.name))

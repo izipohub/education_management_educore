@@ -41,7 +41,8 @@
    "label": "Campus",
    "options": "Campus",
    "fetch_from": "programme_offering.campus",
-   "read_only": 1
+   "read_only": 1,
+   "ignore_user_permissions": 1
   },
   {
    "fieldname": "eligibility",

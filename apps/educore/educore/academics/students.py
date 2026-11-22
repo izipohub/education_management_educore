@@ -59,6 +59,9 @@ def _record_decision(doc, offering):
 		if blockers:
 			frappe.throw(_("Not ready to approve:") + "<br>" + "<br>".join(f"• {b}" for b in blockers))
 		_check_intake_capacity(doc, offering)
+		from educore.admissions import offers
+
+		offers.on_approved(doc)
 	if status in NEEDS_REASON and not (doc.get("educore_decision_reason") or "").strip():
 		frappe.throw(_("Write the reason in Decision Notes before rejecting the application or withdrawing the offer"))
 	if status in DECISIONS:
@@ -70,6 +73,9 @@ def _record_decision(doc, offering):
 		doc.educore_decided_by = None
 		doc.educore_decided_on = None
 		doc.educore_decision_reason = None
+		from educore.admissions import offers
+
+		offers.on_reconsidered(doc)
 
 
 def _check_intake_capacity(doc, offering):

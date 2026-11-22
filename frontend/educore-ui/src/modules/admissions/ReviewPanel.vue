@@ -7,8 +7,9 @@ import ProgressSpinner from "primevue/progressspinner";
 import Tag from "primevue/tag";
 import { useToast } from "primevue/usetoast";
 import { computed, ref, watch } from "vue";
-import { formatDate, formatMoney, shortUser } from "@/core/format";
-import { type Review, getReview, verifyDocument, waiveFee } from "./api";
+import { formatDate, formatMoney, fromIsoDate, shortUser, toIsoDate } from "@/core/format";
+import DatePicker from "primevue/datepicker";
+import { type Review, extendOffer, getReview, verifyDocument, waiveFee } from "./api";
 
 const props = defineProps<{ name: string | null }>();
 const emit = defineEmits<{ close: []; changed: [] }>();
@@ -21,6 +22,8 @@ const rejecting = ref<string | null>(null);
 const rejectReason = ref("");
 const waiving = ref(false);
 const waiveReason = ref("");
+const extending = ref(false);
+const newDeadline = ref<Date | null>(null);
 /** sections shown in full; the rest show one line and "View all" */
 const expanded = ref(new Set<string>());
 const toggle = (section: string) => {
@@ -47,6 +50,7 @@ watch(
     error.value = "";
     rejecting.value = null;
     waiving.value = false;
+    extending.value = false;
     expanded.value = new Set();
     if (!name) return;
     try {
@@ -82,6 +86,18 @@ async function confirmReject() {
   rejecting.value = null;
   rejectReason.value = "";
 }
+
+function startExtend() {
+  extending.value = true;
+  newDeadline.value = review.value?.offer?.deadline ? fromIsoDate(review.value.offer.deadline) : null;
+}
+async function confirmExtend() {
+  if (!newDeadline.value) return;
+  await act(() => extendOffer(props.name!, toIsoDate(newDeadline.value!)), "Deadline extended");
+  extending.value = false;
+}
+const offerSeverity = (status: string | null) =>
+  status === "Accepted" ? "success" : status === "Awaiting response" ? "warn" : status === "Declined" ? "danger" : "secondary";
 
 async function confirmWaive() {
   if (!waiveReason.value.trim()) return;
@@ -121,6 +137,29 @@ const feeSeverity = (status: string | null) => (status === "Paid" || status === 
         <ul v-else-if="review.blockers.length" class="blockers">
           <li v-for="b in review.blockers" :key="b">{{ b }}</li>
         </ul>
+      </section>
+
+      <section v-if="review.offer" class="block">
+        <h3>Offer</h3>
+        <div class="fee">
+          <Tag :severity="offerSeverity(review.offer.status)" :value="review.offer.status ?? 'Offered'" />
+          <span v-if="review.offer.status === 'Awaiting response' && review.offer.deadline" class="sub">respond by {{ formatDate(review.offer.deadline) }}</span>
+          <span v-else-if="review.offer.responded_on" class="sub">{{ formatDate(review.offer.responded_on) }}</span>
+          <Button
+            v-if="review.can_review && review.offer.status === 'Awaiting response' && !extending"
+            label="Extend deadline"
+            size="small"
+            text
+            @click="startExtend"
+          />
+        </div>
+        <div v-if="extending" class="inline-form">
+          <DatePicker v-model="newDeadline" date-format="dd-mm-yy" show-icon :min-date="new Date()" aria-label="New deadline" />
+          <Button label="Save" size="small" :disabled="!newDeadline || busy" @click="confirmExtend" />
+          <Button label="Cancel" size="small" text @click="extending = false" />
+        </div>
+        <p v-if="review.offer.conditions" class="sub">Conditions: {{ review.offer.conditions }}</p>
+        <p v-if="review.offer.decline_reason" class="sub">Reason given: {{ review.offer.decline_reason }}</p>
       </section>
 
       <section class="block">

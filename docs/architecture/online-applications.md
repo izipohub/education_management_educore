@@ -1,8 +1,8 @@
 # Online applications — proposal
 
-Status (2026-11-22): **phases 1, 2 and 4 built**: applicant portal, EFT fee matching and document verification (DPO
-cards wait for the merchant account), and the pathways (applicant portal: `educore.api.v1.apply`,
-`educore/admissions`, the Vue pages `/apply`, `/apply/register`, `/application`). Phases 3 and 5 are proposals. Decisions still open are marked
+Status (2026-11-22): **phases 1 to 4 built**: applicant portal, EFT fee matching and document verification (DPO
+cards wait for the merchant account), offers and notifications, and the pathways (applicant portal: `educore.api.v1.apply`,
+`educore/admissions`, the Vue pages `/apply`, `/apply/register`, `/application`). Phase 5 is a proposal. Decisions still open are marked
 **Decide**.
 
 ## 1. How Namibian universities do it today
@@ -145,7 +145,7 @@ Still open:
    results with points and eligibility flags, document upload (certified copies), submit, status checklist.
 2. **Fee and verification**: DPO card payment, EFT reference with bank-statement matching, waivers, per-document
    verification (including the certification stamp) and re-upload, completeness in the staff queue.
-3. **Offers**: offer letters, accept/decline, deadline release of places, notifications.
+3. **Offers** (built): see section 7.
 4. **More pathways** (built): see section 6.
 5. **Integrations**: DNEA results (if offered), NQA, SMS; the Ministry's school register as a refreshable feed.
 
@@ -178,6 +178,29 @@ What the university sets, and where:
 
 Choices must be at the pathway's level; changing to a pathway at the other level removes the programmes chosen (the
 applicant is told before saving).
+
+## 7. Offers and notifications (built)
+
+Approving an online application makes an offer (`educore.admissions.offers`). Staff may add conditions, which appear
+in the offer letter. The applicant accepts or declines in the portal by the deadline; declining moves the
+application to **Declined**, and an unanswered offer becomes **Lapsed** the day after its deadline (daily job). Both
+release the place: intake capacity counts Approved and Admitted only. Only the registrar can reconsider a declined
+or lapsed application. Admissions can extend a deadline. Paper applications are answered in person: no deadline,
+no portal response.
+
+| Rule | Setting (Admission Settings) | Default |
+|---|---|---|
+| Days to accept an offer | `offer_response_days` | 14 |
+| Reminder before the deadline | `offer_reminder_days` (0: none) | 3 |
+| Enrol online applicants only once they accept | `enrolment_needs_acceptance` | on |
+| Email applicants | `notify_applicants` | on |
+
+Emails (`educore.admissions.notify`), queued with the application as reference: submission received, a rejected
+document (with the reason), offer made, reminder, offer accepted, offer declined, offer lapsed, unsuccessful. A site
+with no outgoing email account notes each unsent email on the application's timeline instead of failing.
+
+Access fix with this phase: an application belongs to its first choice's campus; later choices at other campuses no
+longer hide it from that campus's officers (Applicant Choice.campus ignores User Permissions).
 
 ## Sources
 

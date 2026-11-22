@@ -100,6 +100,10 @@ SETTINGS_DEFAULTS = {
 	"max_choices": 3,
 	"approval_needs_verified_documents": 1,
 	"approval_needs_fee": 1,
+	"offer_response_days": 14,
+	"offer_reminder_days": 3,
+	"enrolment_needs_acceptance": 1,
+	"notify_applicants": 1,
 }
 
 

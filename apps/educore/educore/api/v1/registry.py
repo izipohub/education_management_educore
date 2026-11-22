@@ -10,6 +10,7 @@ from education.education.api import enroll_student
 from frappe import _
 from frappe.utils import getdate, nowdate, validate_email_address
 
+from educore.admissions import offers
 from educore.finance.student_fees import fee_structure_for
 
 FIELDS = [
@@ -26,6 +27,9 @@ FIELDS = [
 	"academic_term",
 	"application_status as status",
 	"educore_decided_on as decided_on",
+	"educore_applicant_user as applicant_user",
+	"educore_offer_status as offer_status",
+	"educore_offer_deadline as offer_deadline",
 ]
 
 
@@ -42,11 +46,19 @@ def _offer_row(row) -> dict:
 	structure = fee_structure_for(row["offering"], row["academic_year"]) if row.get("offering") else None
 	row["fees"] = frappe.db.get_value("Fee Structure", structure, "total_amount") if structure else None
 	row["enrollment_date"] = _default_enrollment_date(row.get("academic_term"))
+	row["online"] = bool(row.pop("applicant_user", None))
+	# online offers are enrolled once accepted, when the university says so (Admission Settings)
+	row["needs_acceptance"] = row["online"] and _needs_acceptance() and row.get("offer_status") != offers.ACCEPTED
 	return row
+
+
+def _needs_acceptance() -> bool:
+	return bool(frappe.get_cached_doc("Admission Settings").enrolment_needs_acceptance)
 
 
 def _admitted_row(row) -> dict:
 	row = dict(row)
+	row.pop("applicant_user", None)
 	row["applicant"] = row.get("title") or " ".join(p for p in (row.get("first_name"), row.get("last_name")) if p)
 	student = frappe.db.get_value("Student", {"student_applicant": row["name"]}, ["name", "user"], as_dict=True)
 	row["student"] = student.name if student else None
@@ -132,6 +144,8 @@ def enrol(name: str, email: str | None = None, enrollment_date: str | None = Non
 		frappe.throw(_("You are not allowed to enrol students"), frappe.PermissionError)
 	if applicant.application_status != "Approved":
 		frappe.throw(_("{0} is {1}: only an approved applicant can be enrolled").format(name, applicant.application_status))
+	if offers.needs_acceptance(applicant):
+		frappe.throw(_("{0} has not accepted the offer yet").format(applicant.title))
 
 	email = (email or "").strip().lower() or applicant.student_email_id
 	if not email:

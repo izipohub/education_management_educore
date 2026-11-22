@@ -10,6 +10,12 @@
   "rules_column",
   "approval_needs_verified_documents",
   "approval_needs_fee",
+  "offers_section",
+  "offer_response_days",
+  "offer_reminder_days",
+  "offers_column",
+  "enrolment_needs_acceptance",
+  "notify_applicants",
   "scale_section",
   "scale_is_placeholder",
   "best_subjects",
@@ -65,6 +71,43 @@
    "fieldtype": "Check",
    "label": "Approve Only Once the Fee Is Paid or Waived",
    "default": "1"
+  },
+  {
+   "fieldname": "offers_section",
+   "fieldtype": "Section Break",
+   "label": "Offers and Notifications"
+  },
+  {
+   "fieldname": "offer_response_days",
+   "fieldtype": "Int",
+   "label": "Days to Accept an Offer",
+   "default": "14",
+   "description": "After this, an unanswered offer lapses and the place is released."
+  },
+  {
+   "fieldname": "offer_reminder_days",
+   "fieldtype": "Int",
+   "label": "Reminder Before the Deadline (Days)",
+   "default": "3",
+   "description": "0: no reminder."
+  },
+  {
+   "fieldname": "offers_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "enrolment_needs_acceptance",
+   "fieldtype": "Check",
+   "label": "Enrol Only Accepted Offers",
+   "default": "1",
+   "description": "Online applications only: paper applications are accepted in person."
+  },
+  {
+   "fieldname": "notify_applicants",
+   "fieldtype": "Check",
+   "label": "Email Applicants",
+   "default": "1",
+   "description": "On submission, a rejected document, the decision, a reminder and a lapsed offer."
   },
   {
    "fieldname": "scale_section",

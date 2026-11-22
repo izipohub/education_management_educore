@@ -15,6 +15,11 @@ export interface Offer {
   fees: number | null;
   /** suggested: the first term's start, or today once that has passed */
   enrollment_date: string;
+  online: boolean;
+  offer_status: "Awaiting response" | "Accepted" | null;
+  offer_deadline: string | null;
+  /** online offers wait for the applicant to accept (Admission Settings) */
+  needs_acceptance: boolean;
 }
 
 export interface Invoice {

@@ -26,6 +26,8 @@ has_permission = {
 scheduler_events = {
 	# application fees paid by EFT: match the imported bank statement to applications
 	"hourly": ["educore.admissions.fees.match_bank_transactions"],
+	# offers: reminders before the deadline, and unanswered offers lapse
+	"daily": ["educore.admissions.offers.daily"],
 }
 
 # Only back-office positions (Desk Access) and System Managers open the Desk; others go to the Vue app
@@ -40,7 +42,10 @@ doc_events = {
 	"Program": {"validate": "educore.academics.catalogue.validate_program"},
 	"Course": {"validate": "educore.academics.catalogue.validate_course"},
 	# Applicants, students and enrolments are on a programme offering: campus, mode, faculty
-	"Student Applicant": {"validate": "educore.academics.students.validate_applicant"},
+	"Student Applicant": {
+		"validate": "educore.academics.students.validate_applicant",
+		"on_update": "educore.admissions.notify.on_applicant_update",
+	},
 	"Student": {"validate": "educore.academics.students.validate_student"},
 	"Program Enrollment": {
 		"validate": "educore.academics.students.validate_enrollment",

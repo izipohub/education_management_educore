@@ -14,9 +14,9 @@ from frappe.utils import add_months, getdate, now_datetime, nowdate
 
 from educore.admissions import application as rules
 from educore.admissions import pathways
-from educore.admissions import fees
+from educore.admissions import fees, notify, offers
 
-STATUSES = ("Applied", "Approved", "Rejected", "Admitted")
+STATUSES = ("Applied", "Approved", "Rejected", "Declined", "Lapsed", "Admitted")
 NEEDS_REASON = ("Reject", "Withdraw Offer")
 
 FIELDS = [
@@ -36,6 +36,8 @@ FIELDS = [
 	"educore_decision_reason as decision_reason",
 	"educore_points as points",
 	"educore_fee_status as fee_status",
+	"educore_offer_status as offer_status",
+	"educore_offer_deadline as offer_deadline",
 ]
 
 #: who checks documents and waives fees
@@ -143,11 +145,14 @@ def _capacity(offerings: set[str], years: set[str]) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-def decide(name: str, action: str, reason: str | None = None) -> dict:
-	"""Approve, Reject, Withdraw Offer or Reconsider an application"""
+def decide(name: str, action: str, reason: str | None = None, conditions: str | None = None) -> dict:
+	"""Approve (optionally with offer conditions), Reject, Withdraw Offer or Reconsider an application"""
 	doc = frappe.get_doc("Student Applicant", name)
 	# campus scope and role: before anything is written
 	doc.check_permission("write")
+	if action == "Approve":
+		# saved first, like the reason: the workflow action reloads the applicant
+		doc.db_set("educore_offer_conditions", (conditions or "").strip() or None)
 	if action in NEEDS_REASON:
 		if not (reason or "").strip():
 			frappe.throw(_("Give the reason for this decision"))
@@ -263,9 +268,22 @@ def review(name: str) -> dict:
 			"bank_transaction": doc.get("educore_fee_bank_transaction"),
 			"note": doc.get("educore_fee_note"),
 		},
+		"offer": _offer(doc),
 		"can_review": bool(set(frappe.get_roles()) & set(REVIEW_ROLES)) and doc.has_permission("write"),
 		"actions": _actions(doc),
 		**_completeness(doc),
+	}
+
+
+def _offer(doc) -> dict | None:
+	if not doc.get("educore_offer_status") and not doc.get("educore_offer_conditions"):
+		return None
+	return {
+		"status": doc.get("educore_offer_status"),
+		"deadline": str(doc.educore_offer_deadline) if doc.get("educore_offer_deadline") else None,
+		"responded_on": str(doc.educore_offer_responded_on) if doc.get("educore_offer_responded_on") else None,
+		"conditions": doc.get("educore_offer_conditions"),
+		"decline_reason": doc.get("educore_offer_decline_reason"),
 	}
 
 
@@ -287,6 +305,16 @@ def verify_document(name: str, document_type: str, verdict: str, reason: str | N
 	row.verified_by = frappe.session.user
 	row.verified_on = now_datetime()
 	doc.save()
+	if verdict == "Rejected":
+		notify.send(doc, "document_rejected", document=document_type, reason=row.rejection_reason)
+	return review(name)
+
+
+@frappe.whitelist(methods=["POST"])
+def extend_offer(name: str, deadline: str) -> dict:
+	"""A later response deadline for an offer still awaiting the applicant's answer"""
+	doc = _reviewable(name, write=True)
+	offers.extend(doc, deadline)
 	return review(name)
 
 

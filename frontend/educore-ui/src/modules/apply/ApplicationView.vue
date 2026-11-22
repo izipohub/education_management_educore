@@ -13,6 +13,7 @@ import { useToast } from "primevue/usetoast";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { formatDate, fromIsoDate, toIsoDate } from "@/core/format";
 import FeePanel from "./FeePanel.vue";
+import OfferPanel from "./OfferPanel.vue";
 import StudiesAndWork from "./StudiesAndWork.vue";
 import {
   type Application,
@@ -345,6 +346,11 @@ async function remove(name: string) {
 
 // submitting
 const declared = ref(false);
+/** after a decision the offer comes first; the application itself is a click away (open while a document needs replacing) */
+const detailsOpen = ref(false);
+const showDetails = computed(
+  () => detailsOpen.value || !app.value?.offer || app.value.documents.some((d) => d.status === "Rejected"),
+);
 async function submit() {
   saving.value = true;
   try {
@@ -358,7 +364,7 @@ async function submit() {
 }
 
 const statusSeverity = computed(() =>
-  ({ Draft: "secondary", Applied: "info", Approved: "success", Rejected: "danger", Admitted: "success" })[
+  ({ Draft: "secondary", Applied: "info", Approved: "success", Rejected: "danger", Declined: "secondary", Lapsed: "secondary", Admitted: "success" })[
     app.value?.status ?? "Draft"
   ],
 );
@@ -369,6 +375,8 @@ const statusText = computed(
       Applied: "Under review",
       Approved: "Offered a place",
       Rejected: "Unsuccessful",
+      Declined: "Offer declined",
+      Lapsed: "Offer lapsed",
       Admitted: "Admitted",
     })[app.value?.status ?? "Draft"],
 );
@@ -429,8 +437,16 @@ const statusText = computed(
 
       <!-- submitted: read only -->
       <template v-if="!app.editable">
-        <article class="card">
-          <p v-if="app.submitted_on">Submitted on {{ formatDate(app.submitted_on) }}. The admissions office reviews your documents and results; you will see their decision here.</p>
+        <OfferPanel v-if="app.offer" :application="app" class="offer-card" @changed="(updated) => (app = updated)" />
+        <Button
+          v-if="!showDetails"
+          label="View application details"
+          text
+          size="small"
+          @click="detailsOpen = true"
+        />
+        <article v-if="showDetails" class="card">
+          <p v-if="app.status === 'Applied' && app.submitted_on">Submitted on {{ formatDate(app.submitted_on) }}. The Admissions Office is reviewing your application; the outcome will be shown here.</p>
           <Message v-if="app.decision_reason" severity="error" :closable="false">{{ app.decision_reason }}</Message>
           <h2>Your choices</h2>
           <ol class="choice-list">
@@ -465,7 +481,7 @@ const statusText = computed(
             </li>
           </ul>
         </article>
-        <article v-if="app.fee.amount" class="card fee-card">
+        <article v-if="app.fee.amount && (showDetails || app.fee.status === 'Unpaid')" class="card fee-card">
           <FeePanel :fee="app.fee" />
         </article>
       </template>
@@ -913,6 +929,10 @@ label {
   margin: 0.25rem 0;
   color: #b91c1c;
   font-size: 0.9rem;
+}
+
+.offer-card {
+  margin-bottom: 1rem;
 }
 
 .fee-card {

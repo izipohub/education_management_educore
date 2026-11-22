@@ -1,6 +1,7 @@
 """Online applications for the demo (development only), one per kind of route, made through the applicant API:
 Nangula Haufiku (school leaver, BACC at Oshakati) and Ndinelao Shikongo (postgraduate, the MBA) have submitted,
-with documents waiting to be checked and the fee not received; Festus Nangolo (mature age entry) has a draft.
+with documents waiting to be checked and the fee not received; Festus Nangolo (mature age entry) has a draft;
+Tomas Iipinge (school leaver, BCS at Windhoek) holds a conditional offer awaiting his response.
 
 Called from demo_students.create, after the users exist. Re-running changes nothing once it is there.
 """
@@ -103,11 +104,48 @@ APPLICATIONS = {
 		("National ID or Passport", "Birth Certificate", "Curriculum Vitae"),
 		False,
 	),
+	# offered a place, with a condition, awaiting their response
+	f"offer.applicant@{DOMAIN}": (
+		"Tomas",
+		"Iipinge",
+		{
+			"pathway": "School leaver",
+			"personal": {"date_of_birth": "2008-01-19", "gender": "Male", "nationality": "Namibian", "city": "Windhoek"},
+			"school": {"centre_number": "DEMO-101"},
+			"exam_number": "DEMO-101-0233",
+			"exam_year": 2026,
+			"results": [
+				{"subject": "English Second Language", "level": "NSSCO", "grade": "B"},
+				{"subject": "Mathematics", "level": "NSSCAS", "grade": "c"},
+				{"subject": "Physical Science", "level": "NSSCO", "grade": "B"},
+				{"subject": "Computer Studies", "level": "NSSCO", "grade": "A"},
+				{"subject": "Geography", "level": "NSSCO", "grade": "C"},
+			],
+			"choices": ["BCS-WHK-FT", "DIT-WHK-PT"],
+		},
+		("National ID or Passport", "Birth Certificate", "NSSC Statement of Results or Certificate"),
+		"offer",
+	),
 }
 
 
 def create() -> list[str]:
 	return [name for login, spec in APPLICATIONS.items() if (name := _create(login, *spec))]
+
+
+def _offer(name: str):
+	"""As the Admissions Office: documents verified, fee waived, place offered with a condition"""
+	from frappe.model.workflow import apply_workflow
+
+	from educore.admissions import fees
+
+	doc = frappe.get_doc("Student Applicant", name)
+	for row in doc.educore_documents:
+		row.status, row.verified_by, row.verified_on = "Verified", "Administrator", frappe.utils.now_datetime()
+	doc.save(ignore_permissions=True)
+	fees.waive(name, "Demo: fee waived")
+	frappe.db.set_value("Student Applicant", name, "educore_offer_conditions", "Final NSSCAS results to be submitted by 31 January 2027.")
+	apply_workflow(frappe.get_doc("Student Applicant", name), "Approve")
 
 
 def _create(login, first_name, last_name, application, documents, submit) -> str | None:
@@ -139,4 +177,6 @@ def _create(login, first_name, last_name, application, documents, submit) -> str
 		result = apply.submit(declaration=True) if submit else apply.my_application()
 	finally:
 		frappe.set_user("Administrator")
+	if submit == "offer":
+		_offer(result["name"])
 	return result["name"]

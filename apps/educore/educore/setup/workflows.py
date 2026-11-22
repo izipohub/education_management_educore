@@ -11,8 +11,16 @@ import frappe
 ADMISSION_WORKFLOW = "EduCore Admission Decision"
 
 #: Workflow State: indicator style
-STATES = {"Draft": "", "Applied": "Primary", "Approved": "Success", "Rejected": "Danger", "Admitted": "Info"}
-ACTIONS = ("Submit", "Approve", "Reject", "Withdraw Offer", "Reconsider")
+STATES = {
+	"Draft": "",
+	"Applied": "Primary",
+	"Approved": "Success",
+	"Rejected": "Danger",
+	"Declined": "Warning",
+	"Lapsed": "",
+	"Admitted": "Info",
+}
+ACTIONS = ("Submit", "Approve", "Reject", "Withdraw Offer", "Decline Offer", "Reconsider")
 
 #: (state, role that may edit the application in that state). The first is where every application starts.
 DOCUMENT_STATES = (
@@ -21,6 +29,9 @@ DOCUMENT_STATES = (
 	("Applied", "Academics User"),
 	("Approved", "Academics User"),
 	("Rejected", "Registrar"),
+	# the applicant declined the offer, or it lapsed unanswered (educore.admissions.offers): the place is free again
+	("Declined", "Registrar"),
+	("Lapsed", "Registrar"),
 	# set by Education's enroll step, not by an action
 	("Admitted", "Registrar"),
 )
@@ -33,6 +44,10 @@ TRANSITIONS = (
 	("Applied", "Reject", "Rejected", ("Admissions Officer", "Registrar"), False),
 	("Approved", "Withdraw Offer", "Rejected", ("Admissions Officer", "Registrar"), False),
 	("Rejected", "Reconsider", "Applied", ("Registrar",), False),
+	# the applicant answers their own offer (educore.api.v1.apply.decline_offer)
+	("Approved", "Decline Offer", "Declined", ("Applicant",), True),
+	("Declined", "Reconsider", "Applied", ("Registrar",), False),
+	("Lapsed", "Reconsider", "Applied", ("Registrar",), False),
 )
 
 

@@ -1,7 +1,9 @@
 import { get, post } from "@/core/api/client";
 import type { Employment, PriorQualification, Referee } from "@/modules/apply/api";
 
-export const STATUSES = ["Applied", "Approved", "Rejected", "Admitted"] as const;
+export const STATUSES = ["Applied", "Approved", "Rejected", "Declined", "Lapsed", "Admitted"] as const;
+/** shown only when there are some: declined and lapsed offers */
+export const OCCASIONAL: Status[] = ["Declined", "Lapsed"];
 export type Status = (typeof STATUSES)[number];
 export type Action = "Approve" | "Reject" | "Withdraw Offer" | "Reconsider";
 
@@ -33,6 +35,19 @@ export interface Application {
   /** what stops approving it; empty: ready */
   blockers: string[];
   ready: boolean;
+  /** online offers: the applicant's response */
+  offer_status: OfferStatus | null;
+  offer_deadline: string | null;
+}
+
+export type OfferStatus = "Awaiting response" | "Accepted" | "Declined" | "Lapsed";
+
+export interface Offer {
+  status: OfferStatus | null;
+  deadline: string | null;
+  responded_on: string | null;
+  conditions: string | null;
+  decline_reason: string | null;
 }
 
 export interface ReviewDocument {
@@ -73,6 +88,7 @@ export interface Review {
   documents: ReviewDocument[];
   missing_documents: string[];
   fee: { amount: number | null; status: string | null; paid_on: string | null; voucher: string | null; bank_transaction: string | null; note: string | null };
+  offer: Offer | null;
   can_review: boolean;
   actions: Action[];
   online: boolean;
@@ -113,6 +129,10 @@ export function listApplications(params: { status: Status; academic_year?: strin
   return get<ApplicationsPage>("educore.api.v1.admissions.applications", params);
 }
 
-export function decide(name: string, action: Action, reason?: string) {
-  return post<Application>("educore.api.v1.admissions.decide", { name, action, reason });
+export function decide(name: string, action: Action, reason?: string, conditions?: string) {
+  return post<Application>("educore.api.v1.admissions.decide", { name, action, reason, conditions });
+}
+
+export function extendOffer(name: string, deadline: string) {
+  return post<Review>("educore.api.v1.admissions.extend_offer", { name, deadline });
 }

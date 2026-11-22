@@ -145,7 +145,7 @@ export interface Personal {
 
 export interface Application {
   name: string;
-  status: "Draft" | "Applied" | "Approved" | "Rejected" | "Admitted";
+  status: "Draft" | "Applied" | "Approved" | "Rejected" | "Declined" | "Lapsed" | "Admitted";
   editable: boolean;
   intake: string;
   academic_year: string;
@@ -171,6 +171,24 @@ export interface Application {
   submitted_on: string | null;
   decision_reason: string | null;
   fee: Fee;
+  /** once a place is offered */
+  offer: Offer | null;
+}
+
+export interface Offer {
+  status: "Awaiting response" | "Accepted" | "Declined" | "Lapsed";
+  programme: string;
+  campus: string;
+  mode_of_study: string;
+  academic_year: string;
+  starts_on: string | null;
+  annual_fees: number | null;
+  conditions: string | null;
+  /** respond by */
+  deadline: string | null;
+  responded_on: string | null;
+  decided_on: string | null;
+  university: string;
 }
 
 export interface Fee {
@@ -211,6 +229,8 @@ export const myApplication = () => get<Application | null>(`${API}.my_applicatio
 export const saveDraft = (data: DraftChanges) => post<Application>(`${API}.save`, { data });
 export const removeDocument = (documentType: string) =>
   post<Application>(`${API}.remove_document`, { document_type: documentType });
+export const acceptOffer = () => post<Application>(`${API}.accept_offer`, {});
+export const declineOffer = (reason: string | null) => post<Application>(`${API}.decline_offer`, { reason });
 export const submitApplication = () => post<Application>(`${API}.submit`, { declaration: true });
 
 /** A document upload (multipart): the file, its type and the certification date */
