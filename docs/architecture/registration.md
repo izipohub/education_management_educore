@@ -37,6 +37,12 @@ students and `/registrations` for faculty officers).
 
 ## Later
 
+- **Next: course scheduling in the curriculum (academic side).** Each Program Course already carries its year of
+  study and when it runs (`educore_semester`: Semester 1, Semester 2 or Year, i.e. full year), but it is set only
+  in Desk. Wanted: a screen in the Vue app where the academic side (faculty officer, HOD, Registrar) lays out
+  each programme's curriculum by year and semester, with credits per semester, and moves courses between Semester 1,
+  Semester 2 and full year. The semester then shows on the proof of registration (a column, courses grouped by
+  semester, credits per semester), in the student's course choice and in the registration approval page.
 - Academic standing set automatically from examination results (examinations module).
 - Repeats and prerequisites from results, instead of the student choosing other years' courses freely.
 - Student fee payments matched from the bank statement by student number (as application fees are today).

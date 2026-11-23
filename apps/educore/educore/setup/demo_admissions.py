@@ -82,6 +82,7 @@ def _fee_bank_account():
 	if not company:
 		return
 	ensure_fee_setup(company)
+	_university_contact(company)
 	if not frappe.db.exists("Bank", DEMO_BANK):
 		frappe.get_doc({"doctype": "Bank", "bank_name": DEMO_BANK}).insert(ignore_permissions=True)
 	abbr = frappe.get_cached_value("Company", company, "abbr")
@@ -112,6 +113,29 @@ def _fee_bank_account():
 		settings.fee_paper_local = settings.fee_paper_local or 200
 		settings.fee_paper_international = settings.fee_paper_international or 350
 		settings.save(ignore_permissions=True)
+
+
+def _university_contact(company: str):
+	"""The demo university's address and contact details (fictional), as a university keeps them on its ERPNext
+	Company: they head its letters and documents"""
+	if not frappe.db.get_value("Company", company, "phone_no"):
+		frappe.db.set_value("Company", company, {
+			"phone_no": "+264 61 000 0000",
+			"email": "registrar@educore.localhost",
+			"website": "educore.localhost",
+		})
+	if not frappe.get_all("Address", filters=[["Dynamic Link", "link_doctype", "=", "Company"], ["Dynamic Link", "link_name", "=", company]], limit=1):
+		frappe.get_doc({
+			"doctype": "Address",
+			"address_title": company,
+			"address_type": "Billing",
+			"address_line1": "Private Bag 99001",
+			"address_line2": "1 Demo Avenue",
+			"city": "Windhoek",
+			"country": "Namibia",
+			"is_your_company_address": 1,
+			"links": [{"link_doctype": "Company", "link_name": company}],
+		}).insert(ignore_permissions=True)
 
 
 def create_admissions_setup():

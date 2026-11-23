@@ -56,3 +56,16 @@ class TestStudentRecords(IntegrationTestCase):
 		self.assertTrue(frappe.local.response.filecontent.startswith(b"%PDF"))
 		_as("student1.osh")
 		self.assertRaises(frappe.PermissionError, documents.proof_of_registration, enrollment)
+
+	def test_a_proof_of_registration_can_be_verified_and_not_forged(self):
+		frappe.set_user("Administrator")
+		enrollment = frappe.db.get_value("Program Enrollment", {"docstatus": 1}, "name")
+		code = documents._code(enrollment)
+		self.assertIn(code, documents._verify_url(enrollment))
+		self.assertNotEqual(code, documents._code(enrollment + "X"))
+		frappe.set_user("Guest")
+		documents.verify(enrollment, code)
+		self.assertEqual(frappe.local.response.get("http_status_code") or 200, 200)
+		documents.verify(enrollment, "FORGED1234")
+		self.assertEqual(frappe.local.response.get("http_status_code"), 404)
+
