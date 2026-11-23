@@ -111,6 +111,19 @@ const subtitle = computed(() => {
     <template v-if="data">
       <EcPanel v-for="year in years" :key="year" :title="`Year ${year}`" :note="yearNote(year)" flush>
         <table class="ec-table curriculum">
+          <!-- the same widths in every year, so the columns line up from one year to the next -->
+          <colgroup>
+            <col class="c-code" />
+            <col />
+            <col class="c-num" />
+            <col class="c-num" />
+            <col class="c-required" />
+            <template v-if="editable">
+              <col class="c-period" />
+              <col class="c-year" />
+              <col class="c-remove" />
+            </template>
+          </colgroup>
           <thead>
             <tr>
               <th>Code</th>
@@ -178,8 +191,42 @@ const subtitle = computed(() => {
 </template>
 
 <style scoped>
+.curriculum {
+  table-layout: fixed;
+}
+
 .curriculum td {
   vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+
+.c-code {
+  width: 7.5rem;
+}
+
+.c-num {
+  width: 5.5rem;
+}
+
+.c-required {
+  width: 7rem;
+}
+
+.c-period {
+  width: 10.5rem;
+}
+
+.c-year {
+  width: 9rem;
+}
+
+.c-remove {
+  width: 3.5rem;
+}
+
+.period,
+.year {
+  width: 100%;
 }
 
 .read-only {
@@ -193,14 +240,6 @@ const subtitle = computed(() => {
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-}
-
-.period {
-  width: 9rem;
-}
-
-.year {
-  width: 6.5rem;
 }
 
 .add {
