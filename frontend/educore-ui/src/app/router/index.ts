@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useSession } from "@/core/auth/session";
+import { CURRICULUM_ROLES } from "@/modules/curriculum/api";
 import { FINANCE_ROLES } from "@/modules/finance/api";
 import { RECORD_ROLES } from "@/modules/records/api";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
@@ -120,6 +121,32 @@ export const router = createRouter({
           component: () => import("@/modules/records/StudentPage.vue"),
           props: true,
           meta: { title: "Student", roles: RECORD_ROLES },
+        },
+        {
+          path: "registration-setup",
+          name: "registration-setup",
+          component: () => import("@/modules/setup/RegistrationSetupView.vue"),
+          meta: { title: "Registration setup", roles: ["Registrar", "System Manager"] },
+        },
+        {
+          path: "registration-setup/periods/:name",
+          name: "registration-period",
+          component: () => import("@/modules/setup/PeriodPage.vue"),
+          props: true,
+          meta: { title: "Registration setup", roles: ["Registrar", "System Manager"] },
+        },
+        {
+          path: "curriculum",
+          name: "curriculum",
+          component: () => import("@/modules/curriculum/CurriculumView.vue"),
+          meta: { title: "Curriculum", roles: CURRICULUM_ROLES },
+        },
+        {
+          path: "curriculum/:name",
+          name: "curriculum-programme",
+          component: () => import("@/modules/curriculum/CurriculumPage.vue"),
+          props: true,
+          meta: { title: "Curriculum", roles: CURRICULUM_ROLES },
         },
         {
           path: "application-fees",

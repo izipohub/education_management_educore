@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { semesterLabel } from "@/modules/curriculum/api";
 import Textarea from "primevue/textarea";
 import { useToast } from "primevue/usetoast";
 import { computed, ref, watch } from "vue";
@@ -78,10 +79,11 @@ const sendBack = () =>
       <EcPanel title="Courses" :note="`${reg.courses.length} courses · ${reg.credits} credits`" flush>
         <table class="ec-table">
           <thead>
-            <tr><th>Course</th><th class="num">Credits</th></tr>
+            <tr><th>Runs in</th><th>Course</th><th class="num">Credits</th></tr>
           </thead>
           <tbody>
             <tr v-for="c in reg.courses" :key="c.course">
+              <td class="ec-nowrap ec-muted">{{ semesterLabel(c.semester) }}</td>
               <td>{{ c.course_name }}</td>
               <td class="num">{{ c.credits }}</td>
             </tr>

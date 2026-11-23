@@ -225,9 +225,14 @@ def queue(status: str = rules.SUBMITTED, academic_year: str | None = None) -> di
 def _queue_row(row, approved: bool) -> dict:
 	"""A registration with its courses, credits and the student's standing"""
 	doc = frappe.get_doc("Program Enrollment", row.name)
-	row["courses"] = [
-		{"course": c.course, "course_name": c.course_name, "credits": rules.credits(c.course)} for c in doc.courses
-	]
+	when = rules.semesters(doc.program)
+	row["courses"] = sorted(
+		(
+			{"course": c.course, "course_name": c.course_name, "credits": rules.credits(c.course), "semester": when.get(c.course, "Year")}
+			for c in doc.courses
+		),
+		key=lambda c: (rules.SEMESTER_ORDER.get(c["semester"], 9), c["course_name"]),
+	)
 	row["credits"] = sum(c["credits"] for c in row["courses"])
 	row["standing"] = frappe.db.get_value("Student", row.student, "educore_academic_standing")
 	if approved:

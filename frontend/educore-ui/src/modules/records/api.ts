@@ -1,5 +1,6 @@
 import { get } from "@/core/api/client";
 import type { Personal } from "@/modules/apply/api";
+import type { Semester } from "@/modules/curriculum/api";
 
 export interface StudentRow {
   name: string;
@@ -31,7 +32,7 @@ export interface Enrolment {
   year_of_study: number | null;
   enrollment_date: string | null;
   status: string;
-  courses: { course: string; course_name: string; credits: number }[];
+  courses: { course: string; course_name: string; credits: number; semester: Semester }[];
   credits: number;
 }
 

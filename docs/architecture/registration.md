@@ -35,15 +35,16 @@ students and `/registrations` for faculty officers).
 | Dates, late registration, late fee | Registration Period (per academic year) | |
 | Academic standing and note | Student | Good standing |
 
+## In the app
+
+- **Curriculum** (faculty officer, head of department, dean, Registrar): each programme's courses by year of study and
+  when they run, Semester 1, Semester 2 or the full year, with credits per period. Registration, the approval page,
+  the student record and the proof of registration all read it.
+- **Registration setup** (Registrar): each academic year's period (opens, closes, late registration until, late
+  fee) and the rules (outstanding balance allowed, deposit, most credits per year, faculty approval).
+
 ## Later
 
-- **Next: course scheduling in the curriculum (academic side).** Each Program Course already carries its year of
-  study and when it runs (`educore_semester`: Semester 1, Semester 2 or Year, i.e. full year), but it is set only
-  in Desk. Wanted: a screen in the Vue app where the academic side (faculty officer, HOD, Registrar) lays out
-  each programme's curriculum by year and semester, with credits per semester, and moves courses between Semester 1,
-  Semester 2 and full year. The semester then shows on the proof of registration (a column, courses grouped by
-  semester, credits per semester), in the student's course choice and in the registration approval page.
 - Academic standing set automatically from examination results (examinations module).
 - Repeats and prerequisites from results, instead of the student choosing other years' courses freely.
 - Student fee payments matched from the bank statement by student number (as application fees are today).
-- Registration screens for the Registrar: periods and settings in the Vue app (Desk for now).

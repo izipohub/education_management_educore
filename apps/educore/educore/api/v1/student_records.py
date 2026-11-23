@@ -106,10 +106,14 @@ def student(name: str) -> dict:
 		],
 		order_by="academic_year desc, enrollment_date desc",
 	):
-		courses = [
-			{"course": c.course, "course_name": c.course_name, "credits": registration_rules.credits(c.course)}
-			for c in frappe.get_doc("Program Enrollment", pe.name).courses
-		]
+		when = registration_rules.semesters(pe.program)
+		courses = sorted(
+			(
+				{"course": c.course, "course_name": c.course_name, "credits": registration_rules.credits(c.course), "semester": when.get(c.course, "Year")}
+				for c in frappe.get_doc("Program Enrollment", pe.name).courses
+			),
+			key=lambda c: (registration_rules.SEMESTER_ORDER.get(c["semester"], 9), c["course_name"]),
+		)
 		enrolments.append({
 			**pe,
 			"status": "Registered" if pe.docstatus == 1 else (pe.registration_status or "Draft"),

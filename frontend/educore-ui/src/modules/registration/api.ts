@@ -1,4 +1,5 @@
 import { get, post } from "@/core/api/client";
+import type { Semester } from "@/modules/curriculum/api";
 
 export type RegistrationStatus = "Draft" | "Submitted" | "Returned" | "Approved";
 
@@ -59,7 +60,8 @@ export interface QueueRow {
   review_note: string | null;
   standing: string;
   credits: number;
-  courses: { course: string; course_name: string; credits: number }[];
+  /** in the order they run: Semester 1, Semester 2, then the full year */
+  courses: { course: string; course_name: string; credits: number; semester: Semester }[];
 }
 
 export interface Queue {

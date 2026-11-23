@@ -48,6 +48,7 @@ STYLE = """
   table.list td { border: 1px solid #e0dccf; padding: 5px 8px; font-size: 9pt; }
   table.list .num { text-align: right; }
   table.list tfoot td { font-weight: bold; background: #faf9f5; }
+  table.list tr.sub td { color: #4b4f5a; font-size: 8.5pt; background: #faf9f5; }
   .section { font-size: 8pt; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #4b4f5a; margin: 14px 0 4px; }
   .sign { width: 100%%; border-collapse: collapse; margin-top: 34px; }
   .sign td { vertical-align: bottom; width: 50%%; }
@@ -344,19 +345,27 @@ def proof_of_registration(enrollment: str):
 		("Year of study", pe.get("educore_year_of_study") or None),
 	])
 
+	# the courses by when they run (the programme's curriculum), with the credits of each period
+	when = registration_rules.semesters(pe.program)
 	courses = []
 	for c in pe.courses:
 		code, nqf = frappe.db.get_value("Course", c.course, ["educore_course_code", "educore_nqf_level"]) or (None, None)
-		courses.append((code or c.course, c.course_name, nqf, registration_rules.credits(c.course)))
-	course_rows = "".join(
-		f"<tr><td>{_e(code)}</td><td>{_e(name)}</td><td class='num'>{_e(nqf)}</td><td class='num'>{credits}</td></tr>"
-		for code, name, nqf, credits in courses
-	)
+		courses.append((when.get(c.course, "Year"), code or c.course, c.course_name, nqf, registration_rules.credits(c.course)))
+	courses.sort(key=lambda c: (registration_rules.SEMESTER_ORDER.get(c[0], 9), c[1]))
+	course_rows = ""
+	for period in sorted({c[0] for c in courses}, key=lambda p: registration_rules.SEMESTER_ORDER.get(p, 9)):
+		group = [c for c in courses if c[0] == period]
+		label = registration_rules.SEMESTER_LABELS.get(period, period)
+		course_rows += "".join(
+			f"<tr><td>{_e(label)}</td><td>{_e(code)}</td><td>{_e(name)}</td><td class='num'>{_e(nqf)}</td><td class='num'>{credits}</td></tr>"
+			for _period, code, name, nqf, credits in group
+		)
+		course_rows += f"<tr class='sub'><td colspan='4'>{_e(label)}: {len(group)} courses</td><td class='num'>{sum(c[4] for c in group)}</td></tr>"
 	courses_html = (
 		"<div class='section'>Registered courses</div>"
-		"<table class='list'><thead><tr><th>Code</th><th>Course</th><th class='num'>NQF level</th><th class='num'>Credits</th></tr></thead>"
+		"<table class='list'><thead><tr><th>Period</th><th>Code</th><th>Course</th><th class='num'>NQF level</th><th class='num'>Credits</th></tr></thead>"
 		f"<tbody>{course_rows}</tbody>"
-		f"<tfoot><tr><td></td><td>{len(courses)} courses</td><td></td><td class='num'>{sum(c[3] for c in courses)}</td></tr></tfoot></table>"
+		f"<tfoot><tr><td colspan='4'>Total for the year: {len(courses)} courses</td><td class='num'>{sum(c[4] for c in courses)}</td></tr></tfoot></table>"
 		if courses
 		else ""
 	)

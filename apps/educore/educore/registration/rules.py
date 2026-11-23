@@ -107,6 +107,16 @@ def curriculum(program: str) -> list[dict]:
 	]
 
 
+#: the order courses are shown in, and how each period reads
+SEMESTER_ORDER = {"Semester 1": 1, "Semester 2": 2, "Year": 3}
+SEMESTER_LABELS = {"Semester 1": "Semester 1", "Semester 2": "Semester 2", "Year": "Full year"}
+
+
+def semesters(program: str) -> dict[str, str]:
+	"""When each of the programme's courses runs, from its curriculum: course: Semester 1, Semester 2 or Year"""
+	return {c["course"]: c["semester"] for c in curriculum(program)} if program else {}
+
+
 def customer(student: str) -> str | None:
 	return frappe.db.get_value("Student", student, "customer")
 

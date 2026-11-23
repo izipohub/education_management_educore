@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { semesterLabel } from "@/modules/curriculum/api";
 import { FileText } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
@@ -86,6 +87,7 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
         <table class="ec-table">
           <tbody>
             <tr v-for="c in current.courses" :key="c.course">
+              <td class="ec-nowrap ec-muted">{{ semesterLabel(c.semester) }}</td>
               <td>{{ c.course_name }}</td>
               <td class="num">{{ c.credits }}</td>
             </tr>

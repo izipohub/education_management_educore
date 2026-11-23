@@ -2,10 +2,12 @@
 import {
   Banknote,
   BookOpen,
+  CalendarCog,
   ClipboardCheck,
   FileText,
   GraduationCap,
   House,
+  LibraryBig,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -20,6 +22,7 @@ import { type Component, computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useSession } from "@/core/auth/session";
 import { useBranding } from "@/core/branding";
+import { CURRICULUM_ROLES } from "@/modules/curriculum/api";
 import { FINANCE_ROLES } from "@/modules/finance/api";
 import { RECORD_ROLES } from "@/modules/records/api";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
@@ -70,8 +73,10 @@ const NAV: NavItem[] = [
   { label: "Admissions", icon: UserPlus, to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
   { label: "Registration", icon: UserCheck, to: "/registrations", roles: REGISTRATION_ROLES },
   { label: "Students", icon: Users, to: "/students", roles: RECORD_ROLES },
+  { label: "Curriculum", icon: LibraryBig, to: "/curriculum", roles: CURRICULUM_ROLES },
   { label: "Application fees", icon: Banknote, to: "/application-fees", roles: FINANCE_ROLES },
   { label: "Admission setup", icon: Settings, to: "/admission-setup", roles: ["Registrar", "System Manager"] },
+  { label: "Registration setup", icon: CalendarCog, to: "/registration-setup", roles: ["Registrar", "System Manager"] },
 ];
 
 const nav = computed(() => NAV.filter((item) => !item.roles || session.hasRole(...item.roles)));

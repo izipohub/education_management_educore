@@ -135,7 +135,7 @@ const headerLine = computed(() => {
           </div>
           <label v-for="c in yearCourses" :key="c.course" class="course">
             <Checkbox v-model="chosen" :value="c.course" :disabled="!editable || locked(c)" :input-id="`c-${c.course}`" />
-            <span class="name">{{ c.course_name }} <span class="sub">{{ c.code }} · {{ c.semester }}</span></span>
+            <span class="name">{{ c.course_name }} <span class="sub">{{ c.code }} · {{ c.semester === "Year" ? "Full year" : c.semester }}</span></span>
             <span class="sub">{{ c.credits }} cr</span>
           </label>
 
