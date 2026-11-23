@@ -38,6 +38,8 @@ export interface CurriculumCourse {
   year: number;
   semester: Semester;
   required: boolean;
+  /** courses to pass first (set on the course, wherever it is taught) */
+  prerequisites: string[];
 }
 
 export interface CatalogueCourse {
@@ -65,5 +67,5 @@ export interface Curriculum {
 const API = "educore.api.v1.curriculum";
 export const listProgrammes = () => get<ProgrammeRow[]>(`${API}.programmes`);
 export const getCurriculum = (name: string) => get<Curriculum>(`${API}.programme`, { name });
-export const saveCurriculum = (name: string, courses: Pick<CurriculumCourse, "course" | "year" | "semester" | "required">[]) =>
+export const saveCurriculum = (name: string, courses: Pick<CurriculumCourse, "course" | "year" | "semester" | "required" | "prerequisites">[]) =>
   post<Curriculum>(`${API}.save`, { name, courses });

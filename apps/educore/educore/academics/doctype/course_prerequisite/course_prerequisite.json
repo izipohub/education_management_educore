@@ -1,0 +1,32 @@
+{
+ "name": "Course Prerequisite",
+ "istable": 1,
+ "editable_grid": 1,
+ "permissions": [],
+ "fields": [
+  {
+   "fieldname": "prerequisite",
+   "fieldtype": "Link",
+   "label": "Course to Pass First",
+   "options": "Course",
+   "reqd": 1,
+   "in_list_view": 1
+  }
+ ],
+ "field_order": [
+  "prerequisite"
+ ],
+ "actions": [],
+ "links": [],
+ "states": [],
+ "creation": "2026-11-24 12:00:00.000000",
+ "modified": "2026-11-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Academics",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

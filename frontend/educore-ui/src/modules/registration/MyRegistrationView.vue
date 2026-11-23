@@ -23,7 +23,9 @@ function adopt(next: RegistrationState) {
   // a saved registration's courses; otherwise the year's courses, ready to submit
   chosen.value = next.registration?.courses.length
     ? [...next.registration.courses]
-    : (next.courses ?? []).filter((c) => c.year === year).map((c) => c.course);
+    : (next.courses ?? [])
+        .filter((c) => c.state === "repeat" || (c.year === year && c.state !== "passed" && c.state !== "blocked"))
+        .map((c) => c.course);
 }
 
 onMounted(async () => {
@@ -40,14 +42,17 @@ const editable = computed(
   () => Boolean(period.value) && ["open", "late"].includes(period.value!.state) && (!registration.value || ["Draft", "Returned"].includes(registration.value.status)),
 );
 const year = computed(() => state.value?.year_of_study ?? 1);
-const yearCourses = computed(() => (state.value?.courses ?? []).filter((c) => c.year === year.value));
-const otherCourses = computed(() => (state.value?.courses ?? []).filter((c) => c.year !== year.value));
+/** courses not passed earlier: taken again first */
+const repeats = computed(() => (state.value?.courses ?? []).filter((c) => c.state === "repeat"));
+const yearCourses = computed(() => (state.value?.courses ?? []).filter((c) => c.year === year.value && c.state !== "passed" && c.state !== "repeat"));
+const otherCourses = computed(() => (state.value?.courses ?? []).filter((c) => c.year !== year.value && c.state !== "passed" && c.state !== "repeat"));
+const blockedReason = (c: CurriculumCourse) => (c.state === "blocked" ? `Needs ${c.missing?.join(", ")} passed first` : "");
 const credits = computed(() =>
   (state.value?.courses ?? []).filter((c) => chosen.value.includes(c.course)).reduce((sum, c) => sum + c.credits, 0),
 );
 const overLimit = computed(() => Boolean(state.value?.max_credits) && credits.value > state.value!.max_credits!);
 const blocked = computed(() => (state.value?.blockers?.length ?? 0) > 0);
-const locked = (c: CurriculumCourse) => c.required && c.year === year.value;
+const locked = (c: CurriculumCourse) => c.state === "blocked" || (c.required && (c.year === year.value || c.state === "repeat"));
 
 async function act(run: () => Promise<RegistrationState>, message: string) {
   busy.value = true;
@@ -133,9 +138,21 @@ const headerLine = computed(() => {
               {{ credits }} credits<template v-if="state.max_credits"> of {{ state.max_credits }}</template>
             </span>
           </div>
-          <label v-for="c in yearCourses" :key="c.course" class="course">
+          <template v-if="repeats.length">
+            <p class="group-label">Repeats</p>
+            <label v-for="c in repeats" :key="c.course" class="course">
+              <Checkbox v-model="chosen" :value="c.course" :disabled="!editable || locked(c)" :input-id="`c-${c.course}`" />
+              <span class="name">{{ c.course_name }} <span class="sub">{{ c.code }} · year {{ c.year }} · not passed earlier</span></span>
+              <span class="sub">{{ c.credits }} cr</span>
+            </label>
+            <p class="group-label">Year {{ year }}</p>
+          </template>
+          <label v-for="c in yearCourses" :key="c.course" class="course" :class="{ blocked: c.state === 'blocked' }">
             <Checkbox v-model="chosen" :value="c.course" :disabled="!editable || locked(c)" :input-id="`c-${c.course}`" />
-            <span class="name">{{ c.course_name }} <span class="sub">{{ c.code }} · {{ c.semester === "Year" ? "Full year" : c.semester }}</span></span>
+            <span class="name">
+              {{ c.course_name }} <span class="sub">{{ c.code }} · {{ c.semester === "Year" ? "Full year" : c.semester }}</span>
+              <span v-if="c.state === 'blocked'" class="reason">{{ blockedReason(c) }}</span>
+            </span>
             <span class="sub">{{ c.credits }} cr</span>
           </label>
 
@@ -148,9 +165,12 @@ const headerLine = computed(() => {
               @click="showOther = !showOther"
             />
             <template v-if="showOther">
-              <label v-for="c in otherCourses" :key="c.course" class="course">
-                <Checkbox v-model="chosen" :value="c.course" :input-id="`c-${c.course}`" />
-                <span class="name">{{ c.course_name }} <span class="sub">{{ c.code }} · year {{ c.year }}</span></span>
+              <label v-for="c in otherCourses" :key="c.course" class="course" :class="{ blocked: c.state === 'blocked' }">
+                <Checkbox v-model="chosen" :value="c.course" :disabled="c.state === 'blocked'" :input-id="`c-${c.course}`" />
+                <span class="name">
+                  {{ c.course_name }} <span class="sub">{{ c.code }} · year {{ c.year }}</span>
+                  <span v-if="c.state === 'blocked'" class="reason">{{ blockedReason(c) }}</span>
+                </span>
                 <span class="sub">{{ c.credits }} cr</span>
               </label>
             </template>
@@ -275,5 +295,24 @@ h2 {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
+}
+
+.group-label {
+  margin: 0.75rem 0 0.25rem;
+  color: var(--ec-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.course.blocked .name {
+  color: var(--ec-muted);
+}
+
+.reason {
+  display: block;
+  color: var(--ec-muted);
+  font-size: 0.75rem;
 }
 </style>

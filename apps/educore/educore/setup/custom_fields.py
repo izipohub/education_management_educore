@@ -188,6 +188,15 @@ CUSTOM_FIELDS = {
 			"fieldtype": "Int",
 			"insert_after": "educore_credits",
 		},
+		# prerequisites: courses to pass first, wherever the course is taught (set by the faculty)
+		{
+			"fieldname": "educore_prerequisites",
+			"label": "Prerequisites",
+			"fieldtype": "Table",
+			"options": "Course Prerequisite",
+			"insert_after": "educore_nqf_level",
+			"description": "Courses to pass before this one, in any programme that teaches it.",
+		},
 	],
 	# Admissions: an applicant applies for an offering (programme + campus + mode), not just a programme
 	"Student Applicant": [

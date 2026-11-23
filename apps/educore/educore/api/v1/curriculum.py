@@ -94,6 +94,34 @@ def programme(name: str) -> dict:
 	}
 
 
+def _set_prerequisites(course: str, wanted: list[str]):
+	"""The courses to pass before this one; set on the course, so they hold wherever it is taught"""
+	wanted = list(dict.fromkeys(w for w in wanted if w))
+	for prerequisite in wanted:
+		if prerequisite == course:
+			frappe.throw(_("{0} cannot be its own prerequisite").format(course))
+		if not frappe.db.exists("Course", prerequisite):
+			frappe.throw(_("{0} is not a course").format(prerequisite))
+		# no circle: a prerequisite that itself needs this course (directly or further back)
+		if course in _all_prerequisites(prerequisite):
+			frappe.throw(_("{0} already needs {1}: they cannot need each other").format(prerequisite, course))
+	doc = frappe.get_doc("Course", course)
+	if [r.prerequisite for r in doc.get("educore_prerequisites") or []] == wanted:
+		return
+	doc.set("educore_prerequisites", [{"prerequisite": p} for p in wanted])
+	doc.flags.ignore_permissions = True
+	doc.save()
+
+
+def _all_prerequisites(course: str, seen: set | None = None) -> set:
+	seen = seen if seen is not None else set()
+	for p in rules.prerequisites(course):
+		if p not in seen:
+			seen.add(p)
+			_all_prerequisites(p, seen)
+	return seen
+
+
 @frappe.whitelist(methods=["POST"])
 def save(name: str, courses: list | str) -> dict:
 	"""The programme's courses, each with its year of study, semester and whether it is required"""
@@ -130,5 +158,8 @@ def save(name: str, courses: list | str) -> dict:
 		)
 	doc.flags.ignore_permissions = True  # the role and the faculty scope are checked above
 	doc.save()
+	for row in courses:
+		if "prerequisites" in row:
+			_set_prerequisites(row["course"], row.get("prerequisites") or [])
 	frappe.clear_document_cache("Program", name)
 	return programme(name)

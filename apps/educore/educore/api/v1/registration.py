@@ -60,7 +60,8 @@ def _state(student: str) -> dict:
 				"state": rules.period_state(period),
 			},
 			"year_of_study": year,
-			"courses": rules.curriculum(latest.program),
+			# each course with what is open to this student: passed, a repeat, blocked by a prerequisite, open
+			"courses": _with_states(student, latest.program, year),
 			"max_credits": rules.settings().max_credits or 0,
 			"fees": {
 				"year": rules.year_fees(offering, period.academic_year),
@@ -73,6 +74,16 @@ def _state(student: str) -> dict:
 		}
 	)
 	return result
+
+
+def _with_states(student: str, program: str, year: int) -> list[dict]:
+	states = rules.course_states(student, program, year)
+	names = {c["course"]: c["course_name"] for c in rules.curriculum(program)}
+	out = []
+	for c in rules.curriculum(program):
+		state = states.get(c["course"], {"state": rules.OPEN, "missing": []})
+		out.append({**c, "state": state["state"], "missing": [names.get(m, m) for m in state["missing"]]})
+	return out
 
 
 def _serialise(doc) -> dict:
@@ -153,7 +164,7 @@ def submit() -> dict:
 	problems = rules.blockers(student, doc.educore_programme_offering, period)
 	if problems:
 		frappe.throw(_("You cannot register yet:") + "<br>" + "<br>".join(f"• {p}" for p in problems))
-	rules.check_courses(doc.program, doc.educore_year_of_study, [row.course for row in doc.courses])
+	rules.check_courses(doc.program, doc.educore_year_of_study, [row.course for row in doc.courses], doc.student)
 	doc.educore_registration_status = rules.SUBMITTED
 	doc.educore_submitted_on = now_datetime()
 	doc.educore_late = 1 if rules.period_state(period) == "late" else 0
@@ -226,9 +237,16 @@ def _queue_row(row, approved: bool) -> dict:
 	"""A registration with its courses, credits and the student's standing"""
 	doc = frappe.get_doc("Program Enrollment", row.name)
 	when = rules.semesters(doc.program)
+	states = rules.course_states(row.student, doc.program, doc.get("educore_year_of_study") or 1)
 	row["courses"] = sorted(
 		(
-			{"course": c.course, "course_name": c.course_name, "credits": rules.credits(c.course), "semester": when.get(c.course, "Year")}
+			{
+				"course": c.course,
+				"course_name": c.course_name,
+				"credits": rules.credits(c.course),
+				"semester": when.get(c.course, "Year"),
+				"repeat": states.get(c.course, {}).get("state") == rules.REPEAT,
+			}
 			for c in doc.courses
 		),
 		key=lambda c: (rules.SEMESTER_ORDER.get(c["semester"], 9), c["course_name"]),

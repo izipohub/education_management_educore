@@ -55,7 +55,7 @@ class TestRegistration(IntegrationTestCase):
 		state = api.status()
 		one = [c["course"] for c in state["courses"] if c["year"] == 2][:1]
 		api.save(one)
-		self.assertRaisesRegex(frappe.ValidationError, "Required for year 2", api.submit)
+		self.assertRaisesRegex(frappe.ValidationError, "Required this year", api.submit)
 
 	def test_outstanding_fees_and_standing_block_registration(self):
 		frappe.set_user(ANNA)

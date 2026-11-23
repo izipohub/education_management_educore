@@ -11,6 +11,10 @@ export interface CurriculumCourse {
   year: number;
   semester: string;
   required: boolean;
+  /** for this student, from their published results: passed already, a repeat, blocked by a prerequisite, open */
+  state?: "passed" | "repeat" | "blocked" | "open";
+  /** the prerequisites not passed yet, when blocked */
+  missing?: string[];
 }
 
 export interface MyRegistration {
@@ -61,7 +65,7 @@ export interface QueueRow {
   standing: string;
   credits: number;
   /** in the order they run: Semester 1, Semester 2, then the full year */
-  courses: { course: string; course_name: string; credits: number; semester: Semester }[];
+  courses: { course: string; course_name: string; credits: number; semester: Semester; repeat: boolean }[];
 }
 
 export interface Queue {

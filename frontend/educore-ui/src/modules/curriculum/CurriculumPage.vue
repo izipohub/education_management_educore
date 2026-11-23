@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { X } from "@lucide/vue";
 import Checkbox from "primevue/checkbox";
+import MultiSelect from "primevue/multiselect";
 import Select from "primevue/select";
 import { useToast } from "primevue/usetoast";
 import { computed, ref, watch } from "vue";
 import EcButton from "@/core/ui/EcButton.vue";
+import EcField from "@/core/ui/EcField.vue";
+import EcModal from "@/core/ui/EcModal.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
 import { type Curriculum, type CurriculumCourse, SEMESTERS, type Semester, getCurriculum, saveCurriculum, semesterLabel } from "./api";
@@ -41,7 +44,8 @@ watch(
   { immediate: true },
 );
 
-const key = (r: Pick<CurriculumCourse, "course" | "year" | "semester" | "required">) => `${r.course}|${r.year}|${r.semester}|${r.required}`;
+const key = (r: Pick<CurriculumCourse, "course" | "year" | "semester" | "required" | "prerequisites">) =>
+  `${r.course}|${r.year}|${r.semester}|${r.required}|${[...r.prerequisites].sort().join("+")}`;
 const changed = computed(() => {
   const saved = (data.value?.courses ?? []).map(key).sort().join(",");
   return saved !== rows.value.map(key).sort().join(",");
@@ -79,7 +83,7 @@ function add(year: number) {
   const course = adding.value[year];
   const c = data.value?.catalogue.find((x) => x.course === course);
   if (!c) return;
-  rows.value.push({ course: c.course, course_name: c.course, code: c.code, credits: c.credits ?? 0, nqf_level: c.nqf_level, year, semester: "Semester 1", required: true });
+  rows.value.push({ course: c.course, course_name: c.course, code: c.code, credits: c.credits ?? 0, nqf_level: c.nqf_level, year, semester: "Semester 1", required: true, prerequisites: [] });
   adding.value[year] = null;
 }
 const remove = (r: CurriculumCourse) => rows.value.splice(rows.value.indexOf(r), 1);
@@ -87,7 +91,7 @@ const remove = (r: CurriculumCourse) => rows.value.splice(rows.value.indexOf(r),
 async function save() {
   saving.value = true;
   try {
-    take(await saveCurriculum(props.name, rows.value.map(({ course, year, semester, required }) => ({ course, year, semester, required }))));
+    take(await saveCurriculum(props.name, rows.value.map(({ course, year, semester, required, prerequisites }) => ({ course, year, semester, required, prerequisites }))));
     toast.add({ severity: "success", summary: "Curriculum saved", life: 2500 });
   } catch (e) {
     toast.add({ severity: "error", summary: "Not saved", detail: e instanceof Error ? e.message : String(e), life: 8000 });
@@ -96,6 +100,23 @@ async function save() {
   }
 }
 const undo = () => data.value && take(data.value);
+
+// prerequisites: the courses to pass first, chosen in a small dialog
+const editingNeeds = ref<CurriculumCourse | null>(null);
+const needs = ref<string[]>([]);
+const needOptions = computed(() =>
+  (data.value?.catalogue ?? [])
+    .filter((c) => c.course !== editingNeeds.value?.course)
+    .map((c) => ({ value: c.course, label: [c.code, c.course].filter(Boolean).join(" · ") })),
+);
+function startNeeds(r: CurriculumCourse) {
+  editingNeeds.value = r;
+  needs.value = [...r.prerequisites];
+}
+function applyNeeds() {
+  if (editingNeeds.value) editingNeeds.value.prerequisites = [...needs.value];
+  editingNeeds.value = null;
+}
 
 const subtitle = computed(() => {
   const d = data.value;
@@ -146,7 +167,11 @@ const subtitle = computed(() => {
                 </tr>
                 <tr v-for="r in inPeriod(year, semester)" :key="r.course">
                   <td class="ec-nowrap">{{ r.code }}</td>
-                  <td>{{ r.course_name }}</td>
+                  <td>
+                    {{ r.course_name }}
+                    <div v-if="r.prerequisites.length" class="needs">Needs {{ r.prerequisites.join(", ") }} passed</div>
+                    <button v-if="editable" type="button" class="needs-edit" @click="startNeeds(r)">{{ r.prerequisites.length ? "Change prerequisites" : "Add a prerequisite" }}</button>
+                  </td>
                   <td class="num">{{ r.nqf_level ?? "" }}</td>
                   <td class="num">{{ r.credits }}</td>
                   <td v-if="editable"><Checkbox v-model="r.required" binary :aria-label="`${r.course_name} required`" /></td>
@@ -188,6 +213,16 @@ const subtitle = computed(() => {
       </div>
     </template>
   </RecordPage>
+
+  <EcModal :open="editingNeeds !== null" :title="`Prerequisites: ${editingNeeds?.course_name ?? ''}`" description="Courses to pass first, wherever this course is taught" @update:open="(v: boolean) => !v && (editingNeeds = null)">
+    <EcField label="Courses to pass first" for="needs">
+      <MultiSelect v-model="needs" input-id="needs" :options="needOptions" option-label="label" option-value="value" filter display="chip" placeholder="None" fluid />
+    </EcField>
+    <template #footer>
+      <EcButton label="Cancel" variant="ghost" @click="editingNeeds = null" />
+      <EcButton label="Done" variant="primary" @click="applyNeeds" />
+    </template>
+  </EcModal>
 </template>
 
 <style scoped>
@@ -227,6 +262,22 @@ const subtitle = computed(() => {
 .period,
 .year {
   width: 100%;
+}
+
+.needs {
+  color: var(--ec-muted);
+  font-size: 0.75rem;
+}
+
+.needs-edit {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ec-accent);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .read-only {

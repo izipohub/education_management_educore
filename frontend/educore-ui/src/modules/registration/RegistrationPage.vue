@@ -84,7 +84,7 @@ const sendBack = () =>
           <tbody>
             <tr v-for="c in reg.courses" :key="c.course">
               <td class="ec-nowrap ec-muted">{{ semesterLabel(c.semester) }}</td>
-              <td>{{ c.course_name }}</td>
+              <td>{{ c.course_name }}<span v-if="c.repeat" class="repeat"> · repeat</span></td>
               <td class="num">{{ c.credits }}</td>
             </tr>
           </tbody>
@@ -123,6 +123,11 @@ const sendBack = () =>
 </template>
 
 <style scoped>
+.repeat {
+  color: var(--ec-muted);
+  font-size: 0.8125rem;
+}
+
 .note {
   margin: 0;
 }

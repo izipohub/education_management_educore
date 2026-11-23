@@ -1,7 +1,7 @@
 """Demo results for EduCore Demo University (development only): the 2026 classes' marks, as the year closes.
 
-Most classes are published (entered by the lecturer, moderated by the head of department, approved by the faculty
-examination board); Computer Systems at Windhoek waits for moderation and Databases at Windhoek for its lecturer's
+The first-year courses' classes are published (entered by the lecturer, moderated by the head of department,
+approved by the faculty examination board); Computer Systems at Windhoek waits for moderation and Databases at Windhoek for its lecturer's
 marks, so each office has work to see. Marks are steady per student and course, and all pass: the demo students'
 standing stays good. Re-running adds whatever is missing.
 """
@@ -24,6 +24,11 @@ def _mark(student: str, course: str, salt: str, low: int, high: int) -> int:
 	return low + digest % (high - low + 1)
 
 
+def _curriculum_year(course: str) -> int:
+	years = frappe.get_all("Program Course", filters={"course": course, "parenttype": "Program"}, pluck="educore_year")
+	return min((y for y in years if y), default=1)
+
+
 def _lecturer_user(group) -> str | None:
 	for row in group.instructors:
 		employee = frappe.db.get_value("Instructor", row.instructor, "employee")
@@ -33,14 +38,41 @@ def _lecturer_user(group) -> str | None:
 	return None
 
 
+#: course: the course to pass first, as a yearbook lists them
+PREREQUISITES = {
+	"Data Structures and Algorithms": "Programming Fundamentals",
+	"Databases": "Programming Fundamentals",
+	"Linear Algebra": "Calculus I",
+	"Corporate Finance": "Financial Accounting I",
+	"Organisational Behaviour": "Principles of Management",
+	"Community Health Nursing": "Fundamentals of Nursing",
+	"Curriculum and Instruction": "Foundations of Education",
+}
+
+
+def _prerequisites():
+	for course, first in PREREQUISITES.items():
+		if not (frappe.db.exists("Course", course) and frappe.db.exists("Course", first)):
+			continue
+		doc = frappe.get_doc("Course", course)
+		if not doc.get("educore_prerequisites"):
+			doc.append("educore_prerequisites", {"prerequisite": first})
+			doc.save(ignore_permissions=True)
+
+
 def create() -> int:
 	results.ensure_defaults()
+	_prerequisites()
 	made, published = 0, []
 	when = get_datetime(add_days(nowdate(), -6))
 	for name in frappe.get_all("Student Group", filters={"group_based_on": "Course", "academic_year": YEAR}, pluck="name"):
 		if name == NOT_STARTED or frappe.db.exists("Mark Sheet", name):
 			continue
 		group = frappe.get_doc("Student Group", name)
+		# the 2026 students were in their first year: results for first-year courses only (their year-two courses
+		# are registered for 2027)
+		if _curriculum_year(group.course) > 1:
+			continue
 		sheet = frappe.get_doc(
 			{
 				"doctype": "Mark Sheet",

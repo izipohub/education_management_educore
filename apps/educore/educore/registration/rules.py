@@ -102,9 +102,56 @@ def curriculum(program: str) -> list[dict]:
 			"year": row.get("educore_year") or 1,
 			"semester": row.get("educore_semester") or "Year",
 			"required": bool(row.required),
+			"prerequisites": prerequisites(row.course),
 		}
 		for row in doc.courses
 	]
+
+
+def prerequisites(course: str) -> list[str]:
+	"""The courses to pass before this one (set on the course, wherever it is taught)"""
+	return frappe.get_all("Course Prerequisite", filters={"parent": course, "parenttype": "Course"}, pluck="prerequisite", order_by="idx")
+
+
+# --- what a student has passed, and what is open to them ----------------------------------------------
+
+PASSED, REPEAT, BLOCKED, OPEN = "passed", "repeat", "blocked", "open"
+
+
+def results_by_course(student: str) -> dict[str, str]:
+	"""The student's latest published result per course (educore.academics.results)"""
+	rows = frappe.db.sql(
+		"""select ms.course, e.result from `tabMark Sheet Entry` e join `tabMark Sheet` ms on ms.name = e.parent
+		where ms.status = 'Published' and e.student = %s order by ms.academic_year asc, ms.published_on asc""",
+		student,
+		as_dict=True,
+	)
+	latest: dict[str, str] = {}
+	for row in rows:
+		# a pass stands; a later attempt replaces an earlier failure
+		if latest.get(row.course) != "Pass":
+			latest[row.course] = row.result
+	return latest
+
+
+def course_states(student: str, program: str, year: int) -> dict[str, dict]:
+	"""Each curriculum course for this student: passed already, a repeat (not passed earlier), blocked by a
+	prerequisite not yet passed (with which), or open"""
+	results = results_by_course(student)
+	passed = {c for c, r in results.items() if r == "Pass"}
+	states = {}
+	for c in curriculum(program):
+		if c["course"] in passed:
+			states[c["course"]] = {"state": PASSED, "missing": []}
+			continue
+		missing = [p for p in c["prerequisites"] if p not in passed]
+		if missing:
+			states[c["course"]] = {"state": BLOCKED, "missing": missing}
+		elif c["course"] in results and c["year"] < year + 1:
+			states[c["course"]] = {"state": REPEAT, "missing": []}
+		else:
+			states[c["course"]] = {"state": OPEN, "missing": []}
+	return states
 
 
 #: the order courses are shown in, and how each period reads
@@ -203,15 +250,30 @@ def blockers(student: str, offering: str, period) -> list[str]:
 	return found
 
 
-def check_courses(program: str, year: int, chosen: list[str]):
-	"""The year's required courses are all chosen; every course is on the programme; within the credit limit"""
+def check_courses(program: str, year: int, chosen: list[str], student: str | None = None):
+	"""Every course is on the programme and open to the student (not passed already, prerequisites passed); the
+	year's required courses and the required repeats are all chosen; within the credit limit"""
 	courses = {c["course"]: c for c in curriculum(program)}
 	unknown = [c for c in chosen if c not in courses]
 	if unknown:
 		frappe.throw(_("{0} is not part of the programme").format(", ".join(unknown)))
-	missing = [c["course_name"] for c in courses.values() if c["year"] == year and c["required"] and c["course"] not in chosen]
+	states = course_states(student, program, year) if student else {}
+	for course in chosen:
+		state = states.get(course, {})
+		if state.get("state") == PASSED:
+			frappe.throw(_("{0} is passed already").format(courses[course]["course_name"]))
+		if state.get("state") == BLOCKED:
+			frappe.throw(
+				_("{0} needs {1} passed first").format(courses[course]["course_name"], ", ".join(state["missing"]))
+			)
+	open_required = [
+		c for c in courses.values()
+		if c["required"] and states.get(c["course"], {}).get("state") not in (PASSED, BLOCKED)
+		and (c["year"] == year or states.get(c["course"], {}).get("state") == REPEAT)
+	]
+	missing = [c["course_name"] for c in open_required if c["course"] not in chosen]
 	if missing:
-		frappe.throw(_("Required for year {0}: {1}").format(year, ", ".join(missing)))
+		frappe.throw(_("Required this year: {0}").format(", ".join(missing)))
 	limit = settings().max_credits or 0
 	total = sum(courses[c]["credits"] for c in chosen)
 	if limit and total > limit:
