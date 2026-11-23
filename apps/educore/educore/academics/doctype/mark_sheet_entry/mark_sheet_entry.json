@@ -21,17 +21,17 @@
   },
   {
    "fieldname": "ca_mark",
-   "fieldtype": "Float",
+   "fieldtype": "Data",
    "label": "Continuous Assessment",
    "in_list_view": 1,
-   "precision": "1"
+   "description": "Empty until entered (a mark of 0 is a real mark)."
   },
   {
    "fieldname": "exam_mark",
-   "fieldtype": "Float",
+   "fieldtype": "Data",
    "label": "Examination",
    "in_list_view": 1,
-   "precision": "1"
+   "description": "Empty until entered (a mark of 0 is a real mark)."
   },
   {
    "fieldname": "absent",
@@ -66,6 +66,25 @@
    "fieldtype": "Data",
    "label": "Moderation Note",
    "read_only": 1
+  },
+  {
+   "fieldname": "supp_exam_mark",
+   "fieldtype": "Data",
+   "label": "Supplementary Examination",
+   "description": "Empty until entered (a mark of 0 is a real mark)."
+  },
+  {
+   "fieldname": "first_final_mark",
+   "fieldtype": "Float",
+   "label": "First Final Mark",
+   "read_only": 1,
+   "precision": "0"
+  },
+  {
+   "fieldname": "first_result",
+   "fieldtype": "Data",
+   "label": "First Result",
+   "read_only": 1
   }
  ],
  "actions": [],
@@ -90,6 +109,9 @@
   "final_mark",
   "grade",
   "result",
-  "moderation_note"
+  "moderation_note",
+  "supp_exam_mark",
+  "first_final_mark",
+  "first_result"
  ]
 }

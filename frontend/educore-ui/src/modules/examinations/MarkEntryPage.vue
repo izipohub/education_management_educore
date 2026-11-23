@@ -8,7 +8,7 @@ import EcModal from "@/core/ui/EcModal.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
-import { type Entry, type Sheet, mySheet, saveMarks, submitMarks, workOut } from "./api";
+import { type Entry, type Sheet, mySheet, saveMarks, saveSupplementary, submitMarks, submitSupplementary, workOut, workOutSupplementary } from "./api";
 
 /**
  * A lecturer's marks for one class: continuous assessment and examination per student, the final mark, grade and
@@ -67,6 +67,40 @@ async function submit() {
     take(await submitMarks(props.group));
     confirming.value = false;
     toast.add({ severity: "success", summary: "Marks submitted to the department", life: 3000 });
+  } catch (e) {
+    toast.add({ severity: "error", summary: "Not submitted", detail: e instanceof Error ? e.message : String(e), life: 8000 });
+  } finally {
+    saving.value = false;
+  }
+}
+
+// the supplementary sitting, once the results are published
+const suppRows = computed(() => rows.value.filter((e) => e.writes_supplementary));
+const suppOpen = computed(() => sheet.value?.status === "Published" && sheet.value.supp_status === "Open" && suppRows.value.length > 0);
+const suppChanged = computed(
+  () => JSON.stringify(suppRows.value.map((e) => e.supp_exam_mark)) !== JSON.stringify((sheet.value?.entries ?? []).filter((e) => e.writes_supplementary).map((e) => e.supp_exam_mark)),
+);
+const suppMissing = computed(() => suppRows.value.filter((e) => e.supp_exam_mark === null || e.supp_exam_mark === undefined).length);
+const liveSupp = (e: Entry) => (sheet.value ? workOutSupplementary(e, sheet.value.rules) : { final_mark: null, grade: null, result: null });
+async function saveSupp(quiet = false) {
+  saving.value = true;
+  try {
+    take(await saveSupplementary(props.group, suppRows.value.map((e) => ({ student: e.student, supp_exam_mark: e.supp_exam_mark }))));
+    if (!quiet) toast.add({ severity: "success", summary: "Supplementary marks saved", life: 2000 });
+    return true;
+  } catch (e) {
+    toast.add({ severity: "error", summary: "Not saved", detail: e instanceof Error ? e.message : String(e), life: 8000 });
+    return false;
+  } finally {
+    saving.value = false;
+  }
+}
+async function submitSupp() {
+  if (suppChanged.value && !(await saveSupp(true))) return;
+  saving.value = true;
+  try {
+    take(await submitSupplementary(props.group));
+    toast.add({ severity: "success", summary: "Supplementary marks submitted", life: 3000 });
   } catch (e) {
     toast.add({ severity: "error", summary: "Not submitted", detail: e instanceof Error ? e.message : String(e), life: 8000 });
   } finally {
@@ -143,6 +177,42 @@ const subtitle = computed(() => {
           </tr>
         </tbody>
       </table>
+    </EcPanel>
+
+    <EcPanel v-if="sheet && suppRows.length && sheet.status === 'Published'" title="Supplementary examination" :note="sheet.supp_status === 'Open' ? 'Students with a supplementary result' : sheet.supp_status === 'Submitted' ? 'Submitted to the examinations office' : 'Published'" flush>
+      <table class="ec-table marks">
+        <colgroup>
+          <col />
+          <col class="c-mark" />
+          <col class="c-mark" />
+          <col class="c-final" />
+          <col class="c-grade" />
+          <col class="c-result" />
+        </colgroup>
+        <thead>
+          <tr><th>Student</th><th class="num">First final</th><th class="num">Supplementary</th><th class="num">Final</th><th>Grade</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="e in suppRows" :key="e.student">
+            <td>{{ e.student_name }}<div class="ec-muted">CA {{ e.ca_mark }}</div></td>
+            <td class="num">{{ e.first_final_mark ?? e.final_mark }}</td>
+            <td class="num">
+              <InputNumber v-if="suppOpen" v-model="e.supp_exam_mark" :min="0" :max="100" :max-fraction-digits="1" size="small" :aria-label="`Supplementary, ${e.student_name}`" fluid />
+              <template v-else>{{ e.supp_exam_mark ?? "" }}</template>
+            </td>
+            <td class="num final">{{ suppOpen ? (liveSupp(e).final_mark ?? "") : (e.first_result ? e.final_mark : "") }}</td>
+            <td>{{ suppOpen ? (liveSupp(e).grade ?? "") : (e.first_result ? e.grade : "") }}</td>
+            <td>
+              <StatusTag v-if="suppOpen && liveSupp(e).result" kind="result" :value="liveSupp(e).result" />
+              <StatusTag v-else-if="!suppOpen && e.first_result" kind="result" :value="e.result" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <template v-if="suppOpen" #footer>
+        <EcButton label="Save" size="sm" :loading="saving" :disabled="!suppChanged" @click="saveSupp()" />
+        <EcButton label="Submit supplementary marks" size="sm" variant="primary" :disabled="saving || suppMissing > 0" @click="submitSupp" />
+      </template>
     </EcPanel>
   </RecordPage>
 

@@ -142,6 +142,37 @@
    "fieldtype": "Datetime",
    "label": "Published On",
    "read_only": 1
+  },
+  {
+   "fieldname": "supp_section",
+   "fieldtype": "Section Break",
+   "label": "Supplementary Examination",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "supp_status",
+   "fieldtype": "Select",
+   "label": "Supplementary",
+   "options": "\nOpen\nSubmitted\nPublished",
+   "read_only": 1
+  },
+  {
+   "fieldname": "supp_submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Supplementary Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "supp_board_reference",
+   "fieldtype": "Data",
+   "label": "Supplementary Approved By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "supp_published_on",
+   "fieldtype": "Datetime",
+   "label": "Supplementary Published On",
+   "read_only": 1
   }
  ],
  "actions": [],
@@ -176,6 +207,11 @@
   "approved_by",
   "approved_on",
   "board_reference",
-  "published_on"
+  "published_on",
+  "supp_section",
+  "supp_status",
+  "supp_submitted_on",
+  "supp_board_reference",
+  "supp_published_on"
  ]
 }

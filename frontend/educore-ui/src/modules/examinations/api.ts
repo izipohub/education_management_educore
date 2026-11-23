@@ -11,6 +11,7 @@ export interface Rules {
   exam_admission_ca: number;
   pass_mark: number;
   supplementary_from: number;
+  supplementary_cap: number;
   probation_share: number;
   grading_scale: string | null;
   bands: { grade: string; from: number }[];
@@ -26,6 +27,11 @@ export interface Entry {
   grade: string | null;
   result: Result | null;
   moderation_note: string | null;
+  /** the supplementary sitting: its mark, and the first attempt kept */
+  supp_exam_mark: number | null;
+  first_final_mark: number | null;
+  first_result: Result | null;
+  writes_supplementary: boolean;
 }
 
 export interface Summary {
@@ -48,6 +54,9 @@ export interface Sheet {
   summary: Summary | null;
   trail: Record<"submitted_by" | "submitted_on" | "moderated_by" | "moderated_on" | "approved_by" | "approved_on" | "board_reference" | "published_on", string | null>;
   rules: Rules;
+  supp_status: "Open" | "Submitted" | "Published" | null;
+  supp_board_reference: string | null;
+  can_publish_supp?: boolean;
   can_edit?: boolean;
   can_moderate?: boolean;
   can_approve?: boolean;
@@ -63,6 +72,7 @@ export interface SheetRow {
   students: number;
   status: SheetStatus;
   pass_rate: number | null;
+  supp_status: "Open" | "Submitted" | "Published" | null;
 }
 
 export interface SheetsPage {
@@ -87,6 +97,22 @@ export const approve = (group: string, boardReference: string) => post<Sheet>(`$
 export const publish = (groups: string[]) => post<{ published: number }>(`${API}.publish`, { groups });
 export const getRules = () => get<Rules & { grading_scales: string[]; can_edit: boolean }>(`${API}.rules`);
 export const saveRules = (data: Partial<Rules>) => post<Rules & { grading_scales: string[]; can_edit: boolean }>(`${API}.save_rules`, { data });
+export const saveSupplementary = (group: string, entries: { student: string; supp_exam_mark: number | null }[]) =>
+  post<Sheet>(`${API}.save_supplementary`, { group, entries });
+export const submitSupplementary = (group: string) => post<Sheet>(`${API}.submit_supplementary`, { group });
+export const publishSupplementary = (group: string, boardReference: string) =>
+  post<Sheet>(`${API}.publish_supplementary`, { group, board_reference: boardReference });
+
+/** a supplementary sitting as the server works it out: CA still counts, a pass is capped */
+export function workOutSupplementary(e: Pick<Entry, "ca_mark" | "supp_exam_mark">, rules: Rules): Pick<Entry, "final_mark" | "grade" | "result"> {
+  if (e.supp_exam_mark === null || e.supp_exam_mark === undefined || (e.supp_exam_mark as unknown) === "") return { final_mark: null, grade: null, result: null };
+  let final = Math.round((e.ca_mark ?? 0) * (rules.ca_weight / 100) + e.supp_exam_mark * (1 - rules.ca_weight / 100));
+  const pass = final >= rules.pass_mark;
+  if (pass) final = Math.min(final, Math.round(rules.supplementary_cap || rules.pass_mark));
+  const grade = [...rules.bands].sort((a, b) => b.from - a.from).find((b) => final >= b.from)?.grade ?? null;
+  return { final_mark: final, grade, result: pass ? "Pass" : "Fail" };
+}
+
 export const myResults = () =>
   get<{ results: { academic_year: string; course: string; code: string | null; credits: number; final_mark: number | null; grade: string | null; result: Result | null; student_group: string }[] }>(
     `${API}.my_results`,

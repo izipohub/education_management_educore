@@ -12,7 +12,7 @@ import EcModal from "@/core/ui/EcModal.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
-import { type Entry, type Sheet, approve, getSheet, moderate, publish, returnSheet, workOut } from "./api";
+import { type Entry, type Sheet, approve, getSheet, moderate, publish, publishSupplementary, returnSheet, workOut } from "./api";
 
 /**
  * A class's marks for the department and the examinations office: the results and how the class did, who did
@@ -82,6 +82,14 @@ async function confirmApprove() {
   if (await run(() => approve(props.group, board.value.trim()), "Approved")) approving.value = false;
 }
 
+// the supplementary results, approved by the board
+const publishingSupp = ref(false);
+const suppBoard = ref("");
+async function confirmPublishSupp() {
+  if (await run(() => publishSupplementary(props.group, suppBoard.value.trim()), "Supplementary results published")) publishingSupp.value = false;
+}
+const suppRows = computed(() => rows.value.filter((e) => e.writes_supplementary));
+
 const subtitle = computed(() => {
   const s = sheet.value;
   return s ? [s.course, s.campus?.replace(" Campus", ""), s.academic_year, s.lecturers.join(", ")].filter(Boolean).join(" · ") : "";
@@ -102,6 +110,7 @@ const counts = computed(() => sheet.value?.summary?.counts);
         <EcButton label="Approve" variant="primary" :disabled="busy" @click="(approving = true), (board = '')" />
       </template>
       <EcButton v-else-if="sheet.can_publish" label="Publish results" variant="primary" :loading="busy" @click="run(() => publish([group]), 'Results published')" />
+      <EcButton v-else-if="sheet.can_publish_supp" label="Publish supplementary results" variant="primary" :disabled="busy" @click="(publishingSupp = true), (suppBoard = '')" />
     </template>
 
     <EcPanel v-if="sheet" title="Results" :note="sheet.status === 'Not started' ? 'No marks yet' : undefined" flush>
@@ -139,6 +148,21 @@ const counts = computed(() => sheet.value?.summary?.counts);
         </tbody>
       </table>
       <p v-else class="none ec-muted">The lecturer has not entered marks yet</p>
+    </EcPanel>
+
+    <EcPanel v-if="sheet && suppRows.length && sheet.status === 'Published'" title="Supplementary examination" :note="sheet.supp_status === 'Published' ? sheet.supp_board_reference ?? 'Published' : sheet.supp_status === 'Submitted' ? 'Marks submitted' : 'With the lecturer'" flush>
+      <table class="ec-table">
+        <thead><tr><th>Student</th><th class="num">First final</th><th class="num">Supplementary</th><th class="num">Final</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr v-for="e in suppRows" :key="e.student">
+            <td>{{ e.student_name }}</td>
+            <td class="num">{{ e.first_final_mark ?? e.final_mark }}</td>
+            <td class="num">{{ e.supp_exam_mark ?? "" }}</td>
+            <td class="num">{{ e.first_result ? e.final_mark : "" }}</td>
+            <td><StatusTag v-if="e.first_result" kind="result" :value="e.result" /></td>
+          </tr>
+        </tbody>
+      </table>
     </EcPanel>
 
     <template v-if="sheet" #aside>
@@ -187,6 +211,16 @@ const counts = computed(() => sheet.value?.summary?.counts);
     <template #footer>
       <EcButton label="Cancel" variant="ghost" @click="returning = false" />
       <EcButton label="Return" variant="danger" :loading="busy" :disabled="!note.trim()" @click="confirmReturn" />
+    </template>
+  </EcModal>
+
+  <EcModal :open="publishingSupp" title="Publish the supplementary results" @update:open="(v: boolean) => (publishingSupp = v)">
+    <EcField label="Examination board meeting" for="supp-board" hint="E.g. Supplementary Examination Board, 20-01-2027">
+      <InputText id="supp-board" v-model="suppBoard" fluid />
+    </EcField>
+    <template #footer>
+      <EcButton label="Cancel" variant="ghost" @click="publishingSupp = false" />
+      <EcButton label="Publish" variant="primary" :loading="busy" :disabled="!suppBoard.trim()" @click="confirmPublishSupp" />
     </template>
   </EcModal>
 

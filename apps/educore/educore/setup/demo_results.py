@@ -17,6 +17,8 @@ YEAR = "2026"
 WAITING_FOR_MODERATION = "CMP1521 WHK 2026"
 NOT_STARTED = "CMP2521 WHK 2026"
 BOARD = "Faculty Examination Board, 18-11-2026"
+#: class: the student who writes a supplementary examination (CA 50, examination 42: a final mark of 46)
+SUPPLEMENTARY = {"CMP1521 OSH 2026": "student1.osh@educore.localhost"}
 
 
 def _mark(student: str, course: str, salt: str, low: int, high: int) -> int:
@@ -92,7 +94,13 @@ def create() -> int:
 				],
 			}
 		)
+		supp_user = SUPPLEMENTARY.get(name)
+		for entry in sheet.entries:
+			if supp_user and frappe.db.get_value("Student", entry.student, "user") == supp_user:
+				entry.ca_mark, entry.exam_mark = 50, 42
 		results.work_out_sheet(sheet)
+		if supp_user:
+			sheet.supp_status = "Open"
 		sheet.update({"status": "Submitted", "submitted_by": _lecturer_user(group), "submitted_on": when})
 		if name != WAITING_FOR_MODERATION:
 			sheet.update(

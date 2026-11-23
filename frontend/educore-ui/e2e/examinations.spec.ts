@@ -44,3 +44,22 @@ test("a student sees their published results", async ({ page }) => {
   await signIn(page, "student1.osh");
   await expect(page.getByRole("heading", { name: "Results 2026" })).toBeVisible();
 });
+
+test("a lecturer enters a supplementary mark; the examinations office sees it waiting", async ({ page }) => {
+  await signIn(page, "lecturer.comp.osh");
+  await page.getByRole("link", { name: "My teaching" }).click();
+  await page.getByRole("article").filter({ hasText: "CMP1521" }).getByRole("link", { name: "Marks" }).click();
+  await expect(page.getByRole("heading", { name: "Supplementary examination" })).toBeVisible();
+  await page.getByRole("spinbutton", { name: /^Supplementary, / }).fill("70");
+  await page.getByRole("spinbutton", { name: /^Supplementary, / }).blur();
+  // CA 50, supplementary 70: 60, recorded at the cap of 50
+  await expect(page.locator("td.final").last()).toHaveText("50");
+  await page.screenshot({ path: "e2e/results/supplementary-entry.png", fullPage: true });
+  // not saved: the demo supplementary stays open
+
+  await page.context().clearCookies();
+  await signIn(page, "examinations-officer.osh");
+  await page.getByRole("link", { name: "Examinations" }).click();
+  await page.getByRole("tab", { name: /^Supplementary/ }).click();
+  await expect(tableRow(page, "Computer Systems")).toContainText("Supplementary with lecturer");
+});

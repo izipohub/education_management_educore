@@ -15,7 +15,7 @@ from frappe import _
 from frappe.utils import flt
 
 #: Examination Settings: the defaults, written once if the site has never had a value
-DEFAULTS = {"ca_weight": 50, "exam_admission_ca": 40, "pass_mark": 50, "supplementary_from": 45, "probation_share": 50}
+DEFAULTS = {"ca_weight": 50, "exam_admission_ca": 40, "pass_mark": 50, "supplementary_from": 45, "supplementary_cap": 50, "probation_share": 50}
 #: the university's grading scale until it loads its own (grade, lowest final mark)
 DEFAULT_SCALE = ("EduCore Standard", (("A+", 80), ("A", 70), ("B", 60), ("C", 50), ("D", 40), ("E", 0)))
 
@@ -64,24 +64,38 @@ def grade_for(final: float, bands: list[tuple[str, float]]) -> str | None:
 	return next((grade for grade, lowest in bands if final >= lowest), None)
 
 
+def mark(value) -> float | None:
+	"""A mark as entered (kept as text so that "not entered" stays empty): the number, or None"""
+	if value is None or str(value).strip() == "":
+		return None
+	return flt(value)
+
+
+def store(value) -> str | None:
+	"""A mark to keep: one decimal, or empty"""
+	number = mark(value)
+	return None if number is None else f"{flt(number, 1):g}"
+
+
 def work_out(entry, rules=None, bands=None):
 	"""An entry's final mark, grade and result from its marks (nothing while marks are missing)"""
 	rules = rules or settings()
 	bands = bands if bands is not None else grade_bands()
 	entry.final_mark = entry.grade = entry.result = None
-	if entry.ca_mark is None or entry.ca_mark == "":
+	ca = mark(entry.ca_mark)
+	if ca is None:
 		return
-	ca = flt(entry.ca_mark)
 	if ca < flt(rules.exam_admission_ca):
 		entry.result = NOT_ADMITTED
 		return
 	if entry.absent:
 		entry.result = ABSENT
 		return
-	if entry.exam_mark is None or entry.exam_mark == "":
+	exam = mark(entry.exam_mark)
+	if exam is None:
 		return
 	weight = flt(rules.ca_weight) / 100
-	final = round(ca * weight + flt(entry.exam_mark) * (1 - weight))
+	final = round(ca * weight + exam * (1 - weight))
 	entry.final_mark = final
 	entry.grade = grade_for(final, bands)
 	if final >= flt(rules.pass_mark):
@@ -93,8 +107,8 @@ def work_out(entry, rules=None, bands=None):
 
 
 def check_marks(entry):
-	for label, mark in ((_("Continuous assessment"), entry.ca_mark), (_("Examination"), entry.exam_mark)):
-		if mark not in (None, "") and not 0 <= flt(mark) <= 100:
+	for label, value in ((_("Continuous assessment"), mark(entry.ca_mark)), (_("Examination"), mark(entry.exam_mark))):
+		if value is not None and not 0 <= value <= 100:
 			frappe.throw(_("{0}: {1} must be between 0 and 100").format(entry.student_name or entry.student, label))
 
 
@@ -121,6 +135,34 @@ def summary(doc) -> dict:
 		"pass_rate": round(100 * counts[PASS] / decided) if decided else None,
 		"complete": decided == len(doc.entries) and bool(doc.entries),
 	}
+
+
+# --- supplementary examinations ---------------------------------------------------------------------
+
+
+def work_out_supplementary(entry, rules=None, bands=None):
+	"""A supplementary sitting: the supplementary mark in place of the examination, the CA still counting; a pass
+	is recorded at the university's cap at most, anything below the pass mark is a fail. The first attempt is kept."""
+	rules = rules or settings()
+	bands = bands if bands is not None else grade_bands()
+	supp = mark(entry.supp_exam_mark)
+	if supp is None:
+		return
+	if not entry.first_result:
+		entry.first_result, entry.first_final_mark = entry.result, entry.final_mark
+	weight = flt(rules.ca_weight) / 100
+	final = round(flt(mark(entry.ca_mark)) * weight + supp * (1 - weight))
+	if final >= flt(rules.pass_mark):
+		final = min(final, round(flt(rules.supplementary_cap) or flt(rules.pass_mark)))
+		entry.result = PASS
+	else:
+		entry.result = FAIL
+	entry.final_mark = final
+	entry.grade = grade_for(final, bands)
+
+
+def writes_supplementary(entry) -> bool:
+	return entry.result == SUPPLEMENTARY or entry.first_result == SUPPLEMENTARY
 
 
 # --- standing -----------------------------------------------------------------------------------------

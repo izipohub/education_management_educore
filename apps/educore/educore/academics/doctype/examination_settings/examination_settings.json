@@ -56,6 +56,13 @@
    "description": "A final mark from this up to the pass mark allows a supplementary examination."
   },
   {
+   "fieldname": "supplementary_cap",
+   "fieldtype": "Percent",
+   "label": "Highest Mark After a Supplementary",
+   "default": "50",
+   "description": "A supplementary pass is recorded at this final mark at most."
+  },
+  {
    "fieldname": "grades_section",
    "fieldtype": "Section Break",
    "label": "Grades and Standing"
@@ -98,6 +105,7 @@
   "marks_column",
   "pass_mark",
   "supplementary_from",
+  "supplementary_cap",
   "grades_section",
   "grading_scale",
   "grades_column",

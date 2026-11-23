@@ -103,3 +103,40 @@ class TestExaminations(IntegrationTestCase):
 		standing, note = frappe.db.get_value("Student", student, ["educore_academic_standing", "educore_standing_note"])
 		self.assertEqual(standing, "Probation")
 		self.assertIn("credits not passed", note)
+
+	def test_a_supplementary_pass_is_capped_and_the_first_attempt_kept(self):
+		_as(LECTURER)
+		api.save_marks(CLASS, self._marks(50, 42))  # final 46: supplementary
+		api.submit(CLASS)
+		_as(HOD)
+		api.moderate(CLASS)
+		_as(EXAMS)
+		api.approve(CLASS, "Board")
+		api.publish([CLASS])
+
+		_as(LECTURER)
+		sheet = api.my_sheet(CLASS)
+		self.assertEqual(sheet["supp_status"], "Open")
+		self.assertTrue(all(e["writes_supplementary"] for e in sheet["entries"]))
+		self.assertRaises(frappe.ValidationError, api.submit_supplementary, CLASS)  # marks still missing
+		api.save_supplementary(CLASS, [{"student": e["student"], "supp_exam_mark": 70} for e in sheet["entries"]])
+		self.assertEqual(api.submit_supplementary(CLASS)["supp_status"], "Submitted")
+
+		_as(EXAMS)
+		self.assertRaises(frappe.ValidationError, api.publish_supplementary, CLASS, "")
+		done = api.publish_supplementary(CLASS, "Supplementary Examination Board, 20-01-2027")
+		entry = done["entries"][0]
+		# 50 x 50% + 70 x 50% = 60, recorded at the cap of 50
+		self.assertEqual((entry["final_mark"], entry["result"], entry["grade"]), (50, "Pass", "C"))
+		self.assertEqual((entry["first_result"], entry["first_final_mark"]), ("Supplementary", 46))
+
+	def test_a_mark_not_entered_is_not_a_zero(self):
+		_as(LECTURER)
+		sheet = api.my_sheet(CLASS)
+		saved = api.save_marks(CLASS, [{"student": e["student"], "ca_mark": 65, "exam_mark": None} for e in sheet["entries"]])
+		entry = saved["entries"][0]
+		self.assertEqual((entry["ca_mark"], entry["exam_mark"], entry["result"], entry["final_mark"]), (65, None, None, None))
+		self.assertRaises(frappe.ValidationError, api.submit, CLASS)  # an examination mark is still missing
+		# a real 0 is a mark
+		zero = api.save_marks(CLASS, [{"student": e["student"], "ca_mark": 65, "exam_mark": 0} for e in sheet["entries"]])
+		self.assertEqual(zero["entries"][0]["result"], "Fail")

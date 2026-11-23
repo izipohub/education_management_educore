@@ -23,7 +23,7 @@ import { type Rules, type SheetRow, type SheetStatus, type SheetsPage, getRules,
  * approved, published); a row opens the class's marks. The examinations officer publishes approved results; the
  * Registrar sets the rules.
  */
-type Tab = "all" | "Draft" | "Submitted" | "Moderated" | "Approved" | "Published" | "rules";
+type Tab = "all" | "Draft" | "Submitted" | "Moderated" | "Approved" | "Published" | "supplementary" | "rules";
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
@@ -72,12 +72,19 @@ const tabs = computed(() => [
   { label: "To approve", value: "Moderated" as Tab, count: count("Moderated") },
   { label: "Approved", value: "Approved" as Tab, count: count("Approved") },
   { label: "Published", value: "Published" as Tab, count: count("Published") },
+  { label: "Supplementary", value: "supplementary" as Tab, count: matching.value.filter((r) => r.supp_status === "Open" || r.supp_status === "Submitted").length },
   { label: "Rules", value: "rules" as Tab },
 ]);
 const rows = computed(
   () =>
     matching.value.filter((r) =>
-      tab.value === "all" ? true : tab.value === "Draft" ? r.status === "Draft" || r.status === "Not started" : r.status === tab.value,
+      tab.value === "all"
+        ? true
+        : tab.value === "supplementary"
+          ? r.supp_status === "Open" || r.supp_status === "Submitted"
+          : tab.value === "Draft"
+            ? r.status === "Draft" || r.status === "Not started"
+            : r.status === tab.value,
     ) as unknown as Record<string, unknown>[],
 );
 const row = (r: Record<string, unknown>) => r as unknown as SheetRow;
@@ -108,7 +115,7 @@ async function publishAll() {
 
 // the rules (Registrar)
 const rules = ref<(Rules & { grading_scales: string[]; can_edit: boolean }) | null>(null);
-const form = reactive({ ca_weight: 50, exam_admission_ca: 40, pass_mark: 50, supplementary_from: 45, probation_share: 50, grading_scale: "" as string | null });
+const form = reactive({ ca_weight: 50, exam_admission_ca: 40, pass_mark: 50, supplementary_from: 45, supplementary_cap: 50, probation_share: 50, grading_scale: "" as string | null });
 watch(
   tab,
   async (t) => {
@@ -161,6 +168,9 @@ async function saveTheRules() {
           <SettingRow label="Supplementary examination from" help="Up to the pass mark" for="supp">
             <InputNumber v-model="form.supplementary_from" input-id="supp" :min="0" :max="100" suffix=" %" show-buttons :disabled="!rules.can_edit" fluid />
           </SettingRow>
+          <SettingRow label="Highest mark after a supplementary" for="supp-cap">
+            <InputNumber v-model="form.supplementary_cap" input-id="supp-cap" :min="0" :max="100" suffix=" %" show-buttons :disabled="!rules.can_edit" fluid />
+          </SettingRow>
         </EcPanel>
         <EcPanel title="Grades and standing">
           <SettingRow label="Grading scale" for="scale">
@@ -204,7 +214,11 @@ async function saveTheRules() {
       <template #cell-campus="{ row: r }">{{ row(r).campus?.replace(" Campus", "") }}</template>
       <template #cell-lecturers="{ row: r }">{{ row(r).lecturers.join(", ") }}</template>
       <template #cell-pass_rate="{ row: r }">{{ row(r).pass_rate !== null ? `${row(r).pass_rate}%` : "" }}</template>
-      <template #cell-status="{ row: r }"><StatusTag kind="marks" :value="row(r).status" /></template>
+      <template #cell-status="{ row: r }">
+        <StatusTag kind="marks" :value="row(r).status" />
+        <span v-if="row(r).supp_status === 'Submitted'" class="sub">Supplementary to publish</span>
+        <span v-else-if="row(r).supp_status === 'Open'" class="sub">Supplementary with lecturer</span>
+      </template>
     </DataTable>
   </section>
 </template>

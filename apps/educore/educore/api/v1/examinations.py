@@ -22,7 +22,7 @@ MODERATE_ROLES = ("Head of Department", "Dean", "System Manager")
 EXAM_ROLES = ("Examinations Officer", "System Manager")
 RULES_ROLES = ("Registrar", "System Manager")
 READ_ROLES = (*MODERATE_ROLES, *EXAM_ROLES, "Registrar", "Faculty Officer")
-RULE_FIELDS = ("ca_weight", "exam_admission_ca", "pass_mark", "supplementary_from", "probation_share", "grading_scale")
+RULE_FIELDS = ("ca_weight", "exam_admission_ca", "pass_mark", "supplementary_from", "supplementary_cap", "probation_share", "grading_scale")
 
 
 def _has(roles) -> bool:
@@ -87,9 +87,21 @@ def _out(doc, group: str) -> dict:
 		"status": doc.status if doc else "Not started",
 		"return_note": doc.return_note if doc else None,
 		"entries": [
-			{f: e.get(f) for f in ("student", "student_name", "ca_mark", "exam_mark", "absent", "final_mark", "grade", "result", "moderation_note")}
+			{
+				**{f: e.get(f) for f in ("student", "student_name", "absent", "grade", "result", "moderation_note", "first_result")},
+				# marks as numbers, empty when not entered; the final mark only once there is a result
+				"ca_mark": results.mark(e.ca_mark),
+				"exam_mark": results.mark(e.exam_mark),
+				"supp_exam_mark": results.mark(e.supp_exam_mark),
+				"final_mark": e.final_mark if e.result and e.final_mark is not None and e.result not in (results.NOT_ADMITTED, results.ABSENT) else None,
+				"first_final_mark": e.first_final_mark if e.first_result else None,
+				"writes_supplementary": results.writes_supplementary(e),
+			}
 			for e in (doc.entries if doc else [])
 		],
+		# the supplementary sitting, once the results are published and someone has a supplementary result
+		"supp_status": (doc.supp_status or ("Open" if any(results.writes_supplementary(e) for e in doc.entries) and doc.status == "Published" else None)) if doc else None,
+		"supp_board_reference": doc.supp_board_reference if doc else None,
 		"summary": results.summary(doc) if doc else None,
 		"trail": {f: (str(doc.get(f)) if doc and doc.get(f) else None) for f in (
 			"submitted_by", "submitted_on", "moderated_by", "moderated_on", "approved_by", "approved_on", "board_reference", "published_on")},
@@ -127,8 +139,8 @@ def _apply(doc, entries, note: str | None = None):
 			continue
 		e = given[entry.student]
 		before = (entry.ca_mark, entry.exam_mark, entry.absent)
-		entry.ca_mark = None if e.get("ca_mark") in (None, "") else flt(e.get("ca_mark"), 1)
-		entry.exam_mark = None if e.get("exam_mark") in (None, "") else flt(e.get("exam_mark"), 1)
+		entry.ca_mark = results.store(e.get("ca_mark"))
+		entry.exam_mark = results.store(e.get("exam_mark"))
 		entry.absent = 1 if e.get("absent") else 0
 		if note and before != (entry.ca_mark, entry.exam_mark, entry.absent):
 			entry.moderation_note = note
@@ -150,6 +162,70 @@ def submit(group: str) -> dict:
 	doc.save(ignore_permissions=True)
 	doc.add_comment("Workflow", _("Marks submitted"))
 	return {**_out(doc, group), "can_edit": False}
+
+
+# --- the supplementary sitting (lecturer, then the examinations officer) -----------------------------
+
+
+def _supp_sheet(group: str):
+	if not _teaches(group):
+		frappe.throw(_("You do not teach this class"), frappe.PermissionError)
+	doc = _sheet(group)
+	if not doc or doc.status != "Published" or doc.supp_status not in (None, "", "Open"):
+		frappe.throw(_("The supplementary marks are not open for this class"))
+	if not any(results.writes_supplementary(e) for e in doc.entries):
+		frappe.throw(_("No student in this class writes a supplementary examination"))
+	return doc
+
+
+@frappe.whitelist(methods=["POST"])
+def save_supplementary(group: str, entries: list | str) -> dict:
+	"""The supplementary examination marks of the students who write it"""
+	doc = _supp_sheet(group)
+	given = {e.get("student"): e.get("supp_exam_mark") for e in (frappe.parse_json(entries) or [])}
+	for entry in doc.entries:
+		if entry.student in given and results.writes_supplementary(entry):
+			value = results.mark(given[entry.student])
+			if value is not None and not 0 <= value <= 100:
+				frappe.throw(_("{0}: the supplementary mark must be between 0 and 100").format(entry.student_name))
+			entry.supp_exam_mark = results.store(value)
+	doc.supp_status = "Open"
+	doc.save(ignore_permissions=True)
+	return {**_out(doc, group), "can_edit": False}
+
+
+@frappe.whitelist(methods=["POST"])
+def submit_supplementary(group: str) -> dict:
+	doc = _supp_sheet(group)
+	missing = [e.student_name for e in doc.entries if results.writes_supplementary(e) and results.mark(e.supp_exam_mark) is None]
+	if missing:
+		frappe.throw(_("Supplementary marks still missing for: {0}").format(", ".join(missing)))
+	doc.update({"supp_status": "Submitted", "supp_submitted_on": now_datetime()})
+	doc.save(ignore_permissions=True)
+	doc.add_comment("Workflow", _("Supplementary marks submitted"))
+	return {**_out(doc, group), "can_edit": False}
+
+
+@frappe.whitelist(methods=["POST"])
+def publish_supplementary(group: str, board_reference: str) -> dict:
+	"""The supplementary results, approved by the examination board, to the students; standing follows"""
+	_require(EXAM_ROLES)
+	if not _in_scope(group):
+		frappe.throw(_("This class is not in your department, faculty or campus"), frappe.PermissionError)
+	doc = _sheet(group)
+	if not doc or doc.supp_status != "Submitted":
+		frappe.throw(_("No supplementary marks are waiting to be published"))
+	if not (board_reference or "").strip():
+		frappe.throw(_("Give the examination board meeting that approved the results"))
+	rules_, bands = results.settings(), results.grade_bands()
+	for entry in doc.entries:
+		if results.writes_supplementary(entry):
+			results.work_out_supplementary(entry, rules_, bands)
+	doc.update({"supp_status": "Published", "supp_board_reference": board_reference.strip(), "supp_published_on": now_datetime()})
+	doc.save(ignore_permissions=True)
+	doc.add_comment("Workflow", _("Supplementary results published: {0}").format(board_reference.strip()))
+	results.update_standing([e.student for e in doc.entries], doc.academic_year)
+	return sheet(group)
 
 
 # --- staff: the list and a sheet ----------------------------------------------------------------------
@@ -192,6 +268,7 @@ def sheets(academic_year: str | None = None) -> dict:
 			"students": frappe.db.count("Student Group Student", {"parent": g.name, "active": 1}),
 			"status": sheet.status if sheet else "Not started",
 			"pass_rate": summary["pass_rate"] if summary else None,
+			"supp_status": frappe.db.get_value("Mark Sheet", sheet.name, "supp_status") if sheet else None,
 		})
 	return {
 		"academic_year": academic_year,
@@ -214,6 +291,7 @@ def sheet(group: str) -> dict:
 		"can_moderate": _has(MODERATE_ROLES) and status == "Submitted",
 		"can_approve": _has(EXAM_ROLES) and status == "Moderated",
 		"can_publish": _has(EXAM_ROLES) and status == "Approved",
+		"can_publish_supp": _has(EXAM_ROLES) and status == "Published" and bool(doc and doc.supp_status == "Submitted"),
 	}
 
 
