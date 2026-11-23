@@ -24,9 +24,8 @@ defineProps<{ title: string; subtitle?: string }>();
 
 h1 {
   margin: 0;
-  font-size: 1.375rem;
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  font-size: 1.625rem;
+  line-height: 1.2;
 }
 
 .titles p {

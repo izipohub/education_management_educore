@@ -6,8 +6,10 @@ test("the registrar's dashboard leads to the work waiting", async ({ page }) => 
   await expect(page.getByRole("heading", { name: /^Good (morning|afternoon|evening), Registrar/ })).toBeVisible();
   const decide = page.locator(".stat").filter({ hasText: "Applications to decide" });
   await expect(decide.getByText(/^\d+$/)).toBeVisible();
-  // the full offering stands out, named, not by colour alone
-  await expect(page.getByRole("listitem", { name: /BSAMS-WHK-FT: 2 of 2/ }).getByText("Full")).toBeVisible();
+  // the full offering is named in words, not by colour
+  await expect(page.getByRole("row").filter({ hasText: "BSAMS-WHK-FT" }).getByText("Full")).toBeVisible();
+  // the oldest applications waiting open their own page
+  await expect(page.getByRole("heading", { name: "Awaiting a decision" })).toBeVisible();
   await page.screenshot({ path: "e2e/results/dashboard-registrar.png", fullPage: true });
 
   await decide.getByRole("link", { name: /Review/ }).click();

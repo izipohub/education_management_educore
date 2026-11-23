@@ -1,33 +1,33 @@
 <script setup lang="ts">
 import Message from "primevue/message";
-import Textarea from "primevue/textarea";
-import { useToast } from "primevue/usetoast";
 import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { formatDate } from "@/core/format";
-import DetailPane from "@/core/ui/DetailPane.vue";
-import DetailSection from "@/core/ui/DetailSection.vue";
-import EcButton from "@/core/ui/EcButton.vue";
-import EcField from "@/core/ui/EcField.vue";
+import DataTable, { type Column } from "@/core/ui/DataTable.vue";
+import EcSegmented from "@/core/ui/EcSegmented.vue";
 import EcTabs from "@/core/ui/EcTabs.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
-import SplitView from "@/core/ui/SplitView.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
-import { type Queue, type QueueRow, approveRegistration, getQueue, returnRegistration } from "./api";
+import { type Queue, type QueueRow, getQueue } from "./api";
+import type { Group } from "./groups";
 
-const toast = useToast();
-const status = ref<"Submitted" | "Returned" | "Approved">("Submitted");
+/** Registration, senior students: their course registrations to approve; a row opens the registration's page */
+defineProps<{ groups: { value: Group; label: string }[] }>();
+const group = defineModel<Group>("group", { required: true });
+type State = "Submitted" | "Returned" | "Approved";
+const STATES: State[] = ["Submitted", "Returned", "Approved"];
+const route = useRoute();
+const router = useRouter();
+const status = ref<State>(STATES.includes(route.query.status as State) ? (route.query.status as State) : "Submitted");
 const page = ref<Queue | null>(null);
 const loading = ref(false);
 const loadError = ref("");
-const selected = ref<string | null>(null);
-const busy = ref(false);
 
 async function load() {
   loading.value = true;
   loadError.value = "";
   try {
     page.value = await getQueue(status.value);
-    if (!page.value.rows.some((r) => r.name === selected.value)) selected.value = page.value.rows[0]?.name ?? null;
   } catch (e) {
     loadError.value = e instanceof Error ? e.message : String(e);
   } finally {
@@ -35,186 +35,97 @@ async function load() {
   }
 }
 onMounted(load);
-watch(status, load);
-
-const tabs = computed(() => (["Submitted", "Returned", "Approved"] as const).map((s) => ({ label: s, count: page.value?.counts[s] ?? 0, value: s })));
-const items = computed(() => (page.value?.rows ?? []) as unknown as Record<string, unknown>[]);
-const asRow = (item: Record<string, unknown>) => item as unknown as QueueRow;
-const current = computed(() => page.value?.rows.find((r) => r.name === selected.value) ?? null);
-
-const returning = ref(false);
-const note = ref("");
-watch(selected, () => {
-  returning.value = false;
-  note.value = "";
+watch(status, () => {
+  void router.replace({ query: { ...route.query, status: status.value } });
+  void load();
 });
 
-async function run(call: () => Promise<unknown>, message: string) {
-  busy.value = true;
-  try {
-    await call();
-    toast.add({ severity: "success", summary: message, life: 3000 });
-    returning.value = false;
-    await load();
-  } catch (e) {
-    toast.add({ severity: "error", summary: "Not done", detail: e instanceof Error ? e.message : String(e), life: 8000 });
-  } finally {
-    busy.value = false;
-  }
-}
-const approve = (row: QueueRow) => run(() => approveRegistration(row.name), `${row.student_name}: approved`);
-const sendBack = (row: QueueRow) => note.value.trim() && run(() => returnRegistration(row.name, note.value.trim()), `${row.student_name}: returned`);
+const tabs = computed(() => STATES.map((s) => ({ label: s, count: page.value?.counts[s] ?? 0, value: s })));
+const rows = computed(() => (page.value?.rows ?? []) as unknown as Record<string, unknown>[]);
+const asRow = (item: Record<string, unknown>) => item as unknown as QueueRow;
+const columns: Column[] = [
+  { key: "student_name", label: "Student" },
+  { key: "offering", label: "Programme" },
+  { key: "year_of_study", label: "Year", align: "right", wide: true },
+  { key: "credits", label: "Credits", align: "right", wide: true },
+  { key: "submitted_on", label: "Submitted", wide: true },
+  { key: "standing", label: "Standing" },
+];
 </script>
 
 <template>
-  <PageHeader
-    :title="page?.academic_year ? `Registration approvals ${page.academic_year}` : 'Registration approvals'"
-    subtitle="Returning students in your faculty and campus. Approving registers the student and invoices the year."
-  >
-    <EcTabs v-model="status" :tabs="tabs" label="Status" class="tabs" />
-  </PageHeader>
+  <section class="list-page">
+    <PageHeader
+      title="Registration"
+      :subtitle="`Senior students: course registrations in your faculty and campus${page?.academic_year ? ` · ${page.academic_year}` : ''}`"
+    >
+      <template #actions>
+        <EcSegmented v-if="groups.length" v-model="group" :options="groups" label="Students" />
+      </template>
+      <EcTabs v-model="status" :tabs="tabs" label="Status" class="tabs" />
+    </PageHeader>
 
-  <Message v-if="loadError" severity="error" :closable="false">{{ loadError }}</Message>
+    <Message v-if="loadError" severity="error" :closable="false">{{ loadError }}</Message>
 
-  <SplitView
-    v-model:selected="selected"
-    :items="items"
-    item-key="name"
-    :loading="loading"
-    list-label="Registrations"
-    :empty-title="`No ${status.toLowerCase()} registrations`"
-    placeholder="Select a registration"
-  >
-    <template #item="{ item }">
-      <div class="item">
-        <div class="item-top">
-          <span class="who">{{ asRow(item).student_name }}</span>
-          <span class="ec-muted ec-nowrap">{{ asRow(item).offering }}</span>
-        </div>
-        <div class="item-bottom">
-          <span class="ec-muted">Year {{ asRow(item).year_of_study }} · {{ asRow(item).credits }} credits</span>
-          <span v-if="asRow(item).late" class="chip warn">Late</span>
-          <StatusTag v-if="asRow(item).standing && asRow(item).standing !== 'Good standing'" kind="standing" :value="asRow(item).standing" />
-        </div>
-      </div>
-    </template>
-
-    <template #detail>
-      <DetailPane
-        v-if="current"
-        :title="current.student_name"
-        :subtitle="[current.student, current.submitted_on ? `submitted ${formatDate(current.submitted_on)}` : ''].filter(Boolean).join(' · ')"
-      >
-        <template #tags>
-          <StatusTag kind="registration" :value="current.status" />
-          <span v-if="current.late" class="chip warn">Late</span>
-        </template>
-        <template v-if="current.review_note" #notice>
-          <div class="notice">Returned: {{ current.review_note }}</div>
-        </template>
-
-        <DetailSection title="Programme" :summary="current.program">
-          <p class="ec-muted">{{ current.offering }} · {{ current.campus }} · year {{ current.year_of_study }}</p>
-        </DetailSection>
-        <DetailSection title="Standing">
-          <template #summary><StatusTag kind="standing" :value="current.standing" /></template>
-        </DetailSection>
-        <DetailSection title="Courses" :summary="`${current.courses.length} courses, ${current.credits} credits`" collapsible open>
-          <div v-for="c in current.courses" :key="c.course" class="line">
-            <span class="grow">{{ c.course_name }}</span>
-            <span class="ec-muted">{{ c.credits }} credits</span>
-          </div>
-        </DetailSection>
-        <DetailSection v-if="returning" title="Return">
-          <EcField label="What should the student change?" for="note" hint="The student sees this">
-            <Textarea id="note" v-model="note" rows="3" auto-resize fluid />
-          </EcField>
-        </DetailSection>
-
-        <template v-if="current.status === 'Submitted'" #actions>
-          <template v-if="returning">
-            <EcButton label="Cancel" variant="ghost" :disabled="busy" @click="returning = false" />
-            <EcButton label="Return to student" variant="danger" :loading="busy" :disabled="!note.trim()" @click="sendBack(current)" />
-          </template>
-          <template v-else>
-            <EcButton label="Return" :disabled="busy" @click="returning = true" />
-            <EcButton label="Approve" variant="primary" :loading="busy" @click="approve(current)" />
-          </template>
-        </template>
-      </DetailPane>
-    </template>
-  </SplitView>
+    <DataTable
+      :columns="columns"
+      :rows="rows"
+      row-key="name"
+      :to="(r) => ({ name: 'registration-record', params: { name: String(r.name) }, query: { ...route.query, group: 'senior' } })"
+      :loading="loading"
+      noun="registrations"
+      :empty-title="`No ${status.toLowerCase()} registrations`"
+    >
+      <template #cell-student_name="{ row: r }">
+        <span class="who">{{ asRow(r).student_name }}</span>
+        <span class="sub">{{ asRow(r).student }}</span>
+      </template>
+      <template #cell-offering="{ row: r }">
+        <span class="programme">{{ asRow(r).program }}</span>
+        <span class="sub">{{ asRow(r).offering }}</span>
+      </template>
+      <template #cell-submitted_on="{ row: r }">
+        <span class="ec-nowrap">{{ formatDate(asRow(r).submitted_on) }}</span>
+        <span v-if="asRow(r).late" class="sub">Late</span>
+      </template>
+      <template #cell-standing="{ row: r }"><StatusTag kind="standing" :value="asRow(r).standing" /></template>
+    </DataTable>
+  </section>
 </template>
 
 <style scoped>
+.list-page {
+  display: grid;
+  gap: 1rem;
+}
+
 .tabs {
   flex: 1;
 }
 
-.item {
-  display: grid;
-  gap: 0.3rem;
-}
-
-.item-top,
-.item-bottom {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.item-top {
-  justify-content: space-between;
-}
-
 .who {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.chip {
-  padding: 0.1rem 0.45rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.chip.warn {
-  background: #fef3c7;
-  color: var(--ec-warn);
-}
-
-.notice {
-  padding: 0.55rem 0.75rem;
-  border-radius: var(--ec-radius-sm);
-  background: #fffbeb;
-  color: var(--ec-warn);
-  font-size: 0.85rem;
-}
-
-.line {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.35rem 0;
-  border-top: 1px solid var(--ec-border-soft);
-}
-
-.line:first-child {
-  border-top: 0;
-}
-
-.grow {
-  flex: 1;
-}
-
-.label {
   display: block;
-  margin-bottom: 0.35rem;
-  font-size: 0.8125rem;
-  color: var(--ec-muted);
 }
 
-p {
-  margin: 0;
+.sub {
+  display: block;
+  white-space: nowrap;
+  margin-top: 0.1rem;
+  color: var(--ec-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+/* a phone shows the offering code only */
+@media (max-width: 767px) {
+  .programme {
+    display: none;
+  }
+
+  .programme + .sub {
+    margin-top: 0;
+    color: inherit;
+    font-size: inherit;
+  }
 }
 </style>

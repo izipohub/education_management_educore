@@ -5,18 +5,20 @@ import {
   FileText,
   GraduationCap,
   House,
-  ListChecks,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   UserCheck,
   UserPlus,
 } from "@lucide/vue";
 import Avatar from "primevue/avatar";
 import Button from "primevue/button";
-import { type Component, computed } from "vue";
+import { type Component, computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useSession } from "@/core/auth/session";
 import { useBranding } from "@/core/branding";
+import { REGISTRATION_ROLES } from "@/modules/registration/groups";
 
 const session = useSession();
 const router = useRouter();
@@ -24,6 +26,24 @@ const route = useRoute();
 /** queues fill the window (list and record side by side); other screens scroll as a page */
 const fill = computed(() => Boolean(route.meta.fill));
 const { branding } = useBranding();
+
+/** the menu folds to its icons; remembered on this browser */
+const COLLAPSED_KEY = "ec-sidebar-collapsed";
+function readCollapsed() {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+const collapsed = ref(readCollapsed());
+watch(collapsed, (value) => {
+  try {
+    localStorage.setItem(COLLAPSED_KEY, value ? "1" : "0");
+  } catch {
+    // private browsing: the choice lasts for this visit
+  }
+});
 
 interface NavItem {
   label: string;
@@ -44,8 +64,7 @@ const NAV: NavItem[] = [
   { label: "Registration", icon: ClipboardCheck, to: "/registration", roles: ["Student"] },
   { label: "My teaching", icon: GraduationCap, to: "/my-teaching", roles: ["Lecturer"] },
   { label: "Admissions", icon: UserPlus, to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
-  { label: "First-year registration", icon: UserCheck, to: "/enrolment", roles: ["Registry Officer", "Registrar"] },
-  { label: "Registration approvals", icon: ListChecks, to: "/registrations", roles: ["Faculty Officer", "Registrar"] },
+  { label: "Registration", icon: UserCheck, to: "/registrations", roles: REGISTRATION_ROLES },
   { label: "Admission setup", icon: Settings, to: "/admission-setup", roles: ["Registrar", "System Manager"] },
 ];
 
@@ -85,12 +104,32 @@ async function signOut() {
       </div>
     </header>
 
-    <div class="body">
+    <div class="body" :class="{ collapsed }">
       <nav class="sidebar" aria-label="Main">
-        <RouterLink v-for="item in nav" :key="item.to" :to="item.to" class="nav-item" active-class="" exact-active-class="active">
+        <!-- a list stays marked while one of its records is open; Home only on itself -->
+        <RouterLink
+          v-for="item in nav"
+          :key="item.to"
+          :to="item.to"
+          class="nav-item"
+          :active-class="item.to === '/' ? '' : 'active'"
+          exact-active-class="active"
+          :title="collapsed ? item.label : undefined"
+        >
           <component :is="item.icon" :size="18" :stroke-width="1.75" aria-hidden="true" />
-          {{ item.label }}
+          <span class="label">{{ item.label }}</span>
         </RouterLink>
+        <button
+          type="button"
+          class="nav-item fold"
+          :aria-label="collapsed ? 'Expand the menu' : 'Collapse the menu'"
+          :title="collapsed ? 'Expand the menu' : 'Collapse the menu'"
+          :aria-expanded="!collapsed"
+          @click="collapsed = !collapsed"
+        >
+          <component :is="collapsed ? PanelLeftOpen : PanelLeftClose" :size="18" :stroke-width="1.75" aria-hidden="true" />
+          <span class="label">Collapse</span>
+        </button>
       </nav>
       <main class="content" :class="{ fill }">
         <RouterView />
@@ -100,10 +139,13 @@ async function signOut() {
 </template>
 
 <style scoped>
+/* the top bar and the menu stay put; only the content scrolls */
 .shell {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .topbar {
@@ -116,6 +158,10 @@ async function signOut() {
   padding: 0.75rem 1.5rem;
   background: var(--ec-second);
   color: var(--ec-on-second);
+  border-bottom: 1px solid var(--ec-second-line);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.25);
+  position: relative;
+  z-index: 2;
 }
 
 .topbar :deep(.p-button) {
@@ -156,8 +202,14 @@ async function signOut() {
 
 .body {
   flex: 1;
+  min-height: 0;
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: 228px minmax(0, 1fr);
+  transition: grid-template-columns 0.18s ease;
+}
+
+.body.collapsed {
+  grid-template-columns: 4.25rem minmax(0, 1fr);
 }
 
 .sidebar {
@@ -165,7 +217,41 @@ async function signOut() {
   flex-direction: column;
   gap: 0.15rem;
   padding: 0.75rem;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: var(--ec-second);
+  border-right: 1px solid var(--ec-second-line);
+}
+
+.label {
+  min-width: 0;
+}
+
+.collapsed .label {
+  display: none;
+}
+
+.collapsed .nav-item {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* the fold button sits at the foot of the menu, set off by a line */
+.fold {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border: 0;
+  border-top: 1px solid var(--ec-second-line);
+  border-radius: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.fold:hover {
+  background: none;
 }
 
 .nav-item {
@@ -210,10 +296,11 @@ async function signOut() {
 .content {
   padding: 1.5rem clamp(16px, 3vw, 2rem);
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .content.fill {
-  height: calc(100vh - var(--ec-topbar-height));
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -226,8 +313,10 @@ async function signOut() {
     display: none;
   }
 
-  .body {
+  .body,
+  .body.collapsed {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .sidebar {
@@ -235,6 +324,26 @@ async function signOut() {
     gap: 0.25rem;
     flex-direction: row;
     overflow-x: auto;
+    overflow-y: hidden;
+    border-right: 0;
+    border-bottom: 1px solid var(--ec-second-line);
+  }
+
+  /* a phone's menu is a row of tabs: always labelled, no fold button */
+  .collapsed .label {
+    display: inline;
+  }
+
+  .fold {
+    display: none;
+  }
+
+  .nav-item {
+    flex: none;
+  }
+
+  .nav-item.active::before {
+    display: none;
   }
 }
 </style>

@@ -215,21 +215,40 @@ def queue(status: str = rules.SUBMITTED, academic_year: str | None = None) -> di
 			filters.update({"docstatus": 0, "educore_registration_status": state})
 		return frappe.get_list("Program Enrollment", filters=filters, fields=FIELDS, order_by="educore_submitted_on asc", limit=500)
 
-	result = rows(status)
-	for row in result:
-		doc = frappe.get_doc("Program Enrollment", row.name)
-		row["courses"] = [
-			{"course": c.course, "course_name": c.course_name, "credits": rules.credits(c.course)} for c in doc.courses
-		]
-		row["credits"] = sum(c["credits"] for c in row["courses"])
-		row["standing"] = frappe.db.get_value("Student", row.student, "educore_academic_standing")
-		if status == rules.APPROVED:
-			row["status"] = rules.APPROVED
 	return {
 		"academic_year": academic_year,
-		"rows": result,
+		"rows": [_queue_row(row, approved=status == rules.APPROVED) for row in rows(status)],
 		"counts": {s: len(rows(s)) for s in (rules.SUBMITTED, rules.RETURNED, rules.APPROVED)},
 	}
+
+
+def _queue_row(row, approved: bool) -> dict:
+	"""A registration with its courses, credits and the student's standing"""
+	doc = frappe.get_doc("Program Enrollment", row.name)
+	row["courses"] = [
+		{"course": c.course, "course_name": c.course_name, "credits": rules.credits(c.course)} for c in doc.courses
+	]
+	row["credits"] = sum(c["credits"] for c in row["courses"])
+	row["standing"] = frappe.db.get_value("Student", row.student, "educore_academic_standing")
+	if approved:
+		row["status"] = rules.APPROVED
+	return row
+
+
+@frappe.whitelist(methods=["GET"])
+def registration(name: str) -> dict:
+	"""One registration in the approval queue (campus and faculty scope apply)"""
+	_require_reviewer()
+	rows = frappe.get_list(
+		"Program Enrollment",
+		filters={"name": name, "educore_registration_status": ("is", "set")},
+		fields=[*FIELDS, "docstatus"],
+		limit=1,
+	)
+	if not rows:
+		frappe.throw(_("This registration is not in your approval queue"), frappe.DoesNotExistError)
+	row = rows[0]
+	return _queue_row(row, approved=row.pop("docstatus") == 1)
 
 
 def _approve(doc):

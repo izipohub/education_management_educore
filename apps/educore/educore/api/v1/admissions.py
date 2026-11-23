@@ -130,6 +130,14 @@ def applications(
 	}
 
 
+def _places(doc) -> dict | None:
+	"""Places offered so far on the offering applied for, against its capacity"""
+	offering = doc.get("educore_programme_offering")
+	if not offering or not doc.academic_year:
+		return None
+	return _capacity({offering}, {doc.academic_year}).get(f"{offering}|{doc.academic_year}")
+
+
 def _capacity(offerings: set[str], years: set[str]) -> dict:
 	"""Places offered so far against each offering's intake capacity, per academic year"""
 	result = {}
@@ -293,6 +301,8 @@ def review(name: str) -> dict:
 			"note": doc.get("educore_fee_note"),
 		},
 		"offer": _offer(doc),
+		"academic_year": doc.academic_year,
+		"places": _places(doc),
 		"can_review": bool(set(frappe.get_roles()) & set(REVIEW_ROLES)) and doc.has_permission("write"),
 		"actions": _actions(doc),
 		**_completeness(doc),

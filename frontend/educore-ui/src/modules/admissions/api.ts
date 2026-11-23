@@ -91,6 +91,9 @@ export interface Review {
   missing_documents: string[];
   fee: { amount: number | null; status: string | null; paid_on: string | null; voucher: string | null; bank_transaction: string | null; note: string | null };
   offer: Offer | null;
+  academic_year: string | null;
+  /** places offered on the offering applied for, against its capacity */
+  places: Places | null;
   can_review: boolean;
   actions: Action[];
   online: boolean;

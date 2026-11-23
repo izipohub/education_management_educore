@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { expand, listItem, openRecord, pane } from "./support";
+import { openRow, record, tableRow } from "./support";
 
 const PASSWORD = process.env.EDUCORE_DEMO_PASSWORD ?? "Campus-Demo-2026";
 
@@ -17,32 +17,30 @@ async function signIn(page: Page, login: string) {
 test("an admissions officer reviews an online application before deciding", async ({ page }) => {
   await signIn(page, "admissions-officer.osh");
   await page.getByRole("link", { name: "Admissions" }).click();
-  const nangula = listItem(page, "Nangula Haufiku");
-  await expect(nangula.getByText("Docs 0/3")).toBeVisible();
+  const nangula = tableRow(page, "Nangula Haufiku");
+  await expect(nangula.getByText("0 of 3 verified")).toBeVisible();
   await expect(nangula.getByText("Unpaid")).toBeVisible();
 
-  await openRecord(page, "Nangula Haufiku");
-  const record = pane(page);
-  // what is outstanding comes first; no offer until it is done
-  // the sections carry the statuses; the offer waits until they are done, and its button says why
-  await expect(record.getByText("0 of 3 verified")).toBeVisible();
-  const offer = record.getByRole("button", { name: "Make offer" });
+  await openRow(page, "Nangula Haufiku");
+  const page_ = record(page);
+  // what is outstanding is listed in words; the offer waits until it is done, and its button says why
+  await expect(page_.getByRole("heading", { name: "Outstanding" })).toBeVisible();
+  await expect(page_.getByText("0 of 3 verified")).toBeVisible();
+  const offer = page_.getByRole("button", { name: "Make offer" });
   await expect(offer).toBeDisabled();
   await expect(offer).toHaveAttribute("title", "3 documents to verify · Application fee outstanding");
-  await expect(record.getByRole("link", { name: "Open file" }).first()).toBeVisible();
-  await expand(page, "Results");
-  await expect(record.getByText("Business Studies")).toBeVisible();
-  await page.screenshot({ path: "e2e/results/review-panel.png" });
+  await expect(page_.getByRole("link", { name: "Birth Certificate" })).toBeVisible();
+  await expect(page_.getByText("Business Studies")).toBeVisible();
+  await page.screenshot({ path: "e2e/results/review-panel.png", fullPage: true });
 
   // a rejection asks for the reason the applicant will see (cancelled: the demo data stays as it is)
-  const birth = record.locator(".doc").filter({ hasText: "Birth Certificate" });
-  await birth.getByRole("button", { name: "Reject" }).click();
-  await expect(birth.getByRole("button", { name: "Reject" })).toBeDisabled();
-  await birth.getByRole("button", { name: "Cancel" }).click();
+  await tableRow(page, "Birth Certificate").getByRole("button", { name: "Reject" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("button", { name: "Reject", exact: true })).toBeDisabled();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
 
-  await expand(page, "Fee");
-  await record.getByRole("button", { name: "Waive the fee" }).click();
-  await expect(record.getByRole("button", { name: "Waive", exact: true })).toBeDisabled();
+  await page_.getByRole("button", { name: "Waive the fee" }).click();
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Waive", exact: true })).toBeDisabled();
 });
 
 test("an applicant sees how to pay, with their application number as the reference", async ({ page }) => {

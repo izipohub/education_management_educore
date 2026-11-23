@@ -134,6 +134,26 @@ def enrolments(academic_year: str | None = None, search: str | None = None) -> d
 	}
 
 
+@frappe.whitelist(methods=["GET"])
+def enrolment(name: str) -> dict:
+	"""One applicant on the registry screen: waiting to be registered, or registered"""
+	rows = frappe.get_list(
+		"Student Applicant",
+		filters={"name": name, "application_status": ("in", ("Approved", "Admitted"))},
+		fields=FIELDS,
+		limit=1,
+	)
+	if not rows:
+		frappe.throw(_("This applicant is not on your registration list"), frappe.DoesNotExistError)
+	row = rows[0]
+	waiting = row.status == "Approved"
+	return {
+		"can_enrol": can_enrol(),
+		"waiting": _offer_row(row) if waiting else None,
+		"enrolled": None if waiting else _admitted_row(row),
+	}
+
+
 @frappe.whitelist(methods=["POST"])
 def enrol(name: str, email: str | None = None, enrollment_date: str | None = None) -> dict:
 	"""Make an approved applicant a student: Student record, login, enrolment and the year's fees"""

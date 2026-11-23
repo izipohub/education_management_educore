@@ -56,6 +56,16 @@ export function listEnrolments(params: { academic_year?: string; search?: string
   return get<EnrolmentsPage>("educore.api.v1.registry.enrolments", params);
 }
 
+export interface EnrolmentRecord {
+  can_enrol: boolean;
+  waiting: Offer | null;
+  enrolled: Enrolled | null;
+}
+
+export function getEnrolment(name: string) {
+  return get<EnrolmentRecord>("educore.api.v1.registry.enrolment", { name });
+}
+
 export function enrol(name: string, email: string, enrollmentDate: string) {
   return post<Enrolled>("educore.api.v1.registry.enrol", { name, email, enrollment_date: enrollmentDate });
 }

@@ -12,7 +12,19 @@ export async function signIn(page: Page, login: string) {
   await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
 }
 
-/** A queue's list item (core/ui/SplitView) */
+/** A row of a list page (core/ui/DataTable) */
+export const tableRow = (page: Page, text: string): Locator => page.getByRole("row").filter({ hasText: text });
+
+/** The record page open (core/ui/RecordPage) */
+export const record = (page: Page): Locator => page.getByRole("main");
+
+/** Open a record from its list page and wait for its page */
+export async function openRow(page: Page, text: string, heading = text) {
+  await tableRow(page, text).getByRole("link", { name: text }).click();
+  await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
+}
+
+/** A split view's list item (core/ui/SplitView: setup lists) */
 export const listItem = (page: Page, text: string): Locator => page.getByRole("option").filter({ hasText: text });
 
 /** The record docked beside the list */

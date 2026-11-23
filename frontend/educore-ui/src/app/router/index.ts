@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useSession } from "@/core/auth/session";
+import { REGISTRATION_ROLES } from "@/modules/registration/groups";
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -32,7 +33,14 @@ export const router = createRouter({
           path: "admissions",
           name: "admissions",
           component: () => import("@/modules/admissions/AdmissionsView.vue"),
-          meta: { fill: true, title: "Admissions", roles: ["Admissions Officer", "Registrar"] },
+          meta: { title: "Admissions", roles: ["Admissions Officer", "Registrar"] },
+        },
+        {
+          path: "admissions/:name",
+          name: "application-record",
+          component: () => import("@/modules/admissions/ApplicationPage.vue"),
+          props: true,
+          meta: { title: "Application", roles: ["Admissions Officer", "Registrar"] },
         },
         {
           path: "application",
@@ -59,23 +67,34 @@ export const router = createRouter({
           meta: { title: "Registration", roles: ["Student"] },
         },
         {
-          path: "registrations",
-          name: "registrations",
-          component: () => import("@/modules/registration/RegistrationsView.vue"),
-          meta: { fill: true, title: "Registration approvals", roles: ["Faculty Officer", "Registrar"] },
-        },
-        {
           path: "admission-setup",
           name: "admission-setup",
           component: () => import("@/modules/setup/AdmissionSetupView.vue"),
           meta: { fill: true, title: "Admission setup", roles: ["Registrar", "System Manager"] },
         },
+        // Registration: first-year students (registry) and senior students (faculty), one menu item
         {
-          path: "enrolment",
-          name: "enrolment",
-          component: () => import("@/modules/registry/EnrolmentView.vue"),
-          meta: { fill: true, title: "First-year registration", roles: ["Registry Officer", "Registrar"] },
+          path: "registrations",
+          name: "registrations",
+          component: () => import("@/modules/registration/RegistrationOfficeView.vue"),
+          meta: { title: "Registration", roles: REGISTRATION_ROLES },
         },
+        {
+          path: "registrations/first-year/:name",
+          name: "enrolment-record",
+          component: () => import("@/modules/registry/EnrolmentPage.vue"),
+          props: true,
+          meta: { title: "Registration", roles: ["Registry Officer", "Registrar"] },
+        },
+        {
+          path: "registrations/senior/:name",
+          name: "registration-record",
+          component: () => import("@/modules/registration/RegistrationPage.vue"),
+          props: true,
+          meta: { title: "Registration", roles: ["Faculty Officer", "Registrar"] },
+        },
+        // the earlier addresses
+        { path: "enrolment", redirect: { path: "/registrations", query: { group: "first-year" } } },
       ],
     },
     { path: "/:pathMatch(.*)*", redirect: "/" },
@@ -117,7 +136,7 @@ declare module "vue-router" {
     title?: string;
     /** shown to users with any of these roles */
     roles?: string[];
-    /** a queue: fills the window, list and record side by side (core/ui/SplitView) */
+    /** a split view: fills the window, list and record side by side (core/ui/SplitView; setup lists) */
     fill?: boolean;
   }
 }

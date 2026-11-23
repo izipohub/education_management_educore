@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { expand, listItem, openRecord, pane } from "./support";
+import { openRow, record, tableRow } from "./support";
 
 const PASSWORD = process.env.EDUCORE_DEMO_PASSWORD ?? "Campus-Demo-2026";
 
@@ -35,28 +35,28 @@ test("an applicant sees their offer, its conditions and deadline, and the letter
 test("admissions sees the offer awaiting a response", async ({ page }) => {
   await signIn(page, "admissions-officer.whk");
   await page.getByRole("link", { name: "Admissions" }).click();
-  await page.getByText(/^Offered \d/).click();
-  await expect(listItem(page, "Tomas Iipinge").getByText("Pending", { exact: true })).toBeVisible();
+  await page.getByRole("tab", { name: /^Offered/ }).click();
+  await expect(tableRow(page, "Tomas Iipinge").getByText("Pending", { exact: true })).toBeVisible();
   // paper applications are answered in person
-  await expect(listItem(page, "Maria Kandjii").getByText("Paper")).toBeVisible();
+  await expect(tableRow(page, "Maria Kandjii").getByText("Paper")).toBeVisible();
 
-  await openRecord(page, "Tomas Iipinge");
-  await expect(pane(page).getByText(/^by /)).toBeVisible();
-  await expand(page, "Offer");
-  await expect(pane(page).getByRole("button", { name: "Extend deadline" })).toBeVisible();
-  await expect(pane(page).getByText(/Conditions: Final NSSCAS results/)).toBeVisible();
+  await openRow(page, "Tomas Iipinge");
+  await expect(record(page).getByText("Respond by")).toBeVisible();
+  await expect(record(page).getByRole("button", { name: "Extend deadline" })).toBeVisible();
+  await expect(record(page).getByText(/^Final NSSCAS results/)).toBeVisible();
 });
 
 test("the registry enrols an online applicant only once they accept", async ({ page }) => {
   await signIn(page, "registry-officer.whk");
-  await page.getByRole("link", { name: "First-year registration" }).click();
-  await expect(listItem(page, "Tomas Iipinge").getByText("Pending", { exact: true })).toBeVisible();
-  await openRecord(page, "Tomas Iipinge");
-  await expect(pane(page).getByText(/Waiting for the applicant to accept/)).toBeVisible();
-  await expect(pane(page).getByRole("button", { name: "Register" })).toHaveCount(0);
-  // paper offers are enrolled as before
-  await openRecord(page, "Maria Kandjii");
-  await expect(pane(page).getByRole("button", { name: "Register", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Registration", exact: true }).click();
+  await expect(tableRow(page, "Tomas Iipinge").getByText("Pending", { exact: true })).toBeVisible();
+  await openRow(page, "Tomas Iipinge");
+  await expect(record(page).getByText(/Applicant to accept the offer/).filter({ visible: true })).toBeVisible();
+  await expect(record(page).getByRole("button", { name: "Register" })).toHaveCount(0);
+  // paper offers are registered as before
+  await page.goBack();
+  await openRow(page, "Maria Kandjii");
+  await expect(record(page).getByRole("button", { name: "Register", exact: true })).toBeVisible();
   await page.screenshot({ path: "e2e/results/offer-registry.png" });
 });
 
@@ -70,8 +70,8 @@ test("approving lets admissions offer another of the applicant's choices", async
   });
   await signIn(page, "admissions-officer.osh");
   await page.getByRole("link", { name: "Admissions" }).click();
-  await openRecord(page, "Nangula Haufiku");
-  await pane(page).getByRole("button", { name: "Make offer" }).click();
+  await openRow(page, "Nangula Haufiku");
+  await record(page).getByRole("button", { name: "Make offer" }).click();
 
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("Programme to offer")).toBeVisible();

@@ -81,7 +81,7 @@ const describe = (r: { label: string; value: number; max?: number; note?: string
 }
 
 .fill.full {
-  background: var(--ec-danger);
+  background: var(--ec-ink);
 }
 
 .figure {
@@ -92,7 +92,7 @@ const describe = (r: { label: string; value: number; max?: number; note?: string
 
 .full-label {
   margin-left: 0.4rem;
-  color: var(--ec-danger);
+  color: var(--ec-ink);
   font-weight: 600;
   font-size: 0.75rem;
 }

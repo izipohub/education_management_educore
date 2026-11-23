@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { expand, openRecord, pane } from "./support";
+import { openRow, record as recordPage } from "./support";
 
 const PASSWORD = process.env.EDUCORE_DEMO_PASSWORD ?? "Campus-Demo-2026";
 
@@ -47,14 +47,13 @@ test("a mature age applicant enters work experience instead of school results", 
 test("an admissions officer sees a postgraduate applicant's qualifications and referees", async ({ page }) => {
   await signIn(page, "admissions-officer.whk");
   await page.getByRole("link", { name: "Admissions" }).click();
-  await openRecord(page, "Ndinelao Shikongo");
-  const record = pane(page);
+  await openRow(page, "Ndinelao Shikongo");
+  const record = recordPage(page);
   await expect(record.getByText(/Postgraduate · 2027 Intake/)).toBeVisible();
-  // one line per section; the rest on request
-  await expect(record.getByText("NQF 7 · 68%")).toBeVisible();
+  await expect(record.getByRole("heading", { name: "Qualifications" })).toBeVisible();
+  await expect(record.getByRole("row").filter({ hasText: "68%" }).first()).toBeVisible();
   await expect(record.getByText("Eligible", { exact: true })).toBeVisible();
-  await expect(record.getByText("Dr Demo Referee One, Demo Referee Two")).toBeVisible();
-  await expand(page, "Documents");
+  await expect(record.getByText("Dr Demo Referee One")).toBeVisible();
   await expect(record.getByText("Degree or Diploma Certificate")).toBeVisible();
   await page.screenshot({ path: "e2e/results/pathway-postgraduate-review.png" });
 });
@@ -66,10 +65,10 @@ test("a new applicant chooses how they are applying", async ({ page }) => {
   );
   await signIn(page, "applicant");
   await expect(page.getByRole("heading", { name: "Start your application" })).toBeVisible();
-  for (const name of ["School leaver", "Mature Age Entry", "Recognition of Prior Learning", "Credit transfer", "Re-admission", "Postgraduate"]) {
+  for (const name of ["Undergraduate", "Mature Age Entry", "Recognition of Prior Learning", "Credit transfer", "Re-admission", "Postgraduate"]) {
     await expect(page.getByRole("radio", { name: new RegExp(`^${name.replace("/", "\\/")}`) })).toBeVisible();
   }
-  await expect(page.getByRole("radio", { name: /^School leaver/ })).toBeChecked();
+  await expect(page.getByRole("radio", { name: /^Undergraduate/ })).toBeChecked();
   await expect(page.getByText("Are you a citizen or permanent resident of Namibia?")).toBeVisible();
   await page.screenshot({ path: "e2e/results/pathway-start.png", fullPage: true });
 });

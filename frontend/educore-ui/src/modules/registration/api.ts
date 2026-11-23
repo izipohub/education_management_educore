@@ -74,6 +74,7 @@ export const myRegistration = () => get<RegistrationState>(`${API}.status`);
 export const saveCourses = (courses: string[]) => post<RegistrationState>(`${API}.save`, { courses });
 export const submitRegistration = () => post<RegistrationState>(`${API}.submit`, {});
 export const getQueue = (status: string) => get<Queue>(`${API}.queue`, { status });
+export const getRegistration = (name: string) => get<QueueRow>(`${API}.registration`, { name });
 export const approveRegistration = (name: string) => post<{ name: string; status: string }>(`${API}.approve`, { name });
 export const returnRegistration = (name: string, note: string) =>
   post<{ name: string; status: string }>(`${API}.return_registration`, { name, note });
