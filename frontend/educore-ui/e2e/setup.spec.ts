@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { listItem, openRecord, pane } from "./support";
+import { tableRow } from "./support";
 
 const PASSWORD = process.env.EDUCORE_DEMO_PASSWORD ?? "Campus-Demo-2026";
 
@@ -35,20 +35,22 @@ test("the registrar sets the admission rules", async ({ page }) => {
   await expect(page.getByText("Shown to applicants")).toBeVisible();
   await page.screenshot({ path: "e2e/results/setup-rules.png", fullPage: true });
 
-  // pathways: one line each, the editor docked beside the list (nothing saved)
+  // pathways: a list, each on its own page (nothing saved)
   await page.getByRole("tab", { name: /^Entry pathways/ }).click();
-  await expect(listItem(page, "Mature Age Entry").getByText(/from age 25/)).toBeVisible();
-  await openRecord(page, "Mature Age Entry");
-  await expect(pane(page).getByLabel("Minimum age")).toHaveValue("25");
+  await expect(tableRow(page, "Mature Age Entry").getByText(/from age 25/)).toBeVisible();
+  await tableRow(page, "Mature Age Entry").getByRole("link", { name: "Mature Age Entry" }).click();
+  await expect(page.getByLabel("Minimum age")).toHaveValue("25");
   // the name can be changed; renaming keeps its applications (cancelled here)
-  await pane(page).getByLabel("Name", { exact: true }).fill("Mature Age Entry (MAE)");
-  await expect(pane(page).getByText("Renaming keeps its applications")).toBeVisible();
-  await pane(page).getByRole("button", { name: "Cancel" }).click();
-  await expect(pane(page).getByLabel("Name", { exact: true })).toHaveValue("Mature Age Entry");
+  await page.getByLabel("Name", { exact: true }).fill("Mature Age Entry (MAE)");
+  await expect(page.getByText("Renaming keeps its applications")).toBeVisible();
   await page.screenshot({ path: "e2e/results/setup-pathway.png" });
+  await page.getByRole("button", { name: "Cancel" }).click();
+  // back on the same list
+  await expect(page).toHaveURL(/tab=pathways/);
+  await expect(tableRow(page, "Mature Age Entry")).toBeVisible();
 
   await page.getByRole("tab", { name: /^Programmes/ }).click();
-  await expect(listItem(page, "Master of Business Administration").getByText(/NQF 7, 60%/)).toBeVisible();
+  await expect(tableRow(page, "Master of Business Administration").getByText(/NQF 7, 60%/)).toBeVisible();
 
   await page.getByRole("tab", { name: "Admission point scale" }).click();
   await expect(page.getByLabel("Grade 1", { exact: true })).toHaveValue("A*");

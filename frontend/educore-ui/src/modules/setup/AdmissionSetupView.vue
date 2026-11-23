@@ -6,14 +6,12 @@ import Message from "primevue/message";
 import SelectButton from "primevue/selectbutton";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import EcButton from "@/core/ui/EcButton.vue";
 import EcSkeleton from "@/core/ui/EcSkeleton.vue";
 import EcTabs from "@/core/ui/EcTabs.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
-import SplitView from "@/core/ui/SplitView.vue";
-import DocumentEditor from "./DocumentEditor.vue";
-import PathwayEditor from "./PathwayEditor.vue";
-import ProgrammeEditor from "./ProgrammeEditor.vue";
+import DataTable, { type Column } from "@/core/ui/DataTable.vue";
 import RulesForm from "./RulesForm.vue";
 import {
   type DocumentType,
@@ -22,22 +20,24 @@ import {
   type ScaleRow,
   type Setup,
   getSetup,
-  saveDocumentType,
-  savePathway,
   savePointsScale,
-  saveProgramme,
   saveSettings,
 } from "./api";
 
-/** The university's admission rules: settings on the Rules tab; pathways, documents and programmes as a list with
- *  the editor docked beside it; the points scale */
+/** The university's admission rules: the settings; pathways, documents and programmes as lists, each item on its
+ *  own page; the points scale */
 const toast = useToast();
 const setup = ref<Setup | null>(null);
 const loadError = ref("");
 const saving = ref(false);
 
 type Tab = "rules" | "pathways" | "documents" | "programmes" | "points";
-const tab = ref<Tab>("rules");
+const route = useRoute();
+const router = useRouter();
+const TABS: Tab[] = ["rules", "pathways", "documents", "programmes", "points"];
+const tab = ref<Tab>(TABS.includes(route.query.tab as Tab) ? (route.query.tab as Tab) : "rules");
+// the tab stays in the address, so Back from an item returns to its list
+watch(tab, (t) => void router.replace({ query: t === "rules" ? {} : { tab: t } }));
 const tabs = computed(() => [
   { label: "Settings", value: "rules" as Tab },
   { label: "Entry pathways", value: "pathways" as Tab, count: setup.value?.pathways.length },
@@ -70,33 +70,36 @@ async function run(call: () => Promise<Setup>, message: string): Promise<boolean
   }
 }
 
-// --- the selected item of the list tabs ("new" while adding one) ----------------------------------------------
-const NEW = "__new__";
-const selected = ref<string | null>(null);
-const items = computed(() => {
-  const s = setup.value;
-  if (!s) return [];
-  const list = tab.value === "pathways" ? s.pathways : tab.value === "documents" ? s.documents : tab.value === "programmes" ? s.programmes : [];
+// --- the list tabs: a row opens the item's own page ----------------------------------------------------------
+const rows = computed(() => {
+  const st = setup.value;
+  if (!st) return [];
+  const list = tab.value === "pathways" ? st.pathways : tab.value === "documents" ? st.documents : tab.value === "programmes" ? st.programmes : [];
   return list as unknown as Record<string, unknown>[];
 });
-watch(tab, () => (selected.value = (items.value[0]?.name as string) ?? null));
-
-const pathway = computed<Pathway | "new" | null>(() =>
-  selected.value === NEW ? "new" : (setup.value?.pathways.find((p) => p.name === selected.value) ?? null),
-);
-const documentType = computed<DocumentType | "new" | null>(() =>
-  selected.value === NEW ? "new" : (setup.value?.documents.find((d) => d.name === selected.value) ?? null),
-);
-const programme = computed<Programme | null>(() => setup.value?.programmes.find((p) => p.name === selected.value) ?? null);
-const first = () => (items.value[0]?.name as string) ?? null;
-
-async function onSavePathway(data: Partial<Pathway> & { pathway_name?: string }, name?: string) {
-  if (await run(() => savePathway(data, name), "Entry pathway saved")) selected.value = data.pathway_name ?? name ?? null;
-}
-async function onSaveDocument(data: Partial<DocumentType> & { document_name?: string }, name?: string) {
-  if (await run(() => saveDocumentType(data, name), "Document saved")) selected.value = data.document_name ?? name ?? null;
-}
-const onSaveProgramme = (name: string, data: Partial<Programme>) => run(() => saveProgramme(name, data), "Entry requirements saved");
+const itemLink = (r: Record<string, unknown>) => ({ name: "setup-item", params: { section: tab.value, name: String(r.name) } });
+const COLUMNS: Record<"pathways" | "documents" | "programmes", Column[]> = {
+  pathways: [
+    { key: "name", label: "Entry pathway" },
+    { key: "level", label: "Level", wide: true },
+    { key: "evidence", label: "Judged on", wide: true },
+    { key: "applications", label: "Applications", align: "right", wide: true },
+    { key: "active", label: "Status" },
+  ],
+  documents: [
+    { key: "name", label: "Document" },
+    { key: "required_for", label: "Asked of", wide: true },
+    { key: "must_be_certified", label: "Certified copy", wide: true },
+    { key: "active", label: "Status" },
+  ],
+  programmes: [
+    { key: "name", label: "Programme" },
+    { key: "code", label: "Code", wide: true },
+    { key: "level", label: "Level", wide: true },
+    { key: "entry", label: "Entry requirement" },
+  ],
+};
+const listTab = computed(() => (tab.value === "pathways" || tab.value === "documents" || tab.value === "programmes" ? tab.value : null));
 
 const asPathway = (i: Record<string, unknown>) => i as unknown as Pathway;
 const asDocument = (i: Record<string, unknown>) => i as unknown as DocumentType;
@@ -123,6 +126,7 @@ async function onSaveScale() {
 </script>
 
 <template>
+  <section class="setup">
   <PageHeader title="Admission setup" subtitle="The university's own admission rules">
     <EcTabs v-model="tab" :tabs="tabs" label="Section" class="tabs" />
   </PageHeader>
@@ -163,55 +167,48 @@ async function onSaveScale() {
       </section>
     </div>
 
-    <!-- the list, and the selected item's editor docked beside it -->
-    <SplitView v-else v-model:selected="selected" :items="items" item-key="name" :list-label="tab" placeholder="Select an item to edit it">
-      <template v-if="tab !== 'programmes'" #filters>
-        <EcButton :label="tab === 'pathways' ? 'Add an entry pathway' : 'Add a document'" :icon="Plus" size="sm" :disabled="selected === NEW" @click="selected = NEW" />
+    <DataTable
+      v-else-if="listTab"
+      :columns="COLUMNS[listTab]"
+      :rows="rows"
+      row-key="name"
+      :to="itemLink"
+      :noun="listTab === 'pathways' ? 'entry pathways' : listTab"
+      empty-title="Nothing set up yet"
+    >
+      <template v-if="listTab !== 'programmes'" #toolbar>
+        <EcButton
+          :label="listTab === 'pathways' ? 'Add an entry pathway' : 'Add a document'"
+          :icon="Plus"
+          size="sm"
+          @click="router.push({ name: 'setup-item', params: { section: listTab, name: 'new' } })"
+        />
       </template>
-
-      <template #item="{ item }">
-        <div v-if="tab === 'pathways'" class="item">
-          <div class="item-top">
-            <span class="who">{{ asPathway(item).name }}</span>
-            <span class="dot" :class="{ on: asPathway(item).active }">{{ asPathway(item).active ? "Open" : "Closed" }}</span>
-          </div>
-          <span class="ec-muted">{{ asPathway(item).level }} · {{ asPathway(item).evidence }}<template v-if="asPathway(item).min_age"> · from age {{ asPathway(item).min_age }}</template></span>
-        </div>
-        <div v-else-if="tab === 'documents'" class="item">
-          <div class="item-top">
-            <span class="who">{{ asDocument(item).name }}</span>
-            <span v-if="!asDocument(item).active" class="dot">Not in use</span>
-          </div>
-          <span class="ec-muted">{{ asDocument(item).required_for }}<template v-if="asDocument(item).must_be_certified"> · certified</template></span>
-        </div>
-        <div v-else class="item">
-          <div class="item-top">
-            <span class="who">{{ asProgramme(item).name }}</span>
-            <span class="ec-muted ec-nowrap">{{ asProgramme(item).code }}</span>
-          </div>
-          <span class="ec-muted">{{ asProgramme(item).level }} · {{ entry(asProgramme(item)) }}</span>
-        </div>
+      <template #cell-name="{ row: r }">{{ r.name }}</template>
+      <template #cell-evidence="{ row: r }">{{ asPathway(r).evidence }}<template v-if="asPathway(r).min_age"> · from age {{ asPathway(r).min_age }}</template></template>
+      <template #cell-applications="{ row: r }">{{ asPathway(r).applications || "" }}</template>
+      <template #cell-active="{ row: r }">
+        <span class="dot" :class="{ on: r.active }">{{ r.active ? (listTab === "pathways" ? "Open" : "In use") : listTab === "pathways" ? "Closed" : "Not in use" }}</span>
       </template>
-
-      <template #detail>
-        <PathwayEditor v-if="tab === 'pathways' && pathway" :key="String(selected)" :pathway="pathway" :setup="setup" :saving="saving" @save="onSavePathway" @cancel="selected = first()" />
-        <DocumentEditor v-else-if="tab === 'documents' && documentType" :key="String(selected)" :document="documentType" :setup="setup" :saving="saving" @save="onSaveDocument" @cancel="selected = first()" />
-        <ProgrammeEditor v-else-if="tab === 'programmes' && programme" :key="String(selected)" :programme="programme" :setup="setup" :saving="saving" @save="onSaveProgramme" />
-      </template>
-    </SplitView>
+      <template #cell-must_be_certified="{ row: r }">{{ asDocument(r).must_be_certified ? "Required" : "" }}</template>
+      <template #cell-entry="{ row: r }">{{ entry(asProgramme(r)) }}</template>
+    </DataTable>
   </template>
+  </section>
 </template>
 
 <style scoped>
+.setup {
+  display: grid;
+  gap: 1rem;
+}
+
 .tabs {
   flex: 1;
 }
 
-/* the pages that are forms scroll inside the window (the screen itself fills it, like the queues) */
 .scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+  min-width: 0;
 }
 
 .item {

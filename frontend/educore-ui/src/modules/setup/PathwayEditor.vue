@@ -105,7 +105,7 @@ function save() {
     </DetailSection>
 
     <template #actions>
-      <EcButton label="Cancel" variant="ghost" :disabled="saving" @click="isNew ? emit('cancel') : reset()" />
+      <EcButton label="Cancel" variant="ghost" :disabled="saving" @click="emit('cancel')" />
       <EcButton label="Save" variant="primary" :loading="saving" :disabled="!form.pathway_name.trim()" @click="save" />
     </template>
   </DetailPane>

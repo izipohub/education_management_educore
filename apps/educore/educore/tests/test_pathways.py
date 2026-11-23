@@ -6,6 +6,7 @@ from frappe.tests import IntegrationTestCase
 from educore.access.demo_users import new_user
 from educore.admissions import application as rules
 from educore.api.v1 import apply
+from educore.tests.utils import school_route
 
 PASSWORD = "Campus-Demo-2026"
 ADULT = {
@@ -73,13 +74,13 @@ class TestPathways(IntegrationTestCase):
 
 	def test_the_open_routes_are_listed_in_the_universitys_order(self):
 		listed = [p["name"] for p in apply.options()["pathways"]]
-		self.assertEqual(listed[0], "School leaver")
+		self.assertEqual(listed[0], school_route())
 		for name in ("Mature Age Entry", "Recognition of Prior Learning", "Credit transfer", "Re-admission", "Postgraduate"):
 			self.assertIn(name, listed)
 
 	def test_a_new_draft_starts_on_the_first_route(self):
 		self._as_new_applicant()
-		self.assertEqual(self._save()["pathway"], "School leaver")
+		self.assertEqual(self._save()["pathway"], school_route())
 
 	def test_choices_must_be_at_the_routes_level(self):
 		self._as_new_applicant()
@@ -202,7 +203,7 @@ class TestPathways(IntegrationTestCase):
 	def test_international_changes_the_documents_and_fee_not_the_route(self):
 		self._as_new_applicant()
 		data = self._save(international=True)
-		self.assertEqual(data["pathway"], "School leaver")
+		self.assertEqual(data["pathway"], school_route())
 		required = {d["document_type"] for d in data["documents"] if d["required"]}
 		self.assertIn("Foreign School Leaving Certificate", required)
 		self.assertIn("Study Permit or Visa", required)

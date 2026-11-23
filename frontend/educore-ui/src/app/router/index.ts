@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useSession } from "@/core/auth/session";
+import { FINANCE_ROLES } from "@/modules/finance/api";
+import { RECORD_ROLES } from "@/modules/records/api";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
 
 export const router = createRouter({
@@ -76,7 +78,14 @@ export const router = createRouter({
           path: "admission-setup",
           name: "admission-setup",
           component: () => import("@/modules/setup/AdmissionSetupView.vue"),
-          meta: { fill: true, title: "Admission setup", roles: ["Registrar", "System Manager"] },
+          meta: { title: "Admission setup", roles: ["Registrar", "System Manager"] },
+        },
+        {
+          path: "admission-setup/:section(pathways|documents|programmes)/:name",
+          name: "setup-item",
+          component: () => import("@/modules/setup/SetupItemPage.vue"),
+          props: true,
+          meta: { title: "Admission setup", roles: ["Registrar", "System Manager"] },
         },
         // Registration: first-year students (registry) and senior students (faculty), one menu item
         {
@@ -98,6 +107,25 @@ export const router = createRouter({
           component: () => import("@/modules/registration/RegistrationPage.vue"),
           props: true,
           meta: { title: "Registration", roles: ["Faculty Officer", "Registrar"] },
+        },
+        {
+          path: "students",
+          name: "students",
+          component: () => import("@/modules/records/StudentsView.vue"),
+          meta: { title: "Students", roles: RECORD_ROLES },
+        },
+        {
+          path: "students/:name",
+          name: "student-record",
+          component: () => import("@/modules/records/StudentPage.vue"),
+          props: true,
+          meta: { title: "Student", roles: RECORD_ROLES },
+        },
+        {
+          path: "application-fees",
+          name: "application-fees",
+          component: () => import("@/modules/finance/ApplicationFeesView.vue"),
+          meta: { title: "Application fees", roles: FINANCE_ROLES },
         },
         // the earlier addresses
         { path: "enrolment", redirect: { path: "/registrations", query: { group: "first-year" } } },

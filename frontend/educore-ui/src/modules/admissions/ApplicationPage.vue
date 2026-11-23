@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { offerLetterUrl } from "@/core/documents";
 import DatePicker from "primevue/datepicker";
 import InputText from "primevue/inputtext";
 import Textarea from "primevue/textarea";
@@ -304,8 +305,9 @@ const subtitle = computed(() => {
           <div v-if="review.offer.conditions"><dt>Conditions</dt><dd>{{ review.offer.conditions }}</dd></div>
           <div v-if="review.offer.decline_reason"><dt>Reason given</dt><dd>{{ review.offer.decline_reason }}</dd></div>
         </dl>
-        <template v-if="review.can_review && review.offer.status === 'Awaiting response'" #footer>
-          <EcButton label="Extend deadline" size="sm" variant="ghost" @click="startExtend" />
+        <template #footer>
+          <a class="pdf-link" :href="offerLetterUrl(review.name)" target="_blank" rel="noopener">Offer letter (PDF)</a>
+          <EcButton v-if="review.can_review && review.offer.status === 'Awaiting response'" label="Extend deadline" size="sm" variant="ghost" @click="startExtend" />
         </template>
       </EcPanel>
 
@@ -430,6 +432,15 @@ const subtitle = computed(() => {
 </template>
 
 <style scoped>
+.pdf-link {
+  margin-right: auto;
+  align-self: center;
+  color: var(--ec-accent);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .none {
   margin: 0;
 }

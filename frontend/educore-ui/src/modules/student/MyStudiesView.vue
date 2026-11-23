@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { proofOfRegistrationUrl } from "@/core/documents";
 import PageHeader from "@/core/ui/PageHeader.vue";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
@@ -53,6 +54,7 @@ const feeStatus = computed(() => {
             <div><dt>Academic year</dt><dd>{{ current.academic_year }}</dd></div>
             <div><dt>Enrolled from</dt><dd>{{ formatDate(current.enrollment_date) }}</dd></div>
           </dl>
+          <a class="pdf" :href="proofOfRegistrationUrl(current.name)" target="_blank" rel="noopener">Proof of registration (PDF)</a>
         </article>
         <article v-else class="card">
           <h2>Programme</h2>
@@ -216,5 +218,13 @@ const feeStatus = computed(() => {
   .cards {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+.pdf {
+  justify-self: start;
+  color: var(--ec-accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
 }
 </style>

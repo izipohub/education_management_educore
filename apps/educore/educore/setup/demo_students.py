@@ -14,6 +14,7 @@ from education.education.api import enroll_student
 from frappe.model.workflow import apply_workflow
 
 from educore.academics.calendar import ensure_academic_year, term
+from educore.academics.students import copy_particulars
 from educore.access.demo_users import DOMAIN, _assert_development_site
 
 #: login, first name, last name, offering: enrolled in 2026
@@ -25,6 +26,37 @@ ENROLLED = [
 	("student1.kmp", "Anna", "Beukes", "BACC-KMP-PT"),
 	("student2.kmp", "Petrus", "Kooper", "DAF-KMP-FT"),
 ]
+
+#: what each enrolled student wrote on their form: gender, national ID, home language, region, town, next of kin
+#: (relationship, name), who pays (and the sponsor)
+PARTICULARS = {
+	"student1.whk": ("Female", "06041200711", "Oshiwambo", "Omusati", "Outapi", "Mother", "Hileni Amukoto", "Sponsor or bursary", "NSFAF"),
+	"student2.whk": ("Male", "05090300422", "Damara/Nama", "Erongo", "Omaruru", "Father", "Johannes Garoeb", "Parent or guardian", None),
+	"student1.osh": ("Female", "05112500198", "Oshiwambo", "Oshana", "Ondangwa", "Mother", "Ndeshi Shilongo", "Sponsor or bursary", "NSFAF"),
+	"student2.osh": ("Male", "06020800356", "Oshiwambo", "Ohangwena", "Eenhana", "Guardian", "Selma Iiyambo", "Parent or guardian", None),
+	"student1.kmp": ("Female", "99070100845", "Afrikaans", "Karas", "Keetmanshoop", "Spouse or partner", "Jacobus Beukes", "Employer", "Karas Regional Council"),
+	"student2.kmp": ("Male", "05031700623", "Afrikaans", "Hardap", "Mariental", "Father", "Willem Kooper", "Self", None),
+}
+
+
+def _particulars(login: str) -> dict:
+	gender, national_id, language, region, town, relationship, kin, payer, sponsor = PARTICULARS[login]
+	number = national_id[-4:]
+	return {
+		"gender": gender,
+		"educore_title": "Ms" if gender == "Female" else "Mr",
+		"educore_national_id": national_id,
+		"educore_home_language": language,
+		"educore_region_of_origin": region,
+		"educore_home_town": town,
+		"student_mobile_number": f"+26481555{number}",
+		"educore_kin_relationship": relationship,
+		"educore_kin_name": kin,
+		"educore_kin_phone": f"+26481666{number}",
+		"educore_fee_payer": payer,
+		"educore_fee_payer_name": sponsor,
+	}
+
 
 #: first name, last name, offering: applied for 2027, not yet decided
 APPLICANTS = [
@@ -96,6 +128,9 @@ def create():
 	for login, first, last, offering in ENROLLED:
 		email = f"{login}@{DOMAIN}"
 		applicant = _applicant(first, last, offering, 2026, email=email, approve=True)
+		# their particulars, as on the form (set before the student is made, so they are copied across)
+		if not frappe.db.get_value("Student Applicant", applicant, "educore_national_id"):
+			frappe.db.set_value("Student Applicant", applicant, _particulars(login), update_modified=False)
 		student = frappe.db.get_value("Student", {"student_applicant": applicant})
 		if not student:
 			enrollment = enroll_student(applicant)
@@ -110,6 +145,8 @@ def create():
 			user = frappe.get_doc("User", email)
 			user.first_name, user.last_name = first, last
 			user.save(ignore_permissions=True)
+		if not frappe.db.get_value("Student", student, "educore_national_id"):
+			copy_particulars(student)
 		enrolled += 1
 
 	for first, last, offering in APPLICANTS:

@@ -67,6 +67,24 @@ class TestRegistryAPI(IntegrationTestCase):
 		row = registry.enrol(name)
 		self.assertEqual(row["student_login"], "test.application.email@example.com")
 
+	def test_the_particulars_and_next_of_kin_follow_the_student(self):
+		name = self._approved(email="test.particulars@example.com")
+		frappe.db.set_value("Student Applicant", name, {
+			"educore_national_id": "07010100999",
+			"educore_fee_payer": "Sponsor or bursary",
+			"educore_fee_payer_name": "NSFAF",
+			"educore_kin_relationship": "Mother",
+			"educore_kin_name": "Test Mother",
+			"educore_kin_phone": "+264811110000",
+		})
+		self._as("registry-officer.whk")
+		row = registry.enrol(name)
+		frappe.set_user("Administrator")
+		student = frappe.get_doc("Student", row["student"])
+		self.assertEqual((student.educore_national_id, student.educore_fee_payer_name), ("07010100999", "NSFAF"))
+		self.assertEqual([(g.guardian_name, g.relation) for g in student.guardians], [("Test Mother", "Mother")])
+		self.assertEqual(frappe.db.get_value("Guardian", student.guardians[0].guardian, "mobile_number"), "+264811110000")
+
 	def test_an_email_is_required_and_must_be_new(self):
 		name = self._approved()
 		self._as("registry-officer.whk")

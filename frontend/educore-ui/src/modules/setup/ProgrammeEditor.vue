@@ -12,7 +12,7 @@ import type { Programme, Setup } from "./api";
 
 /** A programme's level and entry requirements, docked beside the list */
 const props = defineProps<{ programme: Programme; setup: Setup; saving: boolean }>();
-const emit = defineEmits<{ save: [string, Partial<Programme>] }>();
+const emit = defineEmits<{ cancel: []; save: [string, Partial<Programme>] }>();
 
 const form = ref<Programme>({ ...props.programme });
 const reset = () => (form.value = { ...props.programme, subject_requirements: props.programme.subject_requirements.map((r) => ({ ...r })) });
@@ -66,7 +66,7 @@ function save() {
     </DetailSection>
 
     <template #actions>
-      <EcButton label="Undo changes" variant="ghost" :disabled="saving" @click="reset" />
+      <EcButton label="Cancel" variant="ghost" :disabled="saving" @click="emit('cancel')" />
       <EcButton label="Save" variant="primary" :loading="saving" @click="save" />
     </template>
   </DetailPane>

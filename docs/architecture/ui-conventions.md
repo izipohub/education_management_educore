@@ -40,7 +40,7 @@ titles (`h1`, `h2`). Both are served by `educore_theme` (`/assets/educore_theme/
 | `RecordPage` | One record on its own page (see Screens) |
 | `EcPanel` | A titled panel of a record page or the dashboard; `flush` for an edge-to-edge `.ec-table`; a footer for the panel's own action |
 | `ChecklistPanel` | What is outstanding, as a neutral list (`RecordPage` shows it from `outstanding`) |
-| `SplitView`, `DetailPane`, `DetailSection` | Setup lists only (pathways, documents, programmes): the list on the left, the editor docked on the right. The route sets `meta.fill: true` |
+| `DetailPane`, `DetailSection` | An editor's sections and pinned actions inside a card: the admission setup's pathway, document and programme pages. (`SplitView` is kept but no screen uses it now.) |
 | `StatusTag` | Any stored status: quiet text on a neutral pill, a small dot carrying the tone; label and tone from `core/status.ts` (`statusTag(kind, value)`), the same everywhere |
 | `EmptyState` | Nothing to show |
 | `StatTile` | A headline number with its context and a link to act on it (dashboard) |
@@ -66,6 +66,9 @@ Icons: Lucide (`@lucide/vue`), 18 px in the menu, 15 to 16 px inline.
 - Formal wording; no long dashes (use commas or " · ").
 - Calm pages: no coloured banners or tinted headers for a status; colour is a dot beside a word.
 - Decisions on a record sit top right of its page; a decision that needs a reason or a choice opens an `EcModal`.
-- Setup lists (pathways, documents, programmes) edit in the docked side window, never overlay drawers.
+- Setup lists (pathways, documents, programmes) are list pages too; each item opens on its own page, and Save or
+  Cancel returns to the list.
+- Documents people take away (offer letter, proof of registration) are PDFs from the server
+  (`educore.api.v1.documents`), linked with `core/documents.ts`.
 - Dates DD-MM-YYYY, money N$ (`core/format.ts`).
 - Colours, radius, borders and shadows come from the `--ec-*` tokens, never hard-coded per screen.

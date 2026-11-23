@@ -101,6 +101,59 @@ def _check_intake_capacity(doc, offering):
 def validate_student(doc, method=None):
 	if not doc.get("campus") and doc.student_applicant:
 		doc.campus = frappe.db.get_value("Student Applicant", doc.student_applicant, "campus")
+	# the next of kin on the application becomes the student's guardian, to be reached in an emergency
+	if doc.is_new() and doc.student_applicant and not doc.get("guardians"):
+		add_next_of_kin(doc)
+
+
+#: Education's Student Guardian relations; any other relationship on the form is "Others"
+GUARDIAN_RELATIONS = {"Mother": "Mother", "Father": "Father"}
+
+
+def add_next_of_kin(student):
+	"""A Guardian from the application's next of kin (name, phone, email), linked on the student"""
+	kin = frappe.db.get_value(
+		"Student Applicant",
+		student.student_applicant,
+		["educore_kin_name", "educore_kin_relationship", "educore_kin_phone", "educore_kin_email", "educore_kin_address"],
+		as_dict=True,
+	)
+	if not kin or not kin.educore_kin_name:
+		return
+	guardian = frappe.get_doc(
+		{
+			"doctype": "Guardian",
+			"guardian_name": kin.educore_kin_name,
+			"mobile_number": kin.educore_kin_phone,
+			"email_address": kin.educore_kin_email,
+			"work_address": kin.educore_kin_address,
+		}
+	).insert(ignore_permissions=True)
+	student.append(
+		"guardians",
+		{
+			"guardian": guardian.name,
+			"guardian_name": guardian.guardian_name,
+			"relation": GUARDIAN_RELATIONS.get(kin.educore_kin_relationship, "Others"),
+		},
+	)
+
+
+def copy_particulars(student: str):
+	"""For a student registered before the particulars were kept: copy them from the application, with the guardian"""
+	from educore.api.v1.apply import PERSONAL_FIELDS
+
+	doc = frappe.get_doc("Student", student)
+	if not doc.student_applicant:
+		return
+	applicant = frappe.get_doc("Student Applicant", doc.student_applicant)
+	for field in PERSONAL_FIELDS:
+		if field.startswith("educore_") and applicant.get(field) and not doc.get(field):
+			doc.set(field, applicant.get(field))
+	if not doc.get("guardians"):
+		add_next_of_kin(doc)
+	doc.flags.ignore_permissions = True
+	doc.save()
 
 
 def validate_enrollment(doc, method=None):

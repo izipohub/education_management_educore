@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { proofOfRegistrationUrl } from "@/core/documents";
 import DatePicker from "primevue/datepicker";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
@@ -141,7 +142,10 @@ const subtitle = computed(() =>
           <div><dt>Campus</dt><dd>{{ enrolled.campus }}</dd></div>
           <div><dt>Academic year</dt><dd>{{ enrolled.academic_year }}</dd></div>
           <div><dt>Registered from</dt><dd>{{ formatDate(enrolled.enrollment_date) }}</dd></div>
-          <div v-if="enrolled.enrollment"><dt>Programme enrolment</dt><dd>{{ enrolled.enrollment }}</dd></div>
+          <div v-if="enrolled.enrollment">
+            <dt>Programme enrolment</dt>
+            <dd>{{ enrolled.enrollment }} · <a :href="proofOfRegistrationUrl(enrolled.enrollment)" target="_blank" rel="noopener">Proof of registration (PDF)</a></dd>
+          </div>
         </dl>
       </EcPanel>
     </template>

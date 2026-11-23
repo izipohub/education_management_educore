@@ -842,6 +842,20 @@ PROPERTY_SETTERS = (
 )
 
 
+def _student_particulars() -> list[dict]:
+	"""The applicant's particulars, on the Student too under the same names: Education's enroll_student copies
+	same-named fields from the application, so they follow the student from registration on"""
+	fields = CUSTOM_FIELDS["Student Applicant"]
+	start = next(i for i, f in enumerate(fields) if f["fieldname"] == "educore_particulars_section")
+	end = next(i for i, f in enumerate(fields) if f["fieldname"] == "educore_support_needs")
+	copied = [dict(f) for f in fields[start : end + 1]]
+	copied[0]["insert_after"] = "siblings"
+	return copied
+
+
+CUSTOM_FIELDS["Student"].extend(_student_particulars())
+
+
 def sync():
 	from frappe.custom.doctype.property_setter.property_setter import make_property_setter
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  Banknote,
   BookOpen,
   ClipboardCheck,
   FileText,
@@ -11,6 +12,7 @@ import {
   Settings,
   UserCheck,
   UserPlus,
+  Users,
 } from "@lucide/vue";
 import Avatar from "primevue/avatar";
 import Button from "primevue/button";
@@ -18,6 +20,8 @@ import { type Component, computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useSession } from "@/core/auth/session";
 import { useBranding } from "@/core/branding";
+import { FINANCE_ROLES } from "@/modules/finance/api";
+import { RECORD_ROLES } from "@/modules/records/api";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
 
 const session = useSession();
@@ -65,6 +69,8 @@ const NAV: NavItem[] = [
   { label: "My teaching", icon: GraduationCap, to: "/my-teaching", roles: ["Lecturer"] },
   { label: "Admissions", icon: UserPlus, to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
   { label: "Registration", icon: UserCheck, to: "/registrations", roles: REGISTRATION_ROLES },
+  { label: "Students", icon: Users, to: "/students", roles: RECORD_ROLES },
+  { label: "Application fees", icon: Banknote, to: "/application-fees", roles: FINANCE_ROLES },
   { label: "Admission setup", icon: Settings, to: "/admission-setup", roles: ["Registrar", "System Manager"] },
 ];
 

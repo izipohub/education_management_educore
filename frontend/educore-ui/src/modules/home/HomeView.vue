@@ -113,7 +113,14 @@ const showCampusDonut = computed(() => Boolean(s.value.students && !chosen.value
     <div v-else class="board" :class="{ busy: loading }" :aria-busy="loading">
       <!-- the headline figures, each with where to act on it -->
       <div class="tiles">
-        <StatTile v-if="s.students" label="Students" :value="s.students.total" :hint="chosen || `${s.students.by_campus.length} campuses`" />
+        <StatTile
+          v-if="s.students"
+          label="Students"
+          :value="s.students.total"
+          :hint="chosen || `${s.students.by_campus.length} campuses`"
+          :to="{ path: '/students', query: chosen ? { campus: chosen } : {} }"
+          action="View students"
+        />
         <StatTile
           v-if="s.admissions"
           :label="`Applications ${s.admissions.academic_year ?? ''}`"

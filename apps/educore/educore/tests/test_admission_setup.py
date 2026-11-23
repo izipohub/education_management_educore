@@ -4,13 +4,15 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from educore.api.v1 import admission_setup as api
+from educore.tests.utils import school_route
 
 REGISTRAR = "registrar@educore.localhost"
 
 
 class TestAdmissionSetup(IntegrationTestCase):
 	def setUp(self):
-		if not frappe.db.exists("User", REGISTRAR) or not frappe.db.exists("Admission Pathway", "School leaver"):
+		self.school = school_route()
+		if not frappe.db.exists("User", REGISTRAR) or not self.school:
 			self.skipTest("run the demo setup first")
 		# put back whatever a test changes (Frappe rolls back once per class only)
 		settings = frappe.get_single("Admission Settings")
@@ -39,7 +41,7 @@ class TestAdmissionSetup(IntegrationTestCase):
 		self.assertRaises(frappe.PermissionError, api.save_settings, {"max_choices": 2})
 		frappe.set_user(REGISTRAR)
 		data = api.setup()
-		self.assertIn("School leaver", [p["name"] for p in data["pathways"]])
+		self.assertIn(self.school, [p["name"] for p in data["pathways"]])
 		self.assertTrue(any(p["code"] == "MBA" for p in data["programmes"]))
 
 	def test_the_rules_are_saved_within_limits(self):
@@ -77,9 +79,9 @@ class TestAdmissionSetup(IntegrationTestCase):
 
 	def test_renaming_a_pathway_keeps_its_applications(self):
 		frappe.set_user("Administrator")
-		before = frappe.db.count("Student Applicant", {"educore_pathway": "School leaver"})
+		before = frappe.db.count("Student Applicant", {"educore_pathway": self.school})
 		frappe.set_user(REGISTRAR)
-		data = api.save_pathway({"pathway_name": "Grade 12 school leaver"}, name="School leaver")
+		data = api.save_pathway({"pathway_name": "Grade 12 school leaver"}, name=self.school)
 		self.assertIn("Grade 12 school leaver", [p["name"] for p in data["pathways"]])
 		self.assertEqual(frappe.db.count("Student Applicant", {"educore_pathway": "Grade 12 school leaver"}), before)
 		# only the capitals: the same record, renamed
@@ -89,7 +91,7 @@ class TestAdmissionSetup(IntegrationTestCase):
 		self.assertNotIn("Grade 12 school leaver", names)
 		self.assertEqual(frappe.db.count("Student Applicant", {"educore_pathway": "Grade 12 School Leaver"}), before)
 		self.assertRaises(frappe.ValidationError, api.save_pathway, {"pathway_name": "Postgraduate"}, name="Grade 12 School Leaver")
-		api.save_pathway({"pathway_name": "School leaver"}, name="Grade 12 School Leaver")  # the other tests use it
+		api.save_pathway({"pathway_name": self.school}, name="Grade 12 School Leaver")  # the other tests use it
 
 	def test_renaming_a_document_keeps_the_uploads_and_pathways(self):
 		data = api.save_document_type({"document_name": "Curriculum vitae (CV)"}, name="Curriculum Vitae")

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { offerLetterUrl } from "@/core/documents";
 import Button from "primevue/button";
 import Message from "primevue/message";
 import Tag from "primevue/tag";
@@ -84,6 +85,7 @@ const SEVERITY = { "Awaiting response": "warn", Accepted: "success", Declined: "
     <div class="letter-actions">
       <Button :label="showLetter ? 'Hide offer letter' : 'View offer letter'" text size="small" @click="showLetter = !showLetter" />
       <Button label="Print" text size="small" icon="pi pi-print" @click="print" />
+      <a class="pdf" :href="offerLetterUrl(application.name)" target="_blank" rel="noopener">Download PDF</a>
     </div>
 
     <!-- the letter: on screen on request, and what is printed -->
@@ -117,6 +119,14 @@ const SEVERITY = { "Awaiting response": "warn", Accepted: "success", Declined: "
 
 .offer-head,
 .actions,
+.pdf {
+  align-self: center;
+  color: var(--ec-accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .letter-actions {
   display: flex;
   flex-wrap: wrap;
