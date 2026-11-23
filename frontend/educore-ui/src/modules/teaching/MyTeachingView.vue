@@ -71,7 +71,10 @@ const totalStudents = computed(() => new Set(data.value?.classes.flatMap((c) => 
           </p>
           <p v-if="cls.co_lecturers.length" class="sub">With {{ cls.co_lecturers.join(", ") }}</p>
         </div>
-        <Tag :value="`${cls.students.length} ${cls.students.length === 1 ? 'student' : 'students'}`" severity="secondary" />
+        <div class="class-actions">
+          <Tag :value="`${cls.students.length} ${cls.students.length === 1 ? 'student' : 'students'}`" severity="secondary" />
+          <RouterLink v-if="cls.students.length" :to="{ name: 'class-marks', params: { group: cls.name } }" class="marks-link">Marks</RouterLink>
+        </div>
       </header>
       <DataTable :value="cls.students" data-key="student" size="small" class="table">
         <template #empty><p class="empty">No students in this class.</p></template>
@@ -89,6 +92,23 @@ const totalStudents = computed(() => new Set(data.value?.classes.flatMap((c) => 
 </template>
 
 <style scoped>
+.class-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.marks-link {
+  color: var(--ec-accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.marks-link:hover {
+  text-decoration: underline;
+}
+
 .head {
   display: flex;
   flex-wrap: wrap;

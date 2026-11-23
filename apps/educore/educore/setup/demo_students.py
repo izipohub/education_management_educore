@@ -187,6 +187,9 @@ def create():
 	fees = invoice_and_pay()
 	groups = create_course_groups()
 	print(f"{groups} course groups created")
+	from educore.setup import demo_results
+
+	print(f"{demo_results.create()} mark sheets created")
 
 	from educore.setup.demo_online import create as create_online_application
 

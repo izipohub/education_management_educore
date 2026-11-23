@@ -15,7 +15,7 @@ test("a student lands on their own studies: programme, courses and fees", async 
   await expect(page.getByRole("heading", { name: "Anna Beukes" })).toBeVisible();
   await expect(page.getByText("Bachelor of Accounting", { exact: true })).toBeVisible();
   await expect(page.getByText("NQF level 7")).toBeVisible();
-  await expect(page.getByText("ACC1511")).toBeVisible();
+  await expect(page.getByText("ACC1511").first()).toBeVisible();
   await expect(page.getByText("N$ 10,150.00 overdue")).toBeVisible();
   // the statement runs from the fees charged, through the payment, to what is owed
   await expect(page.getByRole("row").filter({ hasText: "Payment EFT-DEMO" })).toContainText("N$ 10,150.00");

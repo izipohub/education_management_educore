@@ -1,0 +1,181 @@
+{
+ "name": "Mark Sheet",
+ "autoname": "field:student_group",
+ "track_changes": 1,
+ "description": "A class's course results: entered by the lecturer, moderated by the department, approved by the examination board, published to students (educore.academics.results).",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  }
+ ],
+ "title_field": "student_group",
+ "fields": [
+  {
+   "fieldname": "student_group",
+   "fieldtype": "Link",
+   "label": "Class",
+   "options": "Student Group",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nSubmitted\nModerated\nApproved\nPublished",
+   "default": "Draft",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "return_note",
+   "fieldtype": "Small Text",
+   "label": "Returned With",
+   "read_only": 1
+  },
+  {
+   "fieldname": "entries_section",
+   "fieldtype": "Section Break",
+   "label": "Marks"
+  },
+  {
+   "fieldname": "entries",
+   "fieldtype": "Table",
+   "label": "Students",
+   "options": "Mark Sheet Entry"
+  },
+  {
+   "fieldname": "trail_section",
+   "fieldtype": "Section Break",
+   "label": "Who and When",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "submitted_by",
+   "fieldtype": "Link",
+   "label": "Submitted By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "moderated_by",
+   "fieldtype": "Link",
+   "label": "Moderated By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "moderated_on",
+   "fieldtype": "Datetime",
+   "label": "Moderated On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "trail_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "label": "Approved By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_on",
+   "fieldtype": "Datetime",
+   "label": "Approved On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "board_reference",
+   "fieldtype": "Data",
+   "label": "Examination Board",
+   "read_only": 1,
+   "description": "The meeting that approved the results."
+  },
+  {
+   "fieldname": "published_on",
+   "fieldtype": "Datetime",
+   "label": "Published On",
+   "read_only": 1
+  }
+ ],
+ "actions": [],
+ "links": [],
+ "states": [],
+ "creation": "2026-11-24 09:00:00.000000",
+ "modified": "2026-11-24 09:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Academics",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "field_order": [
+  "student_group",
+  "course",
+  "campus",
+  "academic_year",
+  "column_1",
+  "status",
+  "return_note",
+  "entries_section",
+  "entries",
+  "trail_section",
+  "submitted_by",
+  "submitted_on",
+  "moderated_by",
+  "moderated_on",
+  "trail_column",
+  "approved_by",
+  "approved_on",
+  "board_reference",
+  "published_on"
+ ]
+}

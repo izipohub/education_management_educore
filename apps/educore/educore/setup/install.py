@@ -2,6 +2,7 @@
 
 import frappe
 
+from educore.academics import results as exam_results
 from educore.access import desk, roles
 from educore.admissions import pathways
 from educore.registration import rules as registration
@@ -16,6 +17,7 @@ def after_migrate():
 	desk.sync()
 	pathways.ensure_defaults()
 	registration.ensure_defaults()
+	exam_results.ensure_defaults()
 	_fee_setup()
 
 

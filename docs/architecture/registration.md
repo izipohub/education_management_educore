@@ -52,4 +52,8 @@ students and `/registrations` for faculty officers).
 ## Later
 
 - Academic standing set automatically from examination results (examinations module).
-- Repeats and prerequisites from results, instead of the student choosing other years' courses freely.
+- **Next after examinations: prerequisites and repeats.** In the curriculum, the faculty sets a course's
+  prerequisites (a course that must be passed first, e.g. Programming Fundamentals before Data Structures and
+  Algorithms). At registration, from the published results: a course is offered only when its prerequisites are
+  passed; a course failed is offered again (a repeat) before the next year's courses; the approval page shows why a
+  course is or is not open to the student. Until then, students choose other years' courses freely.

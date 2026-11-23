@@ -1,0 +1,347 @@
+"""Examinations: marks, moderation, approval and published results (educore.academics.results).
+
+- The lecturer enters a class's marks (only the classes they teach: User → Employee → Instructor on the class)
+  and submits them.
+- The head of department or the dean moderates (own department or faculty): adjusts a mark with a note, or
+  returns the sheet to the lecturer; marks it moderated.
+- The examinations officer (own campus) records the examination board's approval, or returns the sheet to the
+  department, and publishes approved results; publishing sets academic standing.
+- The Registrar sets the rules and, with the faculty officer, reads everything.
+- A student sees their own published results only.
+"""
+
+import frappe
+from frappe import _
+from frappe.utils import flt, now_datetime
+
+from educore.academics import results
+from educore.api.v1.teaching import _instructors
+from educore.api.v1.teaching_allocation import _courses
+
+MODERATE_ROLES = ("Head of Department", "Dean", "System Manager")
+EXAM_ROLES = ("Examinations Officer", "System Manager")
+RULES_ROLES = ("Registrar", "System Manager")
+READ_ROLES = (*MODERATE_ROLES, *EXAM_ROLES, "Registrar", "Faculty Officer")
+RULE_FIELDS = ("ca_weight", "exam_admission_ca", "pass_mark", "supplementary_from", "probation_share", "grading_scale")
+
+
+def _has(roles) -> bool:
+	return bool(set(frappe.get_roles()) & set(roles))
+
+
+def _require(roles, message=None):
+	if not _has(roles):
+		frappe.throw(message or _("Not permitted"), frappe.PermissionError)
+
+
+def _rules() -> dict:
+	s = results.settings()
+	return {**{f: s.get(f) for f in RULE_FIELDS}, "bands": [{"grade": g, "from": t} for g, t in results.grade_bands()]}
+
+
+def _teaches(group: str) -> bool:
+	mine = set(_instructors())
+	return bool(mine) and bool(frappe.get_all("Student Group Instructor", filters={"parent": group, "instructor": ("in", list(mine))}, limit=1))
+
+
+def _in_scope(group: str) -> bool:
+	"""A staff member's scope: the class's course in their department or faculty, and its campus theirs"""
+	course, campus = frappe.db.get_value("Student Group", group, ["course", "campus"]) or (None, None)
+	if course not in _courses():
+		return False
+	return not campus or campus in frappe.get_list("Campus", pluck="name", limit=0)
+
+
+def _sheet(group: str, create: bool = False):
+	name = frappe.db.get_value("Mark Sheet", {"student_group": group})
+	if name:
+		return frappe.get_doc("Mark Sheet", name)
+	if not create:
+		return None
+	g = frappe.get_doc("Student Group", group)
+	doc = frappe.get_doc(
+		{
+			"doctype": "Mark Sheet",
+			"student_group": group,
+			"course": g.course,
+			"campus": g.get("campus"),
+			"academic_year": g.academic_year,
+			"status": "Draft",
+			"entries": [{"student": s.student, "student_name": s.student_name} for s in g.students if s.active],
+		}
+	)
+	doc.insert(ignore_permissions=True)
+	return doc
+
+
+def _out(doc, group: str) -> dict:
+	g = frappe.db.get_value("Student Group", group, ["course", "campus", "academic_year"], as_dict=True)
+	code = frappe.db.get_value("Course", g.course, "educore_course_code")
+	return {
+		"group": group,
+		"course": g.course,
+		"code": code,
+		"campus": g.campus,
+		"academic_year": g.academic_year,
+		"lecturers": frappe.get_all("Student Group Instructor", filters={"parent": group}, pluck="instructor_name"),
+		"status": doc.status if doc else "Not started",
+		"return_note": doc.return_note if doc else None,
+		"entries": [
+			{f: e.get(f) for f in ("student", "student_name", "ca_mark", "exam_mark", "absent", "final_mark", "grade", "result", "moderation_note")}
+			for e in (doc.entries if doc else [])
+		],
+		"summary": results.summary(doc) if doc else None,
+		"trail": {f: (str(doc.get(f)) if doc and doc.get(f) else None) for f in (
+			"submitted_by", "submitted_on", "moderated_by", "moderated_on", "approved_by", "approved_on", "board_reference", "published_on")},
+		"rules": _rules(),
+	}
+
+
+# --- the lecturer -------------------------------------------------------------------------------------
+
+
+@frappe.whitelist(methods=["GET"])
+def my_sheet(group: str) -> dict:
+	"""The marks of a class the lecturer teaches (the sheet is started with its class list the first time)"""
+	if not _teaches(group):
+		frappe.throw(_("You do not teach this class"), frappe.PermissionError)
+	return {**_out(_sheet(group, create=True), group), "can_edit": True}
+
+
+@frappe.whitelist(methods=["POST"])
+def save_marks(group: str, entries: list | str) -> dict:
+	if not _teaches(group):
+		frappe.throw(_("You do not teach this class"), frappe.PermissionError)
+	doc = _sheet(group, create=True)
+	if doc.status != "Draft":
+		frappe.throw(_("The marks are submitted; the department returns them if they need changing"))
+	_apply(doc, entries)
+	doc.save(ignore_permissions=True)
+	return {**_out(doc, group), "can_edit": True}
+
+
+def _apply(doc, entries, note: str | None = None):
+	given = {e.get("student"): e for e in (frappe.parse_json(entries) or [])}
+	for entry in doc.entries:
+		if entry.student not in given:
+			continue
+		e = given[entry.student]
+		before = (entry.ca_mark, entry.exam_mark, entry.absent)
+		entry.ca_mark = None if e.get("ca_mark") in (None, "") else flt(e.get("ca_mark"), 1)
+		entry.exam_mark = None if e.get("exam_mark") in (None, "") else flt(e.get("exam_mark"), 1)
+		entry.absent = 1 if e.get("absent") else 0
+		if note and before != (entry.ca_mark, entry.exam_mark, entry.absent):
+			entry.moderation_note = note
+	results.work_out_sheet(doc)
+
+
+@frappe.whitelist(methods=["POST"])
+def submit(group: str) -> dict:
+	if not _teaches(group):
+		frappe.throw(_("You do not teach this class"), frappe.PermissionError)
+	doc = _sheet(group)
+	if not doc or doc.status != "Draft":
+		frappe.throw(_("Nothing to submit"))
+	results.work_out_sheet(doc)
+	missing = [e.student_name or e.student for e in doc.entries if not e.result]
+	if missing:
+		frappe.throw(_("Marks still missing for: {0}").format(", ".join(missing)))
+	doc.update({"status": "Submitted", "submitted_by": frappe.session.user, "submitted_on": now_datetime(), "return_note": None})
+	doc.save(ignore_permissions=True)
+	doc.add_comment("Workflow", _("Marks submitted"))
+	return {**_out(doc, group), "can_edit": False}
+
+
+# --- staff: the list and a sheet ----------------------------------------------------------------------
+
+
+@frappe.whitelist(methods=["GET"])
+def sheets(academic_year: str | None = None) -> dict:
+	"""Every class of the year this person may see, with where its marks stand"""
+	_require(READ_ROLES)
+	years = sorted(set(frappe.get_all("Student Group", filters={"group_based_on": "Course"}, pluck="academic_year")), reverse=True)
+	academic_year = academic_year or (years[0] if years else None)
+	courses = _courses()
+	groups = frappe.get_all(
+		"Student Group",
+		filters={
+			"group_based_on": "Course",
+			"academic_year": academic_year,
+			"disabled": 0,
+			"course": ("in", list(courses) or [""]),
+			"campus": ("in", frappe.get_list("Campus", pluck="name", limit=0) or [""]),
+		},
+		fields=["name", "course", "campus"],
+		order_by="name asc",
+		limit=0,
+	)
+	by_group = {
+		s.student_group: s
+		for s in frappe.get_all("Mark Sheet", filters={"student_group": ("in", [g.name for g in groups] or [""])}, fields=["name", "student_group", "status"])
+	}
+	rows = []
+	for g in groups:
+		sheet = by_group.get(g.name)
+		summary = results.summary(frappe.get_doc("Mark Sheet", sheet.name)) if sheet else None
+		rows.append({
+			"group": g.name,
+			"course": g.course,
+			"code": courses[g.course].code,
+			"campus": g.campus,
+			"lecturers": frappe.get_all("Student Group Instructor", filters={"parent": g.name}, pluck="instructor_name"),
+			"students": frappe.db.count("Student Group Student", {"parent": g.name, "active": 1}),
+			"status": sheet.status if sheet else "Not started",
+			"pass_rate": summary["pass_rate"] if summary else None,
+		})
+	return {
+		"academic_year": academic_year,
+		"academic_years": years,
+		"rows": rows,
+		"can_publish": _has(EXAM_ROLES),
+		"can_set_rules": _has(RULES_ROLES),
+	}
+
+
+@frappe.whitelist(methods=["GET"])
+def sheet(group: str) -> dict:
+	_require(READ_ROLES)
+	if not _in_scope(group):
+		frappe.throw(_("This class is not in your department, faculty or campus"), frappe.PermissionError)
+	doc = _sheet(group)
+	status = doc.status if doc else None
+	return {
+		**_out(doc, group),
+		"can_moderate": _has(MODERATE_ROLES) and status == "Submitted",
+		"can_approve": _has(EXAM_ROLES) and status == "Moderated",
+		"can_publish": _has(EXAM_ROLES) and status == "Approved",
+	}
+
+
+# --- moderation, approval, publication ----------------------------------------------------------------
+
+
+def _staff_sheet(group: str, roles, status: str):
+	_require(roles)
+	if not _in_scope(group):
+		frappe.throw(_("This class is not in your department, faculty or campus"), frappe.PermissionError)
+	doc = _sheet(group)
+	if not doc or doc.status != status:
+		frappe.throw(_("The marks are not waiting for this step"))
+	return doc
+
+
+@frappe.whitelist(methods=["POST"])
+def moderate(group: str, entries: list | str | None = None, note: str | None = None) -> dict:
+	"""The department's moderation: marks adjusted (with the reason), then moderated"""
+	doc = _staff_sheet(group, MODERATE_ROLES, "Submitted")
+	if entries:
+		if not (note or "").strip():
+			frappe.throw(_("Give the reason for changing marks"))
+		_apply(doc, entries, note.strip())
+	doc.update({"status": "Moderated", "moderated_by": frappe.session.user, "moderated_on": now_datetime()})
+	doc.save(ignore_permissions=True)
+	doc.add_comment("Workflow", _("Marks moderated") + (f": {note.strip()}" if note else ""))
+	return sheet(group)
+
+
+@frappe.whitelist(methods=["POST"])
+def return_sheet(group: str, note: str) -> dict:
+	"""Back one step with a note: the department to the lecturer, the examinations office to the department"""
+	if not (note or "").strip():
+		frappe.throw(_("Say what needs changing"))
+	doc = _sheet(group)
+	if doc and doc.status == "Submitted" and _has(MODERATE_ROLES):
+		doc = _staff_sheet(group, MODERATE_ROLES, "Submitted")
+		doc.status = "Draft"
+	elif doc and doc.status == "Moderated" and _has(EXAM_ROLES):
+		doc = _staff_sheet(group, EXAM_ROLES, "Moderated")
+		doc.status = "Submitted"
+	else:
+		frappe.throw(_("The marks cannot be returned from here"), frappe.PermissionError)
+	doc.return_note = note.strip()
+	doc.save(ignore_permissions=True)
+	doc.add_comment("Workflow", _("Marks returned: {0}").format(note.strip()))
+	return sheet(group)
+
+
+@frappe.whitelist(methods=["POST"])
+def approve(group: str, board_reference: str) -> dict:
+	"""The examination board's approval, recorded by the examinations officer"""
+	doc = _staff_sheet(group, EXAM_ROLES, "Moderated")
+	if not (board_reference or "").strip():
+		frappe.throw(_("Give the examination board meeting that approved the results"))
+	doc.update({"status": "Approved", "approved_by": frappe.session.user, "approved_on": now_datetime(), "board_reference": board_reference.strip()})
+	doc.save(ignore_permissions=True)
+	doc.add_comment("Workflow", _("Results approved: {0}").format(board_reference.strip()))
+	return sheet(group)
+
+
+@frappe.whitelist(methods=["POST"])
+def publish(groups: list | str) -> dict:
+	"""Approved results to the students; academic standing follows"""
+	_require(EXAM_ROLES)
+	published, students, years = 0, [], set()
+	for group in frappe.parse_json(groups) or []:
+		doc = _staff_sheet(group, EXAM_ROLES, "Approved")
+		doc.update({"status": "Published", "published_on": now_datetime()})
+		doc.save(ignore_permissions=True)
+		doc.add_comment("Workflow", _("Results published"))
+		students += [e.student for e in doc.entries]
+		years.add(doc.academic_year)
+		published += 1
+	for year in years:
+		results.update_standing([s for s in students], year)
+	return {"published": published}
+
+
+# --- the rules ----------------------------------------------------------------------------------------
+
+
+@frappe.whitelist(methods=["GET"])
+def rules() -> dict:
+	_require(READ_ROLES)
+	return {**_rules(), "grading_scales": frappe.get_all("Grading Scale", filters={"docstatus": 1}, pluck="name"), "can_edit": _has(RULES_ROLES)}
+
+
+@frappe.whitelist(methods=["POST"])
+def save_rules(data: dict | str) -> dict:
+	_require(RULES_ROLES, _("The examination rules are the Registrar's"))
+	data = frappe.parse_json(data)
+	s = frappe.get_single("Examination Settings")
+	for field in RULE_FIELDS:
+		if field in data:
+			s.set(field, data[field])
+	for field in ("ca_weight", "exam_admission_ca", "pass_mark", "supplementary_from", "probation_share"):
+		if not 0 <= flt(s.get(field)) <= 100:
+			frappe.throw(_("{0} must be between 0 and 100").format(s.meta.get_label(field)))
+	if flt(s.supplementary_from) > flt(s.pass_mark):
+		frappe.throw(_("The supplementary band starts below the pass mark"))
+	if s.grading_scale and not frappe.db.exists("Grading Scale", {"name": s.grading_scale, "docstatus": 1}):
+		frappe.throw(_("Choose a grading scale"))
+	s.save(ignore_permissions=True)
+	return rules()
+
+
+# --- the student --------------------------------------------------------------------------------------
+
+
+@frappe.whitelist(methods=["GET"])
+def my_results() -> dict:
+	"""The signed-in student's published results, by year"""
+	student = frappe.db.get_value("Student", {"user": frappe.session.user}, "name")
+	if not student:
+		frappe.throw(_("This page is for students."), frappe.PermissionError)
+	rows = frappe.db.sql(
+		"""select ms.academic_year, ms.course, ms.student_group, e.final_mark, e.grade, e.result, ms.published_on
+		from `tabMark Sheet Entry` e join `tabMark Sheet` ms on ms.name = e.parent
+		where ms.status = 'Published' and e.student = %s order by ms.academic_year desc, ms.course""",
+		student,
+		as_dict=True,
+	)
+	from educore.registration.rules import credits
+
+	for r in rows:
+		r["code"] = frappe.db.get_value("Course", r.course, "educore_course_code")
+		r["credits"] = credits(r.course)
+		r["published_on"] = str(r.published_on) if r.published_on else None
+	return {"results": rows}

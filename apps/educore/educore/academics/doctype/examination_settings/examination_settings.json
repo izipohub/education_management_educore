@@ -1,0 +1,106 @@
+{
+ "name": "Examination Settings",
+ "issingle": 1,
+ "track_changes": 1,
+ "description": "How course results are worked out: the university's own rules (Senate), set by the Registrar.",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "print": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "print": 1
+  }
+ ],
+ "fields": [
+  {
+   "fieldname": "marks_section",
+   "fieldtype": "Section Break",
+   "label": "Final Mark"
+  },
+  {
+   "fieldname": "ca_weight",
+   "fieldtype": "Percent",
+   "label": "Continuous Assessment Weight",
+   "default": "50",
+   "description": "The rest is the examination."
+  },
+  {
+   "fieldname": "exam_admission_ca",
+   "fieldtype": "Percent",
+   "label": "Continuous Assessment for Examination Admission",
+   "default": "40"
+  },
+  {
+   "fieldname": "marks_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pass_mark",
+   "fieldtype": "Percent",
+   "label": "Pass Mark",
+   "default": "50"
+  },
+  {
+   "fieldname": "supplementary_from",
+   "fieldtype": "Percent",
+   "label": "Supplementary Examination From",
+   "default": "45",
+   "description": "A final mark from this up to the pass mark allows a supplementary examination."
+  },
+  {
+   "fieldname": "grades_section",
+   "fieldtype": "Section Break",
+   "label": "Grades and Standing"
+  },
+  {
+   "fieldname": "grading_scale",
+   "fieldtype": "Link",
+   "label": "Grading Scale",
+   "options": "Grading Scale"
+  },
+  {
+   "fieldname": "grades_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "probation_share",
+   "fieldtype": "Percent",
+   "label": "Credits Failed for Probation",
+   "default": "50",
+   "description": "A student who fails this share of the year's credits or more is on probation."
+  }
+ ],
+ "actions": [],
+ "links": [],
+ "states": [],
+ "creation": "2026-11-24 09:00:00.000000",
+ "modified": "2026-11-24 09:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Academics",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "field_order": [
+  "marks_section",
+  "ca_weight",
+  "exam_admission_ca",
+  "marks_column",
+  "pass_mark",
+  "supplementary_from",
+  "grades_section",
+  "grading_scale",
+  "grades_column",
+  "probation_share"
+ ]
+}

@@ -1,0 +1,82 @@
+"""Demo results for EduCore Demo University (development only): the 2026 classes' marks, as the year closes.
+
+Most classes are published (entered by the lecturer, moderated by the head of department, approved by the faculty
+examination board); Computer Systems at Windhoek waits for moderation and Databases at Windhoek for its lecturer's
+marks, so each office has work to see. Marks are steady per student and course, and all pass: the demo students'
+standing stays good. Re-running adds whatever is missing.
+"""
+
+import hashlib
+
+import frappe
+from frappe.utils import add_days, get_datetime, nowdate
+
+from educore.academics import results
+
+YEAR = "2026"
+WAITING_FOR_MODERATION = "CMP1521 WHK 2026"
+NOT_STARTED = "CMP2521 WHK 2026"
+BOARD = "Faculty Examination Board, 18-11-2026"
+
+
+def _mark(student: str, course: str, salt: str, low: int, high: int) -> int:
+	digest = int(hashlib.sha256(f"{student}|{course}|{salt}".encode()).hexdigest(), 16)
+	return low + digest % (high - low + 1)
+
+
+def _lecturer_user(group) -> str | None:
+	for row in group.instructors:
+		employee = frappe.db.get_value("Instructor", row.instructor, "employee")
+		user = frappe.db.get_value("Employee", employee, "user_id") if employee else None
+		if user:
+			return user
+	return None
+
+
+def create() -> int:
+	results.ensure_defaults()
+	made, published = 0, []
+	when = get_datetime(add_days(nowdate(), -6))
+	for name in frappe.get_all("Student Group", filters={"group_based_on": "Course", "academic_year": YEAR}, pluck="name"):
+		if name == NOT_STARTED or frappe.db.exists("Mark Sheet", name):
+			continue
+		group = frappe.get_doc("Student Group", name)
+		sheet = frappe.get_doc(
+			{
+				"doctype": "Mark Sheet",
+				"student_group": name,
+				"course": group.course,
+				"campus": group.get("campus"),
+				"academic_year": YEAR,
+				"entries": [
+					{
+						"student": s.student,
+						"student_name": s.student_name,
+						"ca_mark": _mark(s.student, group.course, "ca", 55, 85),
+						"exam_mark": _mark(s.student, group.course, "exam", 50, 82),
+					}
+					for s in group.students
+					if s.active
+				],
+			}
+		)
+		results.work_out_sheet(sheet)
+		sheet.update({"status": "Submitted", "submitted_by": _lecturer_user(group), "submitted_on": when})
+		if name != WAITING_FOR_MODERATION:
+			sheet.update(
+				{
+					"status": "Published",
+					"moderated_by": "head-of-department@educore.localhost",
+					"moderated_on": add_days(when, 1),
+					"approved_by": "examinations-officer@educore.localhost",
+					"approved_on": add_days(when, 3),
+					"board_reference": BOARD,
+					"published_on": add_days(when, 4),
+				}
+			)
+			published += [e.student for e in sheet.entries]
+		sheet.insert(ignore_permissions=True)
+		made += 1
+	if published:
+		results.update_standing(published, YEAR)
+	return made

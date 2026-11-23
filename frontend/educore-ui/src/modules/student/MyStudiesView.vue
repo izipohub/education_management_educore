@@ -8,10 +8,19 @@ import ProgressSpinner from "primevue/progressspinner";
 import Tag from "primevue/tag";
 import { computed, onMounted, ref } from "vue";
 import { formatDate, formatMoney } from "@/core/format";
+import StatusTag from "@/core/ui/StatusTag.vue";
+import { myResults } from "@/modules/examinations/api";
 import { type StudentOverview, getOverview } from "./api";
 
 const data = ref<StudentOverview | null>(null);
 const error = ref("");
+
+/** the student's published results, by year */
+const results = ref<Awaited<ReturnType<typeof myResults>>["results"]>([]);
+const resultYears = computed(() => [...new Set(results.value.map((r) => r.academic_year))]);
+onMounted(async () => {
+  results.value = (await myResults().catch(() => ({ results: [] }))).results;
+});
 
 onMounted(async () => {
   try {
@@ -74,6 +83,25 @@ const feeStatus = computed(() => {
           </dl>
         </article>
       </div>
+
+      <section v-for="year in resultYears" :key="year" class="block">
+        <h2>Results {{ year }}</h2>
+        <table class="results">
+          <thead>
+            <tr><th>Code</th><th>Course</th><th class="num">Credits</th><th class="num">Final mark</th><th>Grade</th><th>Result</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in results.filter((x) => x.academic_year === year)" :key="r.student_group">
+              <td>{{ r.code }}</td>
+              <td>{{ r.course }}</td>
+              <td class="num">{{ r.credits }}</td>
+              <td class="num">{{ r.final_mark ?? "" }}</td>
+              <td>{{ r.grade ?? "" }}</td>
+              <td><StatusTag kind="result" :value="r.result" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
 
       <section v-if="current" class="block">
         <h2>Courses this year <span class="sub">({{ current.courses.length }} courses, {{ totalCredits }} credits)</span></h2>
@@ -257,5 +285,30 @@ const feeStatus = computed(() => {
   font-weight: 700;
   white-space: nowrap;
   user-select: all;
+}
+
+.results {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.results th {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--ec-border);
+  color: var(--ec-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.results td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid var(--ec-border-soft);
+}
+
+.results .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 </style>
