@@ -49,11 +49,12 @@ students and `/registrations` for faculty officers).
   line reconciled, any remainder kept as an advance, which counts towards the next year's deposit. Deposits without
   a student number wait for Finance to assign them. Students see the bank details and their reference on My studies.
 
+- **Prerequisites and repeats** (from published results, educore.registration.rules.course_states): the faculty sets
+  a course's prerequisites in the curriculum (on the course, so they hold wherever it is taught; no circles). At
+  registration a course passed already is not offered; a course not passed earlier is a repeat, offered first and,
+  if required, must be taken; a course whose prerequisite is not passed cannot be chosen, with the reason shown;
+  the year's required courses must be taken unless a prerequisite blocks them. The approval page marks repeats.
+
 ## Later
 
 - Academic standing set automatically from examination results (examinations module).
-- **Next after examinations: prerequisites and repeats.** In the curriculum, the faculty sets a course's
-  prerequisites (a course that must be passed first, e.g. Programming Fundamentals before Data Structures and
-  Algorithms). At registration, from the published results: a course is offered only when its prerequisites are
-  passed; a course failed is offered again (a repeat) before the next year's courses; the approval page shows why a
-  course is or is not open to the student. Until then, students choose other years' courses freely.
