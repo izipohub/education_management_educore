@@ -38,6 +38,13 @@ export interface Fees {
   overdue: number;
   next_due: string | null;
   entries: StatementEntry[];
+  /** paid and not yet set against an invoice */
+  in_advance: number;
+  how_to_pay: {
+    bank: { bank_name: string | null; account_name: string | null; account_number: string | null; branch_code: string | null };
+    /** the student number: payments are matched to the student by it */
+    reference: string;
+  };
 }
 
 export interface StudentOverview {

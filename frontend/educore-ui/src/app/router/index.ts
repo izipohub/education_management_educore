@@ -149,6 +149,12 @@ export const router = createRouter({
           meta: { title: "Curriculum", roles: CURRICULUM_ROLES },
         },
         {
+          path: "student-payments",
+          name: "student-payments",
+          component: () => import("@/modules/finance/StudentPaymentsView.vue"),
+          meta: { title: "Student payments", roles: FINANCE_ROLES },
+        },
+        {
           path: "fee-settings",
           name: "fee-settings",
           component: () => import("@/modules/finance/FeeSettingsView.vue"),

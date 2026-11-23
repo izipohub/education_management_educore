@@ -119,6 +119,26 @@ def _paper_email(first: str, last: str) -> str:
 	return f"{first}.{last}@{DOMAIN}".lower()
 
 
+def _unreferenced_deposit():
+	"""A cash deposit at a branch without the student number, as happens in practice: left for Finance to assign"""
+	description = "CASH DEP KEETMANSHOOP BRANCH A BEUKES"
+	account = frappe.db.get_single_value("Admission Settings", "fee_bank_account")
+	if not account or frappe.db.exists("Bank Transaction", {"description": description}):
+		return
+	line = frappe.get_doc(
+		{
+			"doctype": "Bank Transaction",
+			"date": frappe.utils.add_days(frappe.utils.nowdate(), -2),
+			"bank_account": account,
+			"company": frappe.db.get_value("Bank Account", account, "company"),
+			"deposit": 2000,
+			"currency": "NAD",
+			"description": description,
+		}
+	).insert(ignore_permissions=True)
+	line.submit()
+
+
 def create():
 	_assert_development_site()
 	ensure_academic_year(2026)
@@ -149,6 +169,7 @@ def create():
 			copy_particulars(student)
 		enrolled += 1
 
+	_unreferenced_deposit()
 	for first, last, offering in APPLICANTS:
 		_applicant(first, last, offering, 2027, email=_paper_email(first, last))
 	for first, last, offering in OFFERED:

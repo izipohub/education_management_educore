@@ -70,6 +70,7 @@ what each person sees.
 | Registration setup (periods' dates, credit limit, faculty approval) | Registrar | |
 | Fee settings (application fees, ERPNext accounts, deposit, balance allowed, late fee) | Bursar | Finance Officer, Student Fees Officer; shown read only on the Registrar's setup screens |
 | Application fees (outstanding, paid, waived; waiving) | Bursar, Finance Officer, Student Fees Officer | |
+| Student payments (matched from the bank statement by student number; assigning deposits without one) | Bursar, Finance Officer, Student Fees Officer | |
 
 ## Demo users (development only)
 

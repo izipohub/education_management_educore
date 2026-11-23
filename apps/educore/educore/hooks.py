@@ -25,7 +25,8 @@ has_permission = {
 
 scheduler_events = {
 	# application fees paid by EFT: match the imported bank statement to applications
-	"hourly": ["educore.admissions.fees.match_bank_transactions"],
+	# and student fees, by student number
+	"hourly": ["educore.admissions.fees.match_bank_transactions", "educore.finance.student_payments.match_bank_transactions"],
 	# offers: reminders before the deadline, and unanswered offers lapse
 	"daily": ["educore.admissions.offers.daily"],
 }

@@ -66,6 +66,12 @@ const feeStatus = computed(() => {
           <p class="big">{{ formatMoney(data.fees.owing) }}</p>
           <p class="sub">owing of {{ formatMoney(data.fees.billed) }} billed</p>
           <Tag v-if="feeStatus" :severity="feeStatus.severity" :value="feeStatus.label" />
+          <p v-if="data.fees.in_advance" class="sub">{{ formatMoney(data.fees.in_advance) }} paid in advance</p>
+          <dl v-if="data.fees.how_to_pay.bank.account_number" class="pay">
+            <div><dt>Pay by EFT to</dt><dd>{{ data.fees.how_to_pay.bank.bank_name }} · {{ data.fees.how_to_pay.bank.account_name }}</dd></div>
+            <div><dt>Account number</dt><dd>{{ data.fees.how_to_pay.bank.account_number }}<template v-if="data.fees.how_to_pay.bank.branch_code"> · branch {{ data.fees.how_to_pay.bank.branch_code }}</template></dd></div>
+            <div><dt>Reference</dt><dd class="reference">{{ data.fees.how_to_pay.reference }}</dd></div>
+          </dl>
         </article>
       </div>
 
@@ -226,5 +232,30 @@ const feeStatus = computed(() => {
   font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
+}
+
+.pay {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.75rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--ec-border-soft);
+  font-size: 0.85rem;
+}
+
+.pay dt {
+  color: var(--ec-muted);
+  font-size: 0.75rem;
+}
+
+.pay dd {
+  margin: 0.1rem 0 0;
+}
+
+/* never broken across lines: students copy it into their banking app */
+.reference {
+  font-weight: 700;
+  white-space: nowrap;
+  user-select: all;
 }
 </style>

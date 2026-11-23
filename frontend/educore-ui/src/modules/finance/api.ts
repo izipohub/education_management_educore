@@ -50,3 +50,35 @@ export const FEE_SETTINGS_ROLES = ["Bursar", "Finance Officer", "Student Fees Of
 export const getFeeSettings = () => get<FeeSettings>("educore.api.v1.fee_settings.settings");
 export const saveFeeSettings = (data: Partial<Pick<FeeSettings, "application" | "registration" | "late_fees">>) =>
   post<FeeSettings>("educore.api.v1.fee_settings.save", { data });
+
+// --- student payments (educore.api.v1.student_payments) ---------------------------------------------------
+
+export interface ReceivedPayment {
+  name: string;
+  posting_date: string;
+  student: string | null;
+  student_name: string | null;
+  campus: string | null;
+  paid_amount: number;
+  unallocated_amount: number;
+  reference_no: string | null;
+}
+
+export interface WaitingDeposit {
+  name: string;
+  date: string;
+  amount: number;
+  description: string | null;
+  reference_number: string | null;
+  bank_account: string;
+  /** student numbers read from the line that are not on record */
+  numbers_found: string[];
+}
+
+export const listStudentPayments = <T>(view: "received" | "waiting", search?: string) =>
+  get<{ rows: T[]; counts: { waiting: number } }>("educore.api.v1.student_payments.payments", { view, search });
+export const assignDeposit = (bankTransaction: string, student: string) =>
+  post<{ payment_entry: string }>("educore.api.v1.student_payments.assign", { bank_transaction: bankTransaction, student });
+export const matchStudentPayments = () => post<{ matched: number }>("educore.api.v1.student_payments.match_now", {});
+export const findStudents = (search: string) =>
+  get<{ name: string; student_name: string; campus: string | null }[]>("educore.api.v1.student_payments.find_students", { search });

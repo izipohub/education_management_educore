@@ -117,7 +117,23 @@ def _fee_statement(student: str) -> dict:
 			{**i, "posting_date": str(i.posting_date), "due_date": str(i.due_date), "remarks": None} for i in invoices
 		],
 		"entries": entries,
+		# paid and not yet set against an invoice: counts towards the next year's deposit
+		"in_advance": _in_advance(student),
+		# how to pay: EFT into the university's account, the student number as the reference
+		"how_to_pay": {"bank": _bank_details(), "reference": student},
 	}
+
+
+def _in_advance(student: str) -> float:
+	from educore.registration.rules import paid_in_advance
+
+	return round(paid_in_advance(student), 2)
+
+
+def _bank_details() -> dict:
+	from educore.admissions.fees import bank_details
+
+	return bank_details()
 
 
 @frappe.whitelist(methods=["GET"])

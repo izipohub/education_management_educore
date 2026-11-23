@@ -44,8 +44,12 @@ students and `/registrations` for faculty officers).
 - **Registration setup** (Registrar): each academic year's period (opens, closes, late registration until, late
   fee) and the rules (outstanding balance allowed, deposit, most credits per year, faculty approval).
 
+- **Student payments** (Finance): fees paid by EFT with the student number as the reference are matched hourly from
+  the bank statement (educore.finance.student_payments): a Payment Entry against the oldest unpaid invoices, the bank
+  line reconciled, any remainder kept as an advance, which counts towards the next year's deposit. Deposits without
+  a student number wait for Finance to assign them. Students see the bank details and their reference on My studies.
+
 ## Later
 
 - Academic standing set automatically from examination results (examinations module).
 - Repeats and prerequisites from results, instead of the student choosing other years' courses freely.
-- Student fee payments matched from the bank statement by student number (as application fees are today).
