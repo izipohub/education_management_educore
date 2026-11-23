@@ -5,7 +5,16 @@ export const SEMESTERS: Semester[] = ["Semester 1", "Semester 2", "Year"];
 export const semesterLabel = (s: Semester) => (s === "Year" ? "Full year" : s);
 
 /** who lays out a curriculum (educore.api.v1.curriculum.CURRICULUM_ROLES) */
-export const CURRICULUM_ROLES = ["Registrar", "Faculty Officer", "Head of Department", "Dean", "System Manager"];
+export const CURRICULUM_ROLES = [
+  "Registrar",
+  "Faculty Officer",
+  "Head of Department",
+  "Dean",
+  "Timetable Officer",
+  "Examinations Officer",
+  "Quality Assurance Officer",
+  "System Manager",
+];
 
 export interface ProgrammeRow {
   name: string;

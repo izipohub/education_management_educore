@@ -30,9 +30,10 @@ test("the registrar sets the admission rules", async ({ page }) => {
   await days.blur();
   await save.click();
   await expect(days).toHaveValue("14");
-  // the fees: online and paper, and the account from ERPNext with what applicants see
-  await expect(page.getByLabel("Paper fee, local applicants")).toHaveValue(/200/);
-  await expect(page.getByText("Shown to applicants")).toBeVisible();
+  // the fees are shown, set by Finance
+  await expect(page.getByText("Set by Finance").first()).toBeVisible();
+  await expect(page.getByText("N$ 200.00")).toBeVisible();
+  await expect(page.getByText("Applicants pay into")).toBeVisible();
   await page.screenshot({ path: "e2e/results/setup-rules.png", fullPage: true });
 
   // pathways: a list, each on its own page (nothing saved)

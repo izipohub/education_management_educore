@@ -53,6 +53,24 @@ Positions with an EduCore role but no upstream roles (Head of Department, Financ
 Affairs Officer, Accommodation Officer, Facilities Manager, the portal users) can log in but do not see
 anything yet: their screens and permissions come with the EduCore modules that serve them.
 
+## Who does what in the Vue app
+
+Each screen belongs to the office whose work it is; others may read it where their own work needs it. The server
+checks the same roles (the `*_ROLES` constants in `educore/api/v1`), and campus and faculty User Permissions narrow
+what each person sees.
+
+| Screen | Does the work | Reads it as well |
+|---|---|---|
+| Admissions (decide, capture paper forms) | Admissions Officer | Registrar (oversight, reconsiders rejections) |
+| Registration: first-year students | Registry Officer | Registrar |
+| Registration: senior students (approve) | Faculty Officer | Registrar (exceptions) |
+| Students (records, proof of registration) | Registry Officer, Registrar | Faculty Officer, Dean, Head of Department, Campus Director, Executive Management, Examinations Officer, Student Affairs Officer, Financial Aid Officer |
+| Curriculum (courses by year and semester) | Faculty Officer, Head of Department, Dean (own faculty) | Registrar (publishes it), Timetable Officer, Examinations Officer, Quality Assurance Officer |
+| Admission setup (rules, pathways, documents, entry requirements, points) | Registrar | |
+| Registration setup (periods' dates, credit limit, faculty approval) | Registrar | |
+| Fee settings (application fees, ERPNext accounts, deposit, balance allowed, late fee) | Bursar | Finance Officer, Student Fees Officer; shown read only on the Registrar's setup screens |
+| Application fees (outstanding, paid, waived; waiving) | Bursar, Finance Officer, Student Fees Officer | |
+
 ## Demo users (development only)
 
 ```

@@ -34,6 +34,8 @@ SETTINGS_FIELDS = {
 	"fee_income_account": "income_account",
 	"best_subjects": "int",
 }
+#: shown on the Registrar's screen, set by Finance
+FINANCE_FIELDS = ("fee_namibian", "fee_international", "fee_paper_local", "fee_paper_international", "fee_bank_account", "fee_income_account")
 #: sensible bounds: field: (minimum, maximum)
 LIMITS = {
 	"max_choices": (1, 10),
@@ -177,8 +179,15 @@ def save_settings(data: dict | str) -> dict:
 	data = frappe.parse_json(data)
 	settings = frappe.get_single("Admission Settings")
 	for field, kind in SETTINGS_FIELDS.items():
-		if field in data:
-			settings.set(field, _clean(field, kind, data[field]))
+		if field not in data:
+			continue
+		value = _clean(field, kind, data[field])
+		# the fee amounts and accounts are Finance's (educore.api.v1.fee_settings): shown here, changed there
+		if field in FINANCE_FIELDS:
+			if value != (flt(settings.get(field), 2) if kind == "money" else settings.get(field)):
+				frappe.throw(_("{0} is set by Finance").format(_label(field)), frappe.PermissionError)
+			continue
+		settings.set(field, value)
 	settings.save(ignore_permissions=True)
 	return setup()
 

@@ -2,7 +2,6 @@
 import { Plus } from "@lucide/vue";
 import InputNumber from "primevue/inputnumber";
 import Message from "primevue/message";
-import Select from "primevue/select";
 import ToggleSwitch from "primevue/toggleswitch";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, reactive, ref, watch } from "vue";
@@ -48,7 +47,11 @@ const changed = computed(() =>
   Boolean(setup.value) && (Object.keys(form) as (keyof RegistrationSettings)[]).some((k) => form[k] !== setup.value!.settings[k]),
 );
 const approval = computed({ get: () => Boolean(form.approval_needed), set: (on: boolean) => (form.approval_needed = on ? 1 : 0) });
-const percent = computed(() => form.deposit_type === "Percent of the year's fees");
+const deposit = computed(() => {
+  const st = setup.value?.settings;
+  if (!st || st.deposit_type === "None") return "None";
+  return st.deposit_type === "Amount" ? formatMoney(st.deposit_value) : `${st.deposit_value}% of the year's fees`;
+});
 
 async function save() {
   saving.value = true;
@@ -105,16 +108,13 @@ const columns: Column[] = [
     </DataTable>
 
     <div v-else class="settings">
-      <EcPanel title="Fees before registering">
-        <SettingRow label="Outstanding balance allowed" help="Fees owed from earlier years above this block registration" for="outstanding">
-          <InputNumber v-model="form.max_outstanding" input-id="outstanding" :min="0" :min-fraction-digits="2" prefix="N$ " fluid />
+      <!-- the money is Finance's: shown here, set in Fee settings -->
+      <EcPanel title="Fees before registering" note="Set by Finance">
+        <SettingRow label="Outstanding balance allowed" help="Fees owed from earlier years above this block registration">
+          <span class="value">{{ formatMoney(setup.settings.max_outstanding) }}</span>
         </SettingRow>
-        <SettingRow label="Registration deposit" for="deposit-type">
-          <Select v-model="form.deposit_type" input-id="deposit-type" :options="setup.deposit_types" fluid />
-        </SettingRow>
-        <SettingRow v-if="form.deposit_type !== 'None'" :label="percent ? 'Deposit, share of the year\'s fees' : 'Deposit amount'" for="deposit">
-          <InputNumber v-if="percent" v-model="form.deposit_value" input-id="deposit" :min="0" :max="100" suffix=" %" show-buttons fluid />
-          <InputNumber v-else v-model="form.deposit_value" input-id="deposit" :min="0" :min-fraction-digits="2" prefix="N$ " fluid />
+        <SettingRow label="Registration deposit">
+          <span class="value">{{ deposit }}</span>
         </SettingRow>
       </EcPanel>
 
@@ -150,6 +150,11 @@ const columns: Column[] = [
   display: grid;
   gap: 1rem;
   max-width: 52rem;
+}
+
+.value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .save-bar {

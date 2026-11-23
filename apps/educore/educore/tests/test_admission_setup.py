@@ -4,6 +4,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from educore.api.v1 import admission_setup as api
+from educore.api.v1 import fee_settings
 from educore.tests.utils import school_route
 
 REGISTRAR = "registrar@educore.localhost"
@@ -124,28 +125,45 @@ class TestAdmissionSetup(IntegrationTestCase):
 
 
 class TestFeeSettings(IntegrationTestCase):
-	"""The fee account from ERPNext, and online and paper fees"""
+	"""The fees and the ERPNext accounts are Finance's: the Bursar changes them, the Registrar sees them"""
 
 	def setUp(self):
-		if not frappe.db.exists("User", REGISTRAR):
+		if not frappe.db.exists("User", REGISTRAR) or not frappe.db.exists("User", "bursar@educore.localhost"):
 			self.skipTest("run the demo setup first")
-		frappe.set_user(REGISTRAR)
 		saved = {f: frappe.db.get_single_value("Admission Settings", f) for f in api.SETTINGS_FIELDS}
+		registration = {f: frappe.db.get_single_value("Registration Settings", f) for f in fee_settings.REGISTRATION_FIELDS}
 
 		def restore():
 			frappe.set_user("Administrator")
 			doc = frappe.get_single("Admission Settings")
 			doc.update(saved)
 			doc.save(ignore_permissions=True)
+			doc = frappe.get_single("Registration Settings")
+			doc.update(registration)
+			doc.save(ignore_permissions=True)
 
 		self.addCleanup(restore)
 
-	def test_the_fee_account_comes_from_erpnext(self):
-		data = api.setup()
-		self.assertTrue(data["choices"]["bank_accounts"])
-		self.assertRaises(frappe.ValidationError, api.save_settings, {"fee_bank_account": "No Such Account"})
-		self.assertRaises(frappe.ValidationError, api.save_settings, {"fee_income_account": "No Such Account"})
-		account = data["choices"]["bank_accounts"][0]
-		saved = api.save_settings({"fee_bank_account": account["name"], "fee_paper_local": 220})["settings"]
-		self.assertEqual((saved["fee_bank_account"], saved["fee_paper_local"]), (account["name"], 220))
+	def test_the_bursar_sets_the_fees_and_the_account_from_erpnext(self):
+		frappe.set_user("bursar@educore.localhost")
+		data = fee_settings.settings()
+		self.assertTrue(data["can_edit"])
+		self.assertTrue(data["bank_accounts"])
+		self.assertRaises(frappe.ValidationError, fee_settings.save, {"application": {"fee_bank_account": "No Such Account"}})
+		account = data["bank_accounts"][0]["name"]
+		saved = fee_settings.save({"application": {"fee_bank_account": account, "fee_paper_local": 220}, "registration": {"deposit_value": 25}})
+		self.assertEqual((saved["application"]["fee_bank_account"], saved["application"]["fee_paper_local"]), (account, 220))
+		self.assertEqual(saved["registration"]["deposit_value"], 25)
 
+	def test_the_registrar_sees_the_fees_but_does_not_change_them(self):
+		frappe.set_user(REGISTRAR)
+		settings = api.setup()["settings"]
+		# saving the screen as it is works (the fees come back unchanged)
+		api.save_settings({**settings, "max_choices": settings["max_choices"]})
+		self.assertRaises(frappe.PermissionError, api.save_settings, {"fee_paper_local": 999})
+		self.assertRaises(frappe.PermissionError, fee_settings.save, {"application": {"fee_paper_local": 999}})
+
+	def test_finance_officers_read_the_fee_settings(self):
+		frappe.set_user("finance-officer@educore.localhost")
+		self.assertFalse(fee_settings.settings()["can_edit"])
+		self.assertRaises(frappe.PermissionError, fee_settings.save, {"registration": {"deposit_value": 10}})

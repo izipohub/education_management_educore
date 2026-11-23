@@ -62,4 +62,16 @@ export const listStudents = (params: { search?: string; campus?: string; program
 export const getStudent = (name: string) => get<StudentRecord>(`${API}.student`, { name });
 
 /** who opens student records (educore.api.v1.student_records.RECORD_ROLES) */
-export const RECORD_ROLES = ["Registrar", "Registry Officer", "Faculty Officer", "Dean", "Head of Department", "Campus Director", "Executive Management", "System Manager"];
+export const RECORD_ROLES = [
+  "Registrar",
+  "Registry Officer",
+  "Faculty Officer",
+  "Dean",
+  "Head of Department",
+  "Campus Director",
+  "Executive Management",
+  "Examinations Officer",
+  "Student Affairs Officer",
+  "Financial Aid Officer",
+  "System Manager",
+];

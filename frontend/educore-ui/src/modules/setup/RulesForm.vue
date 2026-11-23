@@ -3,6 +3,7 @@ import InputNumber from "primevue/inputnumber";
 import Select from "primevue/select";
 import ToggleSwitch from "primevue/toggleswitch";
 import { computed, reactive, watch } from "vue";
+import { formatMoney } from "@/core/format";
 import EcButton from "@/core/ui/EcButton.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import SettingRow from "@/core/ui/SettingRow.vue";
@@ -40,7 +41,7 @@ const needsFee = flag("approval_needs_fee");
 const needsAcceptance = flag("enrolment_needs_acceptance");
 const notify = flag("notify_applicants");
 
-const bank = computed(() => props.bankAccounts.find((b) => b.name === form.fee_bank_account));
+const bank = computed(() => props.bankAccounts.find((b) => b.name === props.settings.fee_bank_account));
 
 const SECTIONS = [
   { id: "s-applications", label: "Applications" },
@@ -75,39 +76,33 @@ function go(id: string) {
         </SettingRow>
       </EcPanel>
 
-      <EcPanel id="s-fees" title="Application fees" note="N$, non-refundable">
+      <!-- the amounts and accounts are Finance's: shown here, set in Fee settings -->
+      <EcPanel id="s-fees" title="Application fees" note="Set by Finance">
         <table class="fees">
           <thead>
-            <tr><th scope="col"></th><th scope="col">Online</th><th scope="col">Paper form</th></tr>
+            <tr><th scope="col"></th><th scope="col" class="num">Online</th><th scope="col" class="num">Paper form</th></tr>
           </thead>
           <tbody>
             <tr>
               <th scope="row">Local applicants</th>
-              <td><InputNumber v-model="form.fee_namibian" :min="0" :min-fraction-digits="2" aria-label="Online fee, local applicants" fluid /></td>
-              <td><InputNumber v-model="form.fee_paper_local" :min="0" :min-fraction-digits="2" aria-label="Paper fee, local applicants" fluid /></td>
+              <td class="num">{{ formatMoney(settings.fee_namibian) }}</td>
+              <td class="num">{{ formatMoney(settings.fee_paper_local) }}</td>
             </tr>
             <tr>
               <th scope="row">International applicants</th>
-              <td><InputNumber v-model="form.fee_international" :min="0" :min-fraction-digits="2" aria-label="Online fee, international applicants" fluid /></td>
-              <td><InputNumber v-model="form.fee_paper_international" :min="0" :min-fraction-digits="2" aria-label="Paper fee, international applicants" fluid /></td>
+              <td class="num">{{ formatMoney(settings.fee_international) }}</td>
+              <td class="num">{{ formatMoney(settings.fee_paper_international) }}</td>
             </tr>
           </tbody>
         </table>
-        <div class="rows">
-          <SettingRow label="Bank account" for="bank">
-            <Select v-model="form.fee_bank_account" input-id="bank" :options="bankAccounts" option-label="label" option-value="name" placeholder="Choose an account" show-clear fluid />
-          </SettingRow>
-          <dl v-if="bank" class="shown" aria-label="Shown to applicants">
-            <p class="caption">Shown to applicants</p>
-            <div><dt>Bank</dt><dd>{{ bank.bank }}</dd></div>
-            <div><dt>Account holder</dt><dd>{{ bank.holder }}</dd></div>
-            <div><dt>Account number</dt><dd>{{ bank.account_number || "Not set in ERPNext" }}</dd></div>
-            <div><dt>Branch code</dt><dd>{{ bank.branch_code || "Not set in ERPNext" }}</dd></div>
-          </dl>
-          <SettingRow label="Income account" for="income">
-            <Select v-model="form.fee_income_account" input-id="income" :options="incomeAccounts" placeholder="Choose an account" filter show-clear fluid />
-          </SettingRow>
-        </div>
+        <dl v-if="bank" class="shown" aria-label="Shown to applicants">
+          <p class="caption">Applicants pay into</p>
+          <div><dt>Bank</dt><dd>{{ bank.bank }}</dd></div>
+          <div><dt>Account holder</dt><dd>{{ bank.holder }}</dd></div>
+          <div><dt>Account number</dt><dd>{{ bank.account_number || "Not set in ERPNext" }}</dd></div>
+          <div><dt>Branch code</dt><dd>{{ bank.branch_code || "Not set in ERPNext" }}</dd></div>
+        </dl>
+        <p v-else class="ec-muted none">No bank account chosen yet</p>
       </EcPanel>
 
       <EcPanel id="s-offers" title="Offers">
@@ -211,6 +206,19 @@ function go(id: string) {
 
 .fees td {
   padding: 0.35rem 0.5rem 0.35rem 0;
+}
+
+.fees .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.shown {
+  margin-top: 1rem;
+}
+
+.none {
+  margin: 1rem 0 0;
 }
 
 .rows {

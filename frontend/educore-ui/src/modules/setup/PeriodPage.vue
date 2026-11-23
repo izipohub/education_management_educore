@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import DatePicker from "primevue/datepicker";
-import InputNumber from "primevue/inputnumber";
 import Select from "primevue/select";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
-import { fromIsoDate, toIsoDate } from "@/core/format";
+import { formatMoney, fromIsoDate, toIsoDate } from "@/core/format";
 import EcButton from "@/core/ui/EcButton.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
@@ -57,7 +56,6 @@ async function save() {
         opens_on: form.opens_on ? toIsoDate(form.opens_on) : null,
         closes_on: form.closes_on ? toIsoDate(form.closes_on) : null,
         late_until: form.late_until ? toIsoDate(form.late_until) : null,
-        late_fee: form.late_fee,
       },
       isNew.value ? undefined : props.name,
     );
@@ -98,9 +96,16 @@ async function save() {
       <SettingRow label="Late registration until" help="Empty for no late registration" for="late">
         <DatePicker v-model="form.late_until" input-id="late" date-format="dd-mm-yy" show-icon show-button-bar fluid :min-date="form.closes_on ?? undefined" />
       </SettingRow>
-      <SettingRow v-if="form.late_until" label="Late registration fee" for="late-fee">
-        <InputNumber v-model="form.late_fee" input-id="late-fee" :min="0" :min-fraction-digits="2" prefix="N$ " fluid />
+      <SettingRow v-if="form.late_until && !isNew" label="Late registration fee" help="Set by Finance">
+        <span class="value">{{ formatMoney(form.late_fee) }}</span>
       </SettingRow>
     </EcPanel>
   </RecordPage>
 </template>
+
+<style scoped>
+.value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+</style>

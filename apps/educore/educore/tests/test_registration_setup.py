@@ -24,12 +24,15 @@ class TestRegistrationSetup(IntegrationTestCase):
 		self.addCleanup(restore)
 		frappe.set_user(REGISTRAR)
 
-	def test_the_registrar_changes_the_rules_within_limits(self):
-		data = api.save_settings({"max_credits": 160, "deposit_type": "Percent of the year's fees", "deposit_value": 25})
-		self.assertEqual((data["settings"]["max_credits"], data["settings"]["deposit_value"]), (160, 25))
-		self.assertRaises(frappe.ValidationError, api.save_settings, {"deposit_value": 120})
-		self.assertRaises(frappe.ValidationError, api.save_settings, {"deposit_type": "Barter"})
-		self.assertRaises(frappe.ValidationError, api.save_settings, {"max_outstanding": -1})
+	def test_the_registrar_changes_the_academic_rules_not_the_money(self):
+		data = api.save_settings({"max_credits": 160, "approval_needed": 1})
+		self.assertEqual(data["settings"]["max_credits"], 160)
+		self.assertRaises(frappe.ValidationError, api.save_settings, {"max_credits": 999})
+		# the deposit and the balance allowed are Finance's (educore.api.v1.fee_settings)
+		self.assertRaises(frappe.PermissionError, api.save_settings, {"deposit_value": 50})
+		self.assertRaises(frappe.PermissionError, api.save_settings, {"deposit_type": "Amount"})
+		# unchanged values pass, as the screen sends them back
+		api.save_settings(data["settings"])
 
 	def test_a_period_needs_dates_in_order(self):
 		frappe.set_user("Administrator")
@@ -41,9 +44,11 @@ class TestRegistrationSetup(IntegrationTestCase):
 			api.save_period,
 			{"academic_year": "2031", "opens_on": "2031-01-05", "closes_on": "2031-01-31", "late_until": "2031-01-20"},
 		)
-		data = api.save_period({"academic_year": "2031", "opens_on": "2031-01-05", "closes_on": "2031-01-31", "late_until": "2031-02-07", "late_fee": 300})
+		data = api.save_period({"academic_year": "2031", "opens_on": "2031-01-05", "closes_on": "2031-01-31", "late_until": "2031-02-07"})
 		period = next(p for p in data["periods"] if p["academic_year"] == "2031")
-		self.assertEqual((period["late_fee"], period["state"]), (300, "upcoming"))
+		self.assertEqual(period["state"], "upcoming")
+		# the late fee is Finance's
+		self.assertRaises(frappe.PermissionError, api.save_period, {"late_fee": 300}, name=period["name"])
 		self.assertNotIn("2031", data["academic_years"])
 		self.assertRaises(frappe.ValidationError, api.save_period, {"academic_year": "2031", "opens_on": "2031-01-05", "closes_on": "2031-01-31"})
 

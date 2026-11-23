@@ -1,6 +1,7 @@
-"""Registration setup, for the Registrar: when each year's registration opens and closes, late registration and its
-fee (Registration Period), and the rules (Registration Settings: outstanding balance allowed, deposit, credit
-limit, faculty approval). Only the fields listed here can be changed; saving is recorded as the signed-in user.
+"""Registration setup, for the Registrar: when each year's registration opens and closes and late registration
+ends (Registration Period), and the academic rules (Registration Settings: credit limit, faculty approval). The
+money (outstanding balance allowed, deposit, late fee) is Finance's, set in educore.api.v1.fee_settings and shown
+here read only. Only the fields listed here can be changed; saving is recorded as the signed-in user.
 """
 
 import frappe
@@ -12,6 +13,8 @@ from educore.registration import rules
 SETUP_ROLES = ("Registrar", "System Manager")
 SETTINGS_FIELDS = ("max_outstanding", "deposit_type", "deposit_value", "max_credits", "approval_needed")
 DEPOSIT_TYPES = ("None", "Amount", "Percent of the year's fees")
+#: shown on the Registrar's screen, set by Finance
+FINANCE_FIELDS = ("max_outstanding", "deposit_type", "deposit_value")
 
 
 def _require_role():
@@ -54,18 +57,12 @@ def save_settings(data: dict | str) -> dict:
 	_require_role()
 	data = frappe.parse_json(data)
 	settings = frappe.get_single("Registration Settings")
-	if "max_outstanding" in data:
-		settings.max_outstanding = flt(data["max_outstanding"], 2)
-		if settings.max_outstanding < 0:
-			frappe.throw(_("The outstanding balance allowed cannot be negative"))
-	if "deposit_type" in data:
-		if data["deposit_type"] not in DEPOSIT_TYPES:
-			frappe.throw(_("Choose how the deposit is set"))
-		settings.deposit_type = data["deposit_type"]
-	if "deposit_value" in data:
-		settings.deposit_value = flt(data["deposit_value"], 2)
-		if settings.deposit_value < 0 or (settings.deposit_type == "Percent of the year's fees" and settings.deposit_value > 100):
-			frappe.throw(_("The deposit must be between 0 and 100 percent of the year's fees"))
+	# the balance allowed and the deposit are Finance's (educore.api.v1.fee_settings): shown here, changed there
+	for field in FINANCE_FIELDS:
+		before, after = settings.get(field), data.get(field)
+		changed = (after != before) if field == "deposit_type" else (flt(after, 2) != flt(before, 2))
+		if field in data and changed:
+			frappe.throw(_("{0} is set by Finance").format(frappe.get_meta("Registration Settings").get_label(field)), frappe.PermissionError)
 	if "max_credits" in data:
 		settings.max_credits = cint(data["max_credits"])
 		if not 0 <= settings.max_credits <= 400:
@@ -94,8 +91,9 @@ def save_period(data: dict | str, name: str | None = None) -> dict:
 	for field in ("opens_on", "closes_on", "late_until"):
 		if field in data:
 			doc.set(field, data[field] or None)
-	if "late_fee" in data:
-		doc.late_fee = flt(data["late_fee"], 2)
+	# the late fee is Finance's (educore.api.v1.fee_settings): shown here, changed there
+	if "late_fee" in data and flt(data["late_fee"], 2) != flt(doc.late_fee, 2):
+		frappe.throw(_("The late registration fee is set by Finance"), frappe.PermissionError)
 	if not doc.opens_on or not doc.closes_on:
 		frappe.throw(_("Give the dates registration opens and closes"))
 	if getdate(doc.closes_on) < getdate(doc.opens_on):

@@ -55,3 +55,12 @@ class TestCurriculum(IntegrationTestCase):
 		frappe.set_user("student1.whk@educore.localhost")
 		self.assertRaises(frappe.PermissionError, curriculum.programmes)
 		self.assertRaises(frappe.PermissionError, curriculum.save, PROGRAMME, [])
+
+	def test_examinations_and_timetabling_read_it_only(self):
+		for login in ("examinations-officer", "timetable-officer"):
+			if not frappe.db.exists("User", f"{login}@educore.localhost"):
+				continue
+			frappe.set_user(f"{login}@educore.localhost")
+			self.assertFalse(curriculum.programme(PROGRAMME)["can_edit"])
+			self.assertRaises(frappe.PermissionError, curriculum.save, PROGRAMME, [])
+

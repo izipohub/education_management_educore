@@ -20,6 +20,10 @@ RECORD_ROLES = (
 	"Head of Department",
 	"Campus Director",
 	"Executive Management",
+	# read only, for their own work: examinations, student support, sponsored students
+	"Examinations Officer",
+	"Student Affairs Officer",
+	"Financial Aid Officer",
 	"System Manager",
 )
 

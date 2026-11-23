@@ -16,7 +16,17 @@ from educore.registration import rules
 
 #: who reads the curriculum: the faculties, and the Registrar's office, which publishes it (yearbook, proof of
 #: registration)
-CURRICULUM_ROLES = ("Registrar", "Faculty Officer", "Head of Department", "Dean", "System Manager")
+CURRICULUM_ROLES = (
+	"Registrar",
+	"Faculty Officer",
+	"Head of Department",
+	"Dean",
+	# the timetable and examinations are built on it; quality assurance reviews it
+	"Timetable Officer",
+	"Examinations Officer",
+	"Quality Assurance Officer",
+	"System Manager",
+)
 #: who lays it out: the academic side, each in their own faculty (the Registrar reads it, does not change it)
 EDIT_ROLES = ("Faculty Officer", "Head of Department", "Dean", "System Manager")
 SEMESTERS = ("Semester 1", "Semester 2", "Year")
