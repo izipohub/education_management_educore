@@ -1,4 +1,5 @@
-"""The curriculum, for the academic side: which courses each programme has, in which year of study, and when they
+"""The curriculum, laid out by the academic side (faculty officer, head of department, dean) and read by the
+Registrar's office: which courses each programme has, in which year of study, and when they
 run (Semester 1, Semester 2 or the full year).
 
 The curriculum is Education's own Program Course table, with EduCore's year of study and semester on each row
@@ -13,14 +14,21 @@ from frappe.utils import cint
 
 from educore.registration import rules
 
-#: who lays out a curriculum
+#: who reads the curriculum: the faculties, and the Registrar's office, which publishes it (yearbook, proof of
+#: registration)
 CURRICULUM_ROLES = ("Registrar", "Faculty Officer", "Head of Department", "Dean", "System Manager")
+#: who lays it out: the academic side, each in their own faculty (the Registrar reads it, does not change it)
+EDIT_ROLES = ("Faculty Officer", "Head of Department", "Dean", "System Manager")
 SEMESTERS = ("Semester 1", "Semester 2", "Year")
 
 
 def _require_role():
 	if not set(frappe.get_roles()) & set(CURRICULUM_ROLES):
 		frappe.throw(_("The curriculum is set by the faculty and the Registrar"), frappe.PermissionError)
+
+
+def can_edit() -> bool:
+	return bool(set(frappe.get_roles()) & set(EDIT_ROLES))
 
 
 def _faculty(department: str | None) -> str:
@@ -72,13 +80,15 @@ def programme(name: str) -> dict:
 			limit=0,
 		),
 		"semesters": list(SEMESTERS),
+		"can_edit": can_edit(),
 	}
 
 
 @frappe.whitelist(methods=["POST"])
 def save(name: str, courses: list | str) -> dict:
 	"""The programme's courses, each with its year of study, semester and whether it is required"""
-	_require_role()
+	if not can_edit():
+		frappe.throw(_("The curriculum is laid out by the faculty"), frappe.PermissionError)
 	courses = frappe.parse_json(courses)
 	doc = frappe.get_doc("Program", name)
 	doc.check_permission("read")  # faculty scope: only a programme this user may see

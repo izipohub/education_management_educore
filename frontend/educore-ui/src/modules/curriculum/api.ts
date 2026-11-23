@@ -49,6 +49,8 @@ export interface Curriculum {
   courses: CurriculumCourse[];
   catalogue: CatalogueCourse[];
   semesters: Semester[];
+  /** the faculty lays it out; the Registrar's office reads it */
+  can_edit: boolean;
 }
 
 const API = "educore.api.v1.curriculum";

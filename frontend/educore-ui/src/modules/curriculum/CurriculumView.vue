@@ -42,7 +42,7 @@ const columns: Column[] = [
 
 <template>
   <section class="list-page">
-    <PageHeader title="Curriculum" subtitle="Each programme's courses by year of study and semester" />
+    <PageHeader title="Curriculum" subtitle="Each programme's courses by year of study and semester, as the faculties set them" />
 
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
 

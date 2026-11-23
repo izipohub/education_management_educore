@@ -37,9 +37,10 @@ students and `/registrations` for faculty officers).
 
 ## In the app
 
-- **Curriculum** (faculty officer, head of department, dean, Registrar): each programme's courses by year of study and
+- **Curriculum**, laid out by the academic side (faculty officer, head of department, dean, each in their own
+  faculty) and read by the Registrar's office, which publishes it: each programme's courses by year of study and
   when they run, Semester 1, Semester 2 or the full year, with credits per period. Registration, the approval page,
-  the student record and the proof of registration all read it.
+  the student record and the proof of registration all read it. Later: changes approved by Senate before they apply.
 - **Registration setup** (Registrar): each academic year's period (opens, closes, late registration until, late
   fee) and the rules (outstanding balance allowed, deposit, most credits per year, faculty approval).
 

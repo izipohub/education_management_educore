@@ -7,6 +7,7 @@ from educore.api.v1 import curriculum
 from educore.registration import rules
 
 PROGRAMME = "Bachelor of Computer Science"
+EDITOR = "faculty-officer.fst.osh@educore.localhost"
 
 
 class TestCurriculum(IntegrationTestCase):
@@ -19,14 +20,21 @@ class TestCurriculum(IntegrationTestCase):
 		]
 
 		def restore():
-			frappe.set_user("registrar@educore.localhost")
-			curriculum.save(PROGRAMME, saved)
 			frappe.set_user("Administrator")
+			curriculum.save(PROGRAMME, saved)
 
 		self.addCleanup(restore)
-		frappe.set_user("registrar@educore.localhost")
+		# the faculty lays out the curriculum (an officer of the programme's own faculty)
+		frappe.set_user(EDITOR)
 
-	def test_the_registrar_moves_a_course_to_the_second_semester(self):
+	def test_the_registrar_reads_the_curriculum_but_does_not_change_it(self):
+		frappe.set_user("registrar@educore.localhost")
+		data = curriculum.programme(PROGRAMME)
+		self.assertTrue(data["courses"])
+		self.assertFalse(data["can_edit"])
+		self.assertRaises(frappe.PermissionError, curriculum.save, PROGRAMME, data["courses"])
+
+	def test_the_faculty_moves_a_course_to_the_second_semester(self):
 		data = curriculum.programme(PROGRAMME)
 		rows = [{**c, "semester": "Semester 2" if c["course"] == "Calculus I" else c["semester"]} for c in data["courses"]]
 		saved = curriculum.save(PROGRAMME, rows)

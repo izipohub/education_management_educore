@@ -15,6 +15,8 @@ import { type Curriculum, type CurriculumCourse, SEMESTERS, type Semester, getCu
  * Save keeps the whole layout.
  */
 const props = defineProps<{ name: string }>();
+/** the faculty edits; the Registrar's office sees the same layout, read only */
+const editable = computed(() => Boolean(data.value?.can_edit));
 const toast = useToast();
 const data = ref<Curriculum | null>(null);
 const rows = ref<CurriculumCourse[]>([]);
@@ -105,6 +107,7 @@ const subtitle = computed(() => {
 
 <template>
   <RecordPage :back="{ to: { name: 'curriculum' }, label: 'Curriculum' }" :title="data?.name" :subtitle="subtitle" :error="error">
+    <template v-if="data && !editable" #tags><span class="read-only">Set by the faculty</span></template>
     <template v-if="data">
       <EcPanel v-for="year in years" :key="year" :title="`Year ${year}`" :note="yearNote(year)" flush>
         <table class="ec-table curriculum">
@@ -115,9 +118,9 @@ const subtitle = computed(() => {
               <th class="num">NQF</th>
               <th class="num">Credits</th>
               <th>Required</th>
-              <th>Runs in</th>
-              <th>Year</th>
-              <th aria-hidden="true"></th>
+              <th v-if="editable">Runs in</th>
+              <th v-if="editable">Year</th>
+              <th v-if="editable" aria-hidden="true"></th>
             </tr>
           </thead>
           <tbody>
@@ -126,26 +129,29 @@ const subtitle = computed(() => {
                 <tr class="group">
                   <td colspan="3">{{ semesterLabel(semester) }}</td>
                   <td class="num">{{ credits(inPeriod(year, semester)) }}</td>
-                  <td colspan="4"></td>
+                  <td :colspan="editable ? 4 : 1"></td>
                 </tr>
                 <tr v-for="r in inPeriod(year, semester)" :key="r.course">
                   <td class="ec-nowrap">{{ r.code }}</td>
                   <td>{{ r.course_name }}</td>
                   <td class="num">{{ r.nqf_level ?? "" }}</td>
                   <td class="num">{{ r.credits }}</td>
-                  <td><Checkbox v-model="r.required" binary :aria-label="`${r.course_name} required`" /></td>
-                  <td><Select v-model="r.semester" :options="periodOptions" option-label="label" option-value="value" size="small" :aria-label="`When ${r.course_name} runs`" class="period" /></td>
-                  <td><Select v-model="r.year" :options="yearOptions" option-label="label" option-value="value" size="small" :aria-label="`Year of ${r.course_name}`" class="year" /></td>
-                  <td class="num"><EcButton :icon="X" size="sm" variant="ghost" :aria-label="`Remove ${r.course_name}`" @click="remove(r)" /></td>
+                  <td v-if="editable"><Checkbox v-model="r.required" binary :aria-label="`${r.course_name} required`" /></td>
+                  <td v-else>{{ r.required ? "Required" : "Elective" }}</td>
+                  <template v-if="editable">
+                    <td><Select v-model="r.semester" :options="periodOptions" option-label="label" option-value="value" size="small" :aria-label="`When ${r.course_name} runs`" class="period" /></td>
+                    <td><Select v-model="r.year" :options="yearOptions" option-label="label" option-value="value" size="small" :aria-label="`Year of ${r.course_name}`" class="year" /></td>
+                    <td class="num"><EcButton :icon="X" size="sm" variant="ghost" :aria-label="`Remove ${r.course_name}`" @click="remove(r)" /></td>
+                  </template>
                 </tr>
               </template>
             </template>
             <tr v-if="!inYear(year).length">
-              <td colspan="8" class="ec-muted">No courses in year {{ year }} yet</td>
+              <td :colspan="editable ? 8 : 5" class="ec-muted">No courses in year {{ year }} yet</td>
             </tr>
           </tbody>
         </table>
-        <template #footer>
+        <template v-if="editable" #footer>
           <Select
             v-model="adding[year]"
             :options="available"
@@ -162,7 +168,7 @@ const subtitle = computed(() => {
       </EcPanel>
 
       <!-- only once something changed -->
-      <div v-if="changed || saving" class="save-bar">
+      <div v-if="editable && (changed || saving)" class="save-bar">
         <span class="ec-muted">Unsaved changes</span>
         <EcButton label="Undo" variant="ghost" :disabled="saving" @click="undo" />
         <EcButton label="Save" variant="primary" :loading="saving" @click="save" />
@@ -174,6 +180,11 @@ const subtitle = computed(() => {
 <style scoped>
 .curriculum td {
   vertical-align: middle;
+}
+
+.read-only {
+  color: var(--ec-muted);
+  font-size: 0.8125rem;
 }
 
 .group td {

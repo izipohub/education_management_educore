@@ -1,16 +1,24 @@
 import { expect, test } from "@playwright/test";
 import { openRow, record, signIn, tableRow } from "./support";
 
-test("the registrar lays out a programme by year and semester", async ({ page }) => {
+test("the registrar reads a programme's curriculum by year and semester", async ({ page }) => {
   await signIn(page, "registrar");
   await page.getByRole("link", { name: "Curriculum" }).click();
   await expect(page.getByRole("heading", { name: "Curriculum", exact: true })).toBeVisible();
-  await expect(tableRow(page, "Bachelor of Computer Science")).toBeVisible();
-
   await openRow(page, "Bachelor of Computer Science");
-  const year1 = record(page).getByRole("region").or(record(page).locator("section")).filter({ has: page.getByRole("heading", { name: "Year 1" }) });
-  await expect(year1.getByText("Semester 1", { exact: true }).first()).toBeVisible();
-  await expect(year1.getByText("Programming Fundamentals")).toBeVisible();
+  await expect(record(page).getByText("Programming Fundamentals")).toBeVisible();
+  await expect(record(page).getByText("Semester 1", { exact: true }).first()).toBeVisible();
+  // read only: the faculty sets it
+  await expect(page.getByText("Set by the faculty")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "When Calculus I runs" })).toHaveCount(0);
+});
+
+test("the faculty officer lays out a programme by year and semester", async ({ page }) => {
+  await signIn(page, "faculty-officer.fst.osh");
+  await page.getByRole("link", { name: "Curriculum" }).click();
+  await expect(tableRow(page, "Bachelor of Computer Science")).toBeVisible();
+  await openRow(page, "Bachelor of Computer Science");
+  await expect(record(page).getByText("Programming Fundamentals")).toBeVisible();
   await page.screenshot({ path: "e2e/results/curriculum.png", fullPage: true });
 
   // moving a course offers to save; undone here, so the demo curriculum stays as it is
