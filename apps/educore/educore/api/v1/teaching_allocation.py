@@ -217,6 +217,13 @@ def class_detail(group: str) -> dict:
 			key=lambda i: (i["department"] != ((course.department if course else "") or "").rsplit(" - ", 1)[0], i["instructor_name"]),
 		),
 		"can_edit": can_edit(),
+		# the class's course in Moodle, once ICT connects it (educore.learning.moodle)
+		"moodle": {
+			"connected": bool(frappe.db.get_single_value("Learning Platform Settings", "moodle_enabled")),
+			"course_id": doc.get("educore_moodle_course_id"),
+			"synced_on": str(doc.educore_moodle_synced_on) if doc.get("educore_moodle_synced_on") else None,
+			"error": doc.get("educore_moodle_error"),
+		},
 	}
 
 

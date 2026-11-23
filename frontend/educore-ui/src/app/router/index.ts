@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import { useSession } from "@/core/auth/session";
 import { CURRICULUM_ROLES } from "@/modules/curriculum/api";
 import { FEE_SETTINGS_ROLES, FINANCE_ROLES } from "@/modules/finance/api";
+import { ICT_ROLES } from "@/modules/integrations/api";
 import { ALLOCATION_ROLES } from "@/modules/teaching/allocation";
 import { RECORD_ROLES } from "@/modules/records/api";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
@@ -148,6 +149,12 @@ export const router = createRouter({
           component: () => import("@/modules/teaching/ClassPage.vue"),
           props: true,
           meta: { title: "Class", roles: ALLOCATION_ROLES },
+        },
+        {
+          path: "integrations",
+          name: "integrations",
+          component: () => import("@/modules/integrations/IntegrationsView.vue"),
+          meta: { title: "Integrations", roles: ICT_ROLES },
         },
         {
           path: "curriculum",

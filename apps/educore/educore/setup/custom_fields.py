@@ -817,6 +817,11 @@ CUSTOM_FIELDS = {
 			"in_list_view": 1,
 			"in_standard_filter": 1,
 		},
+		# the class's course in Moodle (educore.learning.moodle)
+		{"fieldname": "educore_moodle_section", "label": "Moodle", "fieldtype": "Section Break", "insert_after": "instructors", "collapsible": 1},
+		{"fieldname": "educore_moodle_course_id", "label": "Moodle Course ID", "fieldtype": "Int", "read_only": 1, "insert_after": "educore_moodle_section"},
+		{"fieldname": "educore_moodle_synced_on", "label": "Synced With Moodle", "fieldtype": "Datetime", "read_only": 1, "insert_after": "educore_moodle_course_id"},
+		{"fieldname": "educore_moodle_error", "label": "Moodle Error", "fieldtype": "Small Text", "read_only": 1, "insert_after": "educore_moodle_synced_on"},
 	],
 	"Room": [
 		{

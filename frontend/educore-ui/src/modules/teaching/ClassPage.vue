@@ -7,6 +7,7 @@ import { useRoute } from "vue-router";
 import EcButton from "@/core/ui/EcButton.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
+import { formatDate } from "@/core/format";
 import { semesterLabel } from "@/modules/curriculum/api";
 import { type ClassDetail, getClass, setLecturers } from "./allocation";
 
@@ -108,6 +109,12 @@ const subtitle = computed(() => {
           <Select v-model="adding" :options="available" option-label="label" option-value="value" filter placeholder="Add a lecturer" size="small" aria-label="Add a lecturer" class="add" @change="add" />
         </template>
       </EcPanel>
+
+      <EcPanel v-if="data.moodle.connected" title="Moodle">
+        <p v-if="data.moodle.error" class="none moodle-error">Not in Moodle yet: {{ data.moodle.error }}</p>
+        <p v-else-if="data.moodle.course_id" class="none">Course {{ data.moodle.course_id }} · synced {{ formatDate(data.moodle.synced_on) }}</p>
+        <p v-else class="none ec-muted">Made in Moodle at the next sync</p>
+      </EcPanel>
     </template>
   </RecordPage>
 </template>
@@ -146,6 +153,10 @@ const subtitle = computed(() => {
   display: block;
   color: var(--ec-muted);
   font-size: 0.75rem;
+}
+
+.moodle-error {
+  color: var(--ec-muted);
 }
 
 .add {

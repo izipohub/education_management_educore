@@ -43,6 +43,8 @@ export interface ClassDetail {
   lecturers: { instructor: string; instructor_name: string }[];
   instructors: { name: string; instructor_name: string; department: string }[];
   can_edit: boolean;
+  /** the class's course in Moodle, once ICT connects it */
+  moodle: { connected: boolean; course_id: number | null; synced_on: string | null; error: string | null };
 }
 
 const API = "educore.api.v1.teaching_allocation";

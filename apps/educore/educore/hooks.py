@@ -26,7 +26,12 @@ has_permission = {
 scheduler_events = {
 	# application fees paid by EFT: match the imported bank statement to applications
 	# and student fees, by student number
-	"hourly": ["educore.admissions.fees.match_bank_transactions", "educore.finance.student_payments.match_bank_transactions"],
+	"hourly": [
+		"educore.admissions.fees.match_bank_transactions",
+		"educore.finance.student_payments.match_bank_transactions",
+		# classes, students and lecturers kept in Moodle, once ICT connects it
+		"educore.learning.moodle.sync_all",
+	],
 	# offers: reminders before the deadline, and unanswered offers lapse
 	"daily": ["educore.admissions.offers.daily"],
 }

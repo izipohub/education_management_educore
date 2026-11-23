@@ -1,0 +1,118 @@
+{
+ "actions": [],
+ "creation": "2026-11-23 18:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "moodle_section",
+  "moodle_enabled",
+  "moodle_url",
+  "moodle_token",
+  "moodle_column",
+  "sign_in",
+  "campus_categories",
+  "student_role_id",
+  "teacher_role_id",
+  "status_section",
+  "last_sync_on",
+  "last_sync_result"
+ ],
+ "fields": [
+  {
+   "fieldname": "moodle_section",
+   "fieldtype": "Section Break",
+   "label": "Moodle"
+  },
+  {
+   "fieldname": "moodle_enabled",
+   "fieldtype": "Check",
+   "label": "Connected",
+   "default": "0",
+   "description": "Classes, students and lecturers are kept in Moodle: courses made, users created or found, enrolments kept in step."
+  },
+  {
+   "fieldname": "moodle_url",
+   "fieldtype": "Data",
+   "label": "Moodle Address",
+   "description": "E.g. https://moodle.university.edu.na"
+  },
+  {
+   "fieldname": "moodle_token",
+   "fieldtype": "Password",
+   "label": "Web Service Token",
+   "description": "A Moodle web service token for EduCore's own service user, with the course, user and manual enrolment functions."
+  },
+  {
+   "fieldname": "moodle_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sign_in",
+   "fieldtype": "Select",
+   "label": "Sign-in on Moodle",
+   "options": "Single sign-on\nMoodle password",
+   "default": "Moodle password",
+   "description": "Single sign-on: users sign in through the university's identity provider (OAuth 2). Moodle password: Moodle emails new users a password."
+  },
+  {
+   "fieldname": "campus_categories",
+   "fieldtype": "Check",
+   "label": "A Course Category per Campus",
+   "default": "1"
+  },
+  {
+   "fieldname": "student_role_id",
+   "fieldtype": "Int",
+   "label": "Moodle Student Role ID",
+   "default": "5"
+  },
+  {
+   "fieldname": "teacher_role_id",
+   "fieldtype": "Int",
+   "label": "Moodle Teacher Role ID",
+   "default": "3"
+  },
+  {
+   "fieldname": "status_section",
+   "fieldtype": "Section Break",
+   "label": "Last Sync"
+  },
+  {
+   "fieldname": "last_sync_on",
+   "fieldtype": "Datetime",
+   "label": "Last Sync",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_sync_result",
+   "fieldtype": "Small Text",
+   "label": "Result",
+   "read_only": 1
+  }
+ ],
+ "issingle": 1,
+ "track_changes": 1,
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-23 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Learning",
+ "name": "Learning Platform Settings",
+ "owner": "Administrator",
+ "description": "The learning platforms EduCore keeps in step with its classes: Moodle (AGENT.md 6).",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
