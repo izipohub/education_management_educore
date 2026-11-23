@@ -65,6 +65,7 @@ what each person sees.
 | Registration: first-year students | Registry Officer | Registrar |
 | Registration: senior students (approve) | Faculty Officer | Registrar (exceptions) |
 | Students (records, proof of registration) | Registry Officer, Registrar | Faculty Officer, Dean, Head of Department, Campus Director, Executive Management, Examinations Officer, Student Affairs Officer, Financial Aid Officer |
+| Teaching (classes from approved registrations, lecturers allocated) | Head of Department, Dean (own department or faculty) | Faculty Officer, Timetable Officer, Registrar, Campus Director; lecturers see their own classes in My teaching |
 | Curriculum (courses by year and semester) | Faculty Officer, Head of Department, Dean (own faculty) | Registrar (publishes it), Timetable Officer, Examinations Officer, Quality Assurance Officer |
 | Admission setup (rules, pathways, documents, entry requirements, points) | Registrar | |
 | Registration setup (periods' dates, credit limit, faculty approval) | Registrar | |

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import { useSession } from "@/core/auth/session";
 import { CURRICULUM_ROLES } from "@/modules/curriculum/api";
 import { FEE_SETTINGS_ROLES, FINANCE_ROLES } from "@/modules/finance/api";
+import { ALLOCATION_ROLES } from "@/modules/teaching/allocation";
 import { RECORD_ROLES } from "@/modules/records/api";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
 
@@ -134,6 +135,19 @@ export const router = createRouter({
           component: () => import("@/modules/setup/PeriodPage.vue"),
           props: true,
           meta: { title: "Registration setup", roles: ["Registrar", "System Manager"] },
+        },
+        {
+          path: "teaching",
+          name: "teaching",
+          component: () => import("@/modules/teaching/TeachingView.vue"),
+          meta: { title: "Teaching", roles: ALLOCATION_ROLES },
+        },
+        {
+          path: "teaching/:group",
+          name: "teaching-class",
+          component: () => import("@/modules/teaching/ClassPage.vue"),
+          props: true,
+          meta: { title: "Class", roles: ALLOCATION_ROLES },
         },
         {
           path: "curriculum",

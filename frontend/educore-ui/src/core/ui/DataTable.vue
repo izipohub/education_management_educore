@@ -26,7 +26,8 @@ const props = withDefaults(
     columns: Column[];
     rows: T[];
     rowKey: keyof T & string;
-    to?: (row: T) => RouteLocationRaw;
+    /** where a row leads; null: the row has no page (yet) */
+    to?: (row: T) => RouteLocationRaw | null;
     loading?: boolean;
     emptyTitle?: string;
     emptyHint?: string;
@@ -58,7 +59,8 @@ const router = useRouter();
 function open(row: T, event: MouseEvent) {
   // a click on the link itself (or with a modifier, for a new tab) is left to the link
   if (!props.to || (event.target as HTMLElement).closest("a, button, input") || event.metaKey || event.ctrlKey) return;
-  void router.push(props.to(row));
+  const target = props.to(row);
+  if (target) void router.push(target);
 }
 </script>
 
@@ -82,7 +84,7 @@ function open(row: T, event: MouseEvent) {
       <li v-for="row in rows" :key="String(row[rowKey])" class="tile" :class="{ link: to }" @click="open(row, $event)">
         <template v-for="(c, i) in columns" :key="c.key">
           <div v-if="i === 0" class="tile-title">
-            <RouterLink v-if="to" :to="to(row)" class="primary">
+            <RouterLink v-if="to && to(row)" :to="to(row)!" class="primary">
               <slot :name="`cell-${c.key}`" :row="row">{{ row[c.key] }}</slot>
             </RouterLink>
             <slot v-else :name="`cell-${c.key}`" :row="row">{{ row[c.key] }}</slot>
@@ -108,7 +110,7 @@ function open(row: T, event: MouseEvent) {
         <tbody>
           <tr v-for="row in rows" :key="String(row[rowKey])" :class="{ link: to }" @click="open(row, $event)">
             <td v-for="(c, i) in columns" :key="c.key" :class="[c.align, { wide: c.wide }]">
-              <RouterLink v-if="i === 0 && to" :to="to(row)" class="primary">
+              <RouterLink v-if="i === 0 && to && to(row)" :to="to(row)!" class="primary">
                 <slot :name="`cell-${c.key}`" :row="row">{{ row[c.key] }}</slot>
               </RouterLink>
               <slot v-else :name="`cell-${c.key}`" :row="row">{{ row[c.key] ?? "" }}</slot>

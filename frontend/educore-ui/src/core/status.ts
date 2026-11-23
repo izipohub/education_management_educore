@@ -5,7 +5,7 @@
  */
 
 export type Severity = "success" | "info" | "warn" | "danger" | "secondary" | "contrast";
-export type StatusKind = "application" | "offer" | "eligibility" | "registration" | "document" | "fee" | "standing" | "period";
+export type StatusKind = "application" | "offer" | "eligibility" | "registration" | "document" | "fee" | "standing" | "period" | "class";
 
 type Entry = [label: string, severity: Severity];
 
@@ -51,6 +51,12 @@ const TAGS: Record<StatusKind, Record<string, Entry>> = {
     Probation: ["Probation", "warn"],
     "On hold": ["On hold", "danger"],
     Excluded: ["Excluded", "danger"],
+  },
+  class: {
+    ready: ["Ready", "success"],
+    "no-lecturer": ["No lecturer", "warn"],
+    "to-update": ["List out of date", "warn"],
+    "no-class": ["No class yet", "secondary"],
   },
   period: {
     upcoming: ["Opens soon", "secondary"],

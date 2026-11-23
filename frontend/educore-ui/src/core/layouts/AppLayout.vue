@@ -12,6 +12,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  Presentation,
   Settings,
   SlidersHorizontal,
   UserCheck,
@@ -26,6 +27,7 @@ import { useSession } from "@/core/auth/session";
 import { useBranding } from "@/core/branding";
 import { CURRICULUM_ROLES } from "@/modules/curriculum/api";
 import { FEE_SETTINGS_ROLES, FINANCE_ROLES } from "@/modules/finance/api";
+import { ALLOCATION_ROLES } from "@/modules/teaching/allocation";
 import { RECORD_ROLES } from "@/modules/records/api";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
 
@@ -76,6 +78,7 @@ const NAV: NavItem[] = [
   { label: "Registration", icon: UserCheck, to: "/registrations", roles: REGISTRATION_ROLES },
   { label: "Students", icon: Users, to: "/students", roles: RECORD_ROLES },
   { label: "Curriculum", icon: LibraryBig, to: "/curriculum", roles: CURRICULUM_ROLES },
+  { label: "Teaching", icon: Presentation, to: "/teaching", roles: ALLOCATION_ROLES },
   { label: "Student payments", icon: Landmark, to: "/student-payments", roles: FINANCE_ROLES },
   { label: "Application fees", icon: Banknote, to: "/application-fees", roles: FINANCE_ROLES },
   { label: "Fee settings", icon: SlidersHorizontal, to: "/fee-settings", roles: FEE_SETTINGS_ROLES },
