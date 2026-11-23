@@ -49,6 +49,8 @@ students and `/registrations` for faculty officers).
   line reconciled, any remainder kept as an advance, which counts towards the next year's deposit. Deposits without
   a student number wait for Finance to assign them. Students see the bank details and their reference on My studies.
 
+- **Academic standing** is set from published results (educore.academics.results): probation at the university's
+  line of credits not passed, good standing otherwise; On hold and Excluded stay as set by hand.
 - **Prerequisites and repeats** (from published results, educore.registration.rules.course_states): the faculty sets
   a course's prerequisites in the curriculum (on the course, so they hold wherever it is taught; no circles). At
   registration a course passed already is not offered; a course not passed earlier is a repeat, offered first and,
@@ -57,4 +59,3 @@ students and `/registrations` for faculty officers).
 
 ## Later
 
-- Academic standing set automatically from examination results (examinations module).
