@@ -266,6 +266,18 @@ def missing(doc) -> list[str]:
 	):
 		if not doc.get(field):
 			gaps.append(_("Your {0}").format(label))
+	# identity: citizens give their national ID number, others their passport
+	if doc.get("educore_international"):
+		if not doc.get("educore_passport_number"):
+			gaps.append(_("Your passport number"))
+	elif not doc.get("educore_national_id"):
+		gaps.append(_("Your national ID number"))
+	if not doc.get("student_mobile_number"):
+		gaps.append(_("Your mobile number"))
+	if not (doc.get("educore_kin_relationship") and doc.get("educore_kin_name") and doc.get("educore_kin_phone")):
+		gaps.append(_("Your next of kin: relationship, name and phone"))
+	if not doc.get("educore_fee_payer"):
+		gaps.append(_("Who pays your fees"))
 	pathway = pathways.of(doc)
 	if not pathway:
 		gaps.append(_("Your pathway"))

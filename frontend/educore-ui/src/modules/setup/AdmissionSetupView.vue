@@ -39,7 +39,7 @@ const saving = ref(false);
 type Tab = "rules" | "pathways" | "documents" | "programmes" | "points";
 const tab = ref<Tab>("rules");
 const tabs = computed(() => [
-  { label: "Rules", value: "rules" as Tab },
+  { label: "Settings", value: "rules" as Tab },
   { label: "Entry pathways", value: "pathways" as Tab, count: setup.value?.pathways.length },
   { label: "Documents", value: "documents" as Tab, count: setup.value?.documents.length },
   { label: "Programmes", value: "programmes" as Tab, count: setup.value?.programmes.length },
@@ -123,7 +123,7 @@ async function onSaveScale() {
 </script>
 
 <template>
-  <PageHeader title="Admission setup" subtitle="The university's own admission rules. Changes apply from the next assessment.">
+  <PageHeader title="Admission setup" subtitle="The university's own admission rules">
     <EcTabs v-model="tab" :tabs="tabs" label="Section" class="tabs" />
   </PageHeader>
 
@@ -134,7 +134,14 @@ async function onSaveScale() {
 
   <template v-else>
     <div v-if="tab === 'rules'" class="scroll">
-      <RulesForm :settings="setup.settings" :countries="setup.choices.countries" :saving="saving" @save="(data) => run(() => saveSettings(data), 'Rules saved')" />
+      <RulesForm
+        :settings="setup.settings"
+        :countries="setup.choices.countries"
+        :bank-accounts="setup.choices.bank_accounts"
+        :income-accounts="setup.choices.income_accounts"
+        :saving="saving"
+        @save="(data) => run(() => saveSettings(data), 'Settings saved')"
+      />
     </div>
 
     <div v-else-if="tab === 'points'" class="scroll">

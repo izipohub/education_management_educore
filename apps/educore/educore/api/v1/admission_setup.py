@@ -27,10 +27,11 @@ SETTINGS_FIELDS = {
 	"max_file_size_mb": "int",
 	"fee_namibian": "money",
 	"fee_international": "money",
-	"eft_bank_name": "text",
-	"eft_account_name": "text",
-	"eft_account_number": "text",
-	"eft_branch_code": "text",
+	"fee_paper_local": "money",
+	"fee_paper_international": "money",
+	# from ERPNext: the account applicants pay into, and where the fees are booked
+	"fee_bank_account": "bank_account",
+	"fee_income_account": "income_account",
 	"best_subjects": "int",
 }
 #: sensible bounds: field: (minimum, maximum)
@@ -78,6 +79,10 @@ def setup() -> dict:
 			"Program", filters={"educore_programme_code": ("is", "set")}, pluck="name", order_by="program_name asc"
 		)],
 		"choices": {
+			"bank_accounts": _bank_accounts(),
+			"income_accounts": frappe.get_all(
+				"Account", filters={"root_type": "Income", "is_group": 0, "disabled": 0}, pluck="name", order_by="name asc"
+			),
 			"countries": frappe.get_all("Country", pluck="name", order_by="name asc"),
 			"subjects": frappe.get_all("School Subject", pluck="name", order_by="name asc"),
 			"school_levels": list(SCHOOL_LEVELS),
@@ -86,6 +91,20 @@ def setup() -> dict:
 			"applies_to": _options("Pathway Document", "applies_to"),
 		},
 	}
+
+
+def _bank_accounts() -> list[dict]:
+	"""The university's own bank accounts in ERPNext, with what applicants would be shown"""
+	return [
+		{"name": a.name, "label": " · ".join(x for x in (a.bank, a.bank_account_no or a.iban, a.company) if x), "bank": a.bank,
+		 "account_number": a.bank_account_no or a.iban, "branch_code": a.branch_code, "holder": a.company}
+		for a in frappe.get_all(
+			"Bank Account",
+			filters={"is_company_account": 1, "disabled": 0},
+			fields=["name", "bank", "bank_account_no", "iban", "branch_code", "company"],
+			order_by="name asc",
+		)
+	]
 
 
 def _pathway(name: str) -> dict:
@@ -136,6 +155,14 @@ def _clean(field: str, kind: str, value):
 		if not value or not frappe.db.exists("Country", value):
 			frappe.throw(_("Choose a country from the list"))
 		return value
+	if kind == "bank_account":
+		if value and not frappe.db.exists("Bank Account", {"name": value, "is_company_account": 1}):
+			frappe.throw(_("Choose one of the university's bank accounts in ERPNext"))
+		return value or None
+	if kind == "income_account":
+		if value and not frappe.db.exists("Account", {"name": value, "root_type": "Income", "is_group": 0}):
+			frappe.throw(_("Choose an income account from ERPNext"))
+		return value or None
 	return (str(value).strip() or None) if value is not None else None
 
 

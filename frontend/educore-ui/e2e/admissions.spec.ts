@@ -46,3 +46,29 @@ test("staff without admissions rights have no Admissions screen", async ({ page 
   await page.goto("/admissions");
   await expect(page.getByRole("heading", { name: /^Good (morning|afternoon|evening)/ })).toBeVisible();
 });
+
+test("an admissions officer types in a paper application", async ({ page }) => {
+  await signIn(page, "admissions-officer.whk");
+  await page.getByRole("link", { name: "Admissions" }).click();
+  await page.getByRole("button", { name: "New paper application" }).click();
+  await expect(page.getByRole("heading", { name: "New paper application", level: 1 })).toBeVisible({ timeout: 15_000 });
+  const capture = page.getByRole("button", { name: "Capture application" });
+  await expect(capture).toBeDisabled();
+  await expect(page.getByText("Email to fill in").filter({ visible: true })).toBeVisible();
+
+  await page.getByLabel("First name(s)").fill("Paper");
+  await page.getByLabel("Surname", { exact: true }).fill("Applicant");
+  await page.getByLabel("Date of birth").fill("14-03-2007");
+  await page.getByLabel("Date of birth").press("Escape");
+  await page.locator("#email").fill("paper.applicant@example.com");
+  // the phone keeps its country code (Namibia first)
+  await page.locator("#d-mobile").fill("081 123 4567");
+  await expect(page.getByRole("combobox", { name: "Country code for d-mobile" })).toContainText("+264");
+  await page.locator("#choice-0").click();
+  await page.getByRole("option", { name: /Bachelor of Computer Science · Windhoek/ }).click();
+  // the paper fee, paid at the cashier
+  await expect(page.getByText("Application fee N$ 200.00")).toBeVisible();
+  await expect(capture).toBeEnabled();
+  await page.screenshot({ path: "e2e/results/capture-paper.png", fullPage: true });
+  // not captured: the demo data stays as it is
+});

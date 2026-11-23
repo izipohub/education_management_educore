@@ -9,6 +9,7 @@
 """
 
 import os
+import re
 
 import frappe
 from frappe import _
@@ -16,7 +17,7 @@ from frappe.rate_limiter import rate_limit
 from frappe.utils import cint, getdate, nowdate, validate_email_address
 
 from educore.admissions import application as rules
-from educore.admissions import notify, offers, pathways
+from educore.admissions import fees, notify, offers, pathways
 
 ALLOWED_FILE_TYPES = {".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
 
@@ -33,7 +34,36 @@ PERSONAL_FIELDS = (
 	"address_line_2",
 	"city",
 	"country",
+	# the particulars Namibian universities ask (custom fields on Student Applicant)
+	"educore_title",
+	"educore_previous_surname",
+	"educore_marital_status",
+	"educore_home_language",
+	"educore_home_town",
+	"educore_region_of_origin",
+	"educore_minority_group",
+	"educore_national_id",
+	"educore_passport_number",
+	"educore_passport_expiry",
+	"educore_study_permit",
+	"educore_alternative_phone",
+	"educore_postal_address",
+	"educore_kin_relationship",
+	"educore_kin_name",
+	"educore_kin_phone",
+	"educore_kin_email",
+	"educore_kin_address",
+	"educore_fee_payer",
+	"educore_fee_payer_name",
+	"educore_fee_payer_email",
+	"educore_fee_payer_phone",
+	"educore_disability",
+	"educore_support_needs",
 )
+
+#: phone numbers are kept with their country code: +264811234567
+PHONE_FIELDS = ("student_mobile_number", "educore_alternative_phone", "educore_kin_phone", "educore_fee_payer_phone")
+EMAIL_FIELDS = ("educore_kin_email", "educore_fee_payer_email")
 
 PRIOR_FIELDS = ("qualification", "institution", "country", "nqf_level", "year_completed", "average")
 EMPLOYMENT_FIELDS = ("employer", "position", "from_date", "to_date", "duties")
@@ -127,8 +157,19 @@ def options() -> dict:
 		"max_choices": rules.max_choices(),
 		"home_country": settings.home_country or "Namibia",
 		"countries": frappe.get_all("Country", pluck="name", order_by="name asc"),
+		"dial_codes": _dial_codes(),
 		"pathways": pathways.active(),
 	}
+
+
+def _dial_codes() -> list[dict]:
+	"""Each country's calling code (Frappe's country data), for the phone fields"""
+	from frappe.geo.country_info import get_all
+
+	return sorted(
+		({"country": name, "code": info["isd"]} for name, info in get_all().items() if info.get("isd")),
+		key=lambda c: c["country"],
+	)
 
 
 @frappe.whitelist(methods=["GET"])
@@ -266,12 +307,7 @@ def _fee(doc) -> dict:
 		"status": doc.get("educore_fee_status") or "Unpaid",
 		"paid_on": str(doc.educore_fee_paid_on) if doc.get("educore_fee_paid_on") else None,
 		"reference": doc.name,
-		"bank": {
-			"bank_name": settings.eft_bank_name,
-			"account_name": settings.eft_account_name,
-			"account_number": settings.eft_account_number,
-			"branch_code": settings.eft_branch_code,
-		},
+		"bank": fees.bank_details(),
 		"card_payments": bool(settings.card_payments_enabled),
 	}
 
@@ -333,12 +369,32 @@ def save(data: dict | str) -> dict:
 			}
 		)
 
+	apply_fields(doc, data)
+
+	doc.flags.ignore_permissions = True
+	if doc.is_new():
+		_insert_draft(doc)
+	else:
+		doc.save()
+	return _serialise(doc)
+
+
+def apply_fields(doc, data):
+	"""The applicant's details from the form, onto a draft: only the fields listed in this module are taken.
+	Used for an online draft and for a paper application staff capture (educore.api.v1.admissions.capture)."""
 	personal = data.get("personal") or {}
 	for field in PERSONAL_FIELDS:
 		if field in personal:
 			doc.set(field, (personal[field] or None) if not isinstance(personal[field], str) else personal[field].strip() or None)
 	if doc.get("date_of_birth") and getdate(doc.date_of_birth) >= getdate(nowdate()):
 		frappe.throw(_("Check your date of birth"))
+	for field in PHONE_FIELDS:
+		doc.set(field, phone(doc.get(field)))
+	for field in EMAIL_FIELDS:
+		if doc.get(field):
+			validate_email_address(doc.get(field), throw=True)
+	if not doc.get("educore_disability"):
+		doc.educore_support_needs = None
 	if "international" in data:
 		doc.educore_international = 1 if data.get("international") else 0
 	if data.get("pathway") and data["pathway"] != doc.get("educore_pathway"):
@@ -368,16 +424,20 @@ def save(data: dict | str) -> dict:
 	_set_rows(doc, data, "referees", "educore_referees", REFEREE_FIELDS, ("full_name", "email"))
 	for row in doc.get("educore_referees") or []:
 		validate_email_address(row.email, throw=True)
+		row.phone = phone(row.phone)
 	for row in doc.get("educore_employment") or []:
 		if row.to_date and getdate(row.to_date) < getdate(row.from_date):
 			frappe.throw(_("{0}: the end date is before the start date").format(row.employer))
 
-	doc.flags.ignore_permissions = True
-	if doc.is_new():
-		_insert_draft(doc)
-	else:
-		doc.save()
-	return _serialise(doc)
+
+def phone(value: str | None) -> str | None:
+	"""A phone number with its country code, digits only after the +: '+264 81 123 4567' is +264811234567"""
+	if not value:
+		return None
+	digits = re.sub(r"[\s\-().]", "", str(value))
+	if not re.fullmatch(r"\+\d{7,15}", digits):
+		frappe.throw(_("{0}: give the number with its country code, e.g. +264 81 123 4567").format(value))
+	return digits
 
 
 def _change_pathway(doc, pathway: str):

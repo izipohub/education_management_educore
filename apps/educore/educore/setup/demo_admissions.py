@@ -105,13 +105,12 @@ def _fee_bank_account():
 		)
 	settings = frappe.get_single("Admission Settings")
 	if not settings.fee_bank_account:
+		# applicants are shown this ERPNext account's bank, number and branch (educore.admissions.fees.bank_details)
 		settings.fee_bank_account = account
-		settings.eft_bank_name = DEMO_BANK
-		settings.eft_account_name = "EduCore Demo University"
-		settings.eft_account_number = DEMO_ACCOUNT_NUMBER
-		settings.eft_branch_code = "DEMO-000"
 		settings.fee_namibian = settings.fee_namibian or 150
 		settings.fee_international = settings.fee_international or 300
+		settings.fee_paper_local = settings.fee_paper_local or 200
+		settings.fee_paper_international = settings.fee_paper_international or 350
 		settings.save(ignore_permissions=True)
 
 

@@ -18,7 +18,18 @@ GOOD_RESULTS = [
 	{"subject": "Geography", "level": "NSSCO", "grade": "B"},
 	{"subject": "Oshindonga First Language", "level": "NSSCO", "grade": "A"},
 ]
-PERSONAL = {"date_of_birth": "2008-03-14", "gender": "Female", "nationality": "Namibian"}
+PERSONAL = {
+	"date_of_birth": "2008-03-14",
+	"gender": "Female",
+	"nationality": "Namibian",
+	# the particulars an application needs before it is submitted
+	"educore_national_id": "08031400123",
+	"student_mobile_number": "+264 81 123 4567",
+	"educore_kin_relationship": "Mother",
+	"educore_kin_name": "Test Parent",
+	"educore_kin_phone": "+264811234568",
+	"educore_fee_payer": "Parent or guardian",
+}
 
 
 def _pdf() -> bytes:
@@ -198,3 +209,22 @@ class TestOnlineApplication(IntegrationTestCase):
 		self.assertRaises(
 			frappe.ValidationError, apply.register.__wrapped__, "New", "Applicant", "new.applicant@example.com", "Another-Passphrase-1"
 		)
+
+
+class TestParticulars(IntegrationTestCase):
+	"""The particulars Namibian universities ask: phones with their country code, and what submitting needs"""
+
+	def test_a_phone_keeps_its_country_code(self):
+		self.assertEqual(apply.phone("+264 81 123-4567"), "+264811234567")
+		self.assertIsNone(apply.phone(""))
+		self.assertRaises(frappe.ValidationError, apply.phone, "081 123 4567")
+
+	def test_submitting_needs_identity_next_of_kin_and_who_pays(self):
+		from educore.admissions.application import missing
+
+		doc = frappe.new_doc("Student Applicant")
+		gaps = missing(doc)
+		for gap in ("Your national ID number", "Your mobile number", "Your next of kin: relationship, name and phone", "Who pays your fees"):
+			self.assertIn(gap, gaps)
+		doc.educore_international = 1
+		self.assertIn("Your passport number", missing(doc))

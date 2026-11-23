@@ -12,7 +12,7 @@ import EcModal from "@/core/ui/EcModal.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
-import { type Action, type Review, decide, extendOffer, getReview, verifyDocument, waiveFee } from "./api";
+import { type Action, type Review, decide, extendOffer, getReview, verifyDocument } from "./api";
 
 /** One application on its own page: the record in panels, where it stands beside it, the decisions on top */
 const props = defineProps<{ name: string }>();
@@ -56,6 +56,8 @@ async function act(run: () => Promise<unknown>, message: string, reload = false)
   }
 }
 
+/** the particulars on the form (identity, origin, next of kin, who pays, support) */
+const p = computed(() => review.value?.particulars ?? {});
 const back = computed(() => ({ to: { name: "admissions", query: route.query }, label: "Admissions" }));
 
 // --- where it stands --------------------------------------------------------------------------------------
@@ -83,16 +85,7 @@ async function confirmReject() {
   }
 }
 
-// --- fee and offer ------------------------------------------------------------------------------------------
-const waiving = ref(false);
-const waiveReason = ref("");
-async function confirmWaive() {
-  if (!waiveReason.value.trim()) return;
-  if (await act(() => waiveFee(props.name, waiveReason.value.trim()), "Fee waived")) {
-    waiving.value = false;
-    waiveReason.value = "";
-  }
-}
+// --- offer ------------------------------------------------------------------------------------------
 const extending = ref(false);
 const newDeadline = ref<Date | null>(null);
 function startExtend() {
@@ -323,23 +316,65 @@ const subtitle = computed(() => {
           <div v-if="review.fee.paid_on"><dt>Paid</dt><dd>{{ formatDate(review.fee.paid_on) }}</dd></div>
           <div v-if="review.fee.note"><dt>Note</dt><dd>{{ review.fee.note }}</dd></div>
         </dl>
-        <template v-if="review.can_review && review.fee.status === 'Unpaid'" #footer>
-          <EcButton label="Waive the fee" size="sm" variant="ghost" @click="waiving = true" />
-        </template>
       </EcPanel>
 
       <EcPanel title="Applicant">
         <dl class="ec-facts stacked">
-          <div><dt>Email</dt><dd>{{ review.personal.email }}</dd></div>
-          <div><dt>Mobile</dt><dd>{{ review.personal.mobile || "Not given" }}</dd></div>
+          <div><dt>Full name</dt><dd>{{ [p.educore_title, review.applicant].filter(Boolean).join(" ") }}<template v-if="p.educore_previous_surname"> · previously {{ p.educore_previous_surname }}</template></dd></div>
           <div>
             <dt>Date of birth</dt>
             <dd>{{ formatDate(review.personal.date_of_birth) }}<template v-if="review.age !== null"> · {{ review.age }} years</template></dd>
           </div>
-          <div><dt>Gender</dt><dd>{{ review.personal.gender || "Not given" }}</dd></div>
+          <div><dt>Gender</dt><dd>{{ review.personal.gender || "Not given" }}<template v-if="p.educore_marital_status"> · {{ p.educore_marital_status }}</template></dd></div>
           <div><dt>Nationality</dt><dd>{{ review.personal.nationality || "Not given" }}</dd></div>
-          <div><dt>Town</dt><dd>{{ review.personal.city || "Not given" }}</dd></div>
+          <div v-if="!review.international"><dt>National ID</dt><dd>{{ p.educore_national_id || "Not given" }}</dd></div>
+          <template v-else>
+            <div><dt>Passport</dt><dd>{{ p.educore_passport_number || "Not given" }}<template v-if="p.educore_passport_expiry"> · expires {{ formatDate(p.educore_passport_expiry) }}</template></dd></div>
+            <div v-if="p.educore_study_permit"><dt>Study permit</dt><dd>{{ p.educore_study_permit }}</dd></div>
+          </template>
+          <div v-if="p.educore_home_language"><dt>Home language</dt><dd>{{ p.educore_home_language }}</dd></div>
+          <div v-if="p.educore_region_of_origin || p.educore_home_town">
+            <dt>Origin</dt>
+            <dd>{{ [p.educore_home_town, p.educore_region_of_origin].filter(Boolean).join(", ") }}</dd>
+          </div>
+          <div v-if="p.educore_minority_group && p.educore_minority_group !== 'None'"><dt>Designated minority group</dt><dd>{{ p.educore_minority_group }}</dd></div>
         </dl>
+      </EcPanel>
+
+      <EcPanel title="Contact">
+        <dl class="ec-facts stacked">
+          <div><dt>Email</dt><dd>{{ review.personal.email }}</dd></div>
+          <div><dt>Mobile</dt><dd>{{ review.personal.mobile || "Not given" }}<template v-if="p.educore_alternative_phone"> · {{ p.educore_alternative_phone }}</template></dd></div>
+          <div><dt>Residential address</dt><dd>{{ [review.personal.address, review.personal.city].filter(Boolean).join(", ") || "Not given" }}</dd></div>
+          <div v-if="p.educore_postal_address"><dt>Postal address</dt><dd>{{ p.educore_postal_address }}</dd></div>
+        </dl>
+      </EcPanel>
+
+      <EcPanel title="Next of kin">
+        <dl v-if="p.educore_kin_name" class="ec-facts stacked">
+          <div><dt>{{ p.educore_kin_relationship || "Next of kin" }}</dt><dd>{{ p.educore_kin_name }}</dd></div>
+          <div v-if="p.educore_kin_phone || p.educore_kin_email">
+            <dt>Contact</dt>
+            <dd>{{ [p.educore_kin_phone, p.educore_kin_email].filter(Boolean).join(" · ") }}</dd>
+          </div>
+          <div v-if="p.educore_kin_address"><dt>Address</dt><dd>{{ p.educore_kin_address }}</dd></div>
+        </dl>
+        <p v-else class="ec-muted none">Not given</p>
+      </EcPanel>
+
+      <EcPanel title="Fees paid by">
+        <dl v-if="p.educore_fee_payer" class="ec-facts stacked">
+          <div><dt>{{ p.educore_fee_payer }}</dt><dd>{{ p.educore_fee_payer_name || (p.educore_fee_payer === "Self" ? "The applicant" : "Not named") }}</dd></div>
+          <div v-if="p.educore_fee_payer_email || p.educore_fee_payer_phone">
+            <dt>Contact</dt>
+            <dd>{{ [p.educore_fee_payer_phone, p.educore_fee_payer_email].filter(Boolean).join(" · ") }}</dd>
+          </div>
+        </dl>
+        <p v-else class="ec-muted none">Not given</p>
+      </EcPanel>
+
+      <EcPanel v-if="p.educore_disability" title="Support">
+        <p class="none">{{ p.educore_support_needs || "Has a disability or impairment; no support needs stated." }}</p>
       </EcPanel>
     </template>
   </RecordPage>
@@ -383,16 +418,6 @@ const subtitle = computed(() => {
     </template>
   </EcModal>
 
-  <EcModal :open="waiving" title="Waive the application fee" @update:open="(v: boolean) => (waiving = v)">
-    <EcField label="Reason" for="waive-reason" hint="For example, the scheme it falls under">
-      <InputText id="waive-reason" v-model="waiveReason" fluid />
-    </EcField>
-    <template #footer>
-      <EcButton label="Cancel" variant="ghost" @click="waiving = false" />
-      <EcButton label="Waive" variant="primary" :loading="busy" :disabled="!waiveReason.trim()" @click="confirmWaive" />
-    </template>
-  </EcModal>
-
   <EcModal :open="extending" title="Extend the offer deadline" @update:open="(v: boolean) => (extending = v)">
     <EcField label="New deadline" for="new-deadline">
       <DatePicker v-model="newDeadline" input-id="new-deadline" date-format="dd-mm-yy" show-icon fluid :min-date="new Date()" />
@@ -405,6 +430,10 @@ const subtitle = computed(() => {
 </template>
 
 <style scoped>
+.none {
+  margin: 0;
+}
+
 .rank {
   width: 2rem;
   color: var(--ec-muted);

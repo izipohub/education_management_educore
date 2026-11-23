@@ -7,8 +7,11 @@ export interface Count {
 
 export interface DashboardStats {
   today: string;
+  /** the campus shown; null: every campus the user may see */
+  campus: string | null;
+  campuses: string[];
   sections: {
-    students?: { total: number; by_campus: Count[] };
+    students?: { total: number; by_campus: Count[]; by_gender: Count[] };
     admissions?: {
       academic_year: string | null;
       pipeline: Count[];
@@ -16,6 +19,13 @@ export interface DashboardStats {
       declined_or_lapsed: number;
       fee_unpaid: number;
       offers_pending: number;
+      total: number;
+      /** last twelve months, oldest first; label YYYY-MM */
+      by_month: Count[];
+      by_programme: Count[];
+      by_pathway: Count[];
+      by_channel: Count[];
+      offer_responses: Count[];
       offerings: { label: string; applied: number; taken: number; capacity: number }[];
     };
     enrolment?: { academic_year: string | null; waiting: number; enrolled: number };
@@ -37,4 +47,4 @@ export interface DashboardStats {
   };
 }
 
-export const getStats = () => get<DashboardStats>("educore.api.v1.dashboard.stats");
+export const getStats = (campus?: string) => get<DashboardStats>("educore.api.v1.dashboard.stats", campus ? { campus } : {});

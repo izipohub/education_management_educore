@@ -51,7 +51,9 @@ watch(
 
 const back = computed(() => ({ to: { name: "registrations", query: { ...route.query, group: "first-year" } }, label: "Registration · first-year students" }));
 const canRegister = computed(() => Boolean(record.value?.can_enrol && offer.value && !offer.value.needs_acceptance));
-const ready = computed(() => canRegister.value && EMAIL.test(email.value.trim()) && Boolean(enrollmentDay.value));
+/** the login is the email given on the application; only an application captured without one asks for it here */
+const askEmail = computed(() => !offer.value?.email);
+const ready = computed(() => canRegister.value && (!askEmail.value || EMAIL.test(email.value.trim())) && Boolean(enrollmentDay.value));
 const outstanding = computed(() =>
   offer.value?.needs_acceptance
     ? [`Applicant to accept the offer${offer.value.offer_deadline ? `, by ${formatDate(offer.value.offer_deadline)}` : ""}`]
@@ -64,7 +66,7 @@ async function confirmEnrol() {
   saving.value = true;
   formError.value = "";
   try {
-    const result = await enrol(o.name, email.value.trim(), toIsoDate(enrollmentDay.value!));
+    const result = await enrol(o.name, askEmail.value ? email.value.trim() : undefined, toIsoDate(enrollmentDay.value!));
     const fees = result.invoice ? `, invoiced ${formatMoney(result.invoice.grand_total)}` : ", not invoiced (no fees set)";
     toast.add({ severity: "success", summary: `${o.applicant} registered`, detail: `Student ${result.student}${fees}`, life: 6000 });
     await load();
@@ -96,7 +98,18 @@ const subtitle = computed(() =>
     <template v-if="offer">
       <EcPanel v-if="canRegister" title="Register">
         <div class="form">
-          <EcField label="Student's email (their login)" for="enrol-email" :error="email && !EMAIL.test(email.trim()) ? 'Not a valid email address' : undefined">
+          <div v-if="!askEmail" class="login">
+            <span class="ec-muted">Login</span>
+            <span>{{ offer.email }}</span>
+            <span class="ec-muted">from the application</span>
+          </div>
+          <EcField
+            v-else
+            label="Student's email (their login)"
+            for="enrol-email"
+            hint="Not given on the application"
+            :error="email && !EMAIL.test(email.trim()) ? 'Not a valid email address' : undefined"
+          >
             <InputText id="enrol-email" v-model="email" type="email" autocomplete="off" fluid :invalid="Boolean(email) && !EMAIL.test(email.trim())" />
           </EcField>
           <EcField label="Registered from" for="enrol-date">
@@ -178,6 +191,18 @@ const subtitle = computed(() =>
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
   gap: 0.75rem 1rem;
+}
+
+.login {
+  display: grid;
+  align-content: start;
+  gap: 0.2rem;
+  font-size: 0.875rem;
+}
+
+.login .ec-muted:first-child {
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 .form-error {

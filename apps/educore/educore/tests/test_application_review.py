@@ -105,13 +105,15 @@ class TestApplicationReview(IntegrationTestCase):
 		self.assertEqual(frappe.db.get_value("Student Applicant", name, "educore_fee_status"), "Unpaid")
 		self.assertIn(txn, frappe.db.get_value("Student Applicant", name, "educore_fee_note"))
 
-	def test_admissions_can_waive_the_fee_with_a_reason(self):
+	def test_only_finance_waives_the_fee_with_a_reason(self):
 		name = self._submitted()
 		self._as("admissions-officer.osh")
+		self.assertRaises(frappe.PermissionError, admissions.waive_fee, name, "Marginalised communities scheme")
+		self._as("finance-officer")
 		self.assertRaises(frappe.ValidationError, admissions.waive_fee, name, "")
 		data = admissions.waive_fee(name, "Marginalised communities scheme")
-		self.assertEqual(data["fee"]["status"], "Waived")
-		self.assertIn("Marginalised communities scheme", data["fee"]["note"])
+		self.assertEqual(data["status"], "Waived")
+		self.assertIn("Marginalised communities scheme", data["note"])
 
 	# --- documents -------------------------------------------------------------------------------------
 
@@ -158,7 +160,10 @@ class TestApplicationReview(IntegrationTestCase):
 		data = admissions.review(name)
 		self.assertEqual(data["blockers"], ["Application fee outstanding"])
 		self.assertRaises(frappe.ValidationError, admissions.decide, name, "Approve")
+		# Finance waives it; admissions then decides
+		self._as("finance-officer")
 		admissions.waive_fee(name, "Staff dependant")
+		self._as("admissions-officer.osh")
 		self.assertTrue(admissions.review(name)["ready"])
 		self.assertEqual(admissions.decide(name, "Approve")["status"], "Approved")
 

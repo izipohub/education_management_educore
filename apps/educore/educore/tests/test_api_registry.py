@@ -61,6 +61,12 @@ class TestRegistryAPI(IntegrationTestCase):
 		self.assertEqual((invoice.docstatus, invoice.campus), (1, "Windhoek Campus"))
 		self.assertIn("Enrolled by registry-officer.whk@educore.localhost", invoice.remarks)
 
+	def test_the_email_on_the_application_becomes_the_login(self):
+		name = self._approved(email="test.application.email@example.com")
+		self._as("registry-officer.whk")
+		row = registry.enrol(name)
+		self.assertEqual(row["student_login"], "test.application.email@example.com")
+
 	def test_an_email_is_required_and_must_be_new(self):
 		name = self._approved()
 		self._as("registry-officer.whk")

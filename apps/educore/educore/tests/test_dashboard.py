@@ -42,3 +42,23 @@ class TestDashboard(IntegrationTestCase):
 		offerings = _as("registrar")["admissions"]["offerings"]
 		shares = [o["taken"] / o["capacity"] for o in offerings]
 		self.assertEqual(shares, sorted(shares, reverse=True))
+
+	def test_the_registrar_narrows_to_one_campus_and_an_officer_cannot_leave_theirs(self):
+		frappe.set_user("registrar@educore.localhost")
+		try:
+			everyone = dashboard.stats()
+			oshakati = dashboard.stats(campus="Oshakati Campus")
+		finally:
+			frappe.set_user("Administrator")
+		self.assertIn("Oshakati Campus", everyone["campuses"])
+		self.assertEqual([c["label"] for c in oshakati["sections"]["students"]["by_campus"]], ["Oshakati Campus"])
+		self.assertLessEqual(oshakati["sections"]["admissions"]["total"], everyone["sections"]["admissions"]["total"])
+		months = everyone["sections"]["admissions"]["by_month"]
+		self.assertEqual(len(months), 12)
+		self.assertEqual(sum(c["value"] for c in everyone["sections"]["admissions"]["by_channel"]), everyone["sections"]["admissions"]["total"])
+
+		frappe.set_user("admissions-officer.osh@educore.localhost")
+		try:
+			self.assertRaises(frappe.PermissionError, dashboard.stats, campus="Windhoek Campus")
+		finally:
+			frappe.set_user("Administrator")

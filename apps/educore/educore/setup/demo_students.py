@@ -72,11 +72,19 @@ def _applicant(first, last, offering, year, email=None, approve=False):
 			.insert(ignore_permissions=True)
 			.name
 		)
+	elif email and not frappe.db.get_value("Student Applicant", existing, "student_email_id"):
+		# captured before the paper form asked for an email: as a real form would give it
+		frappe.db.set_value("Student Applicant", existing, "student_email_id", email)
 	if frappe.db.get_value("Student Applicant", existing, "application_status") == "Draft":
 		apply_workflow(frappe.get_doc("Student Applicant", existing), "Submit")
 	if approve and frappe.db.get_value("Student Applicant", existing, "application_status") == "Applied":
 		apply_workflow(frappe.get_doc("Student Applicant", existing), "Approve")
 	return existing
+
+
+def _paper_email(first: str, last: str) -> str:
+	"""The email written on a paper form; it becomes the student's login on registration"""
+	return f"{first}.{last}@{DOMAIN}".lower()
 
 
 def create():
@@ -105,11 +113,11 @@ def create():
 		enrolled += 1
 
 	for first, last, offering in APPLICANTS:
-		_applicant(first, last, offering, 2027)
+		_applicant(first, last, offering, 2027, email=_paper_email(first, last))
 	for first, last, offering in OFFERED:
-		_applicant(first, last, offering, 2027, approve=True)
+		_applicant(first, last, offering, 2027, email=_paper_email(first, last), approve=True)
 	for first, last, offering, reason in REJECTED:
-		applicant = _applicant(first, last, offering, 2027)
+		applicant = _applicant(first, last, offering, 2027, email=_paper_email(first, last))
 		if frappe.db.get_value("Student Applicant", applicant, "application_status") == "Applied":
 			# the reason is saved first, as on the form: a workflow action reloads the document
 			frappe.db.set_value("Student Applicant", applicant, "educore_decision_reason", reason)

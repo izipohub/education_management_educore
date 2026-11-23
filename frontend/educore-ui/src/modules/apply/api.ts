@@ -63,6 +63,8 @@ export interface ApplyOptions {
   max_choices: number;
   home_country: string;
   countries: string[];
+  /** each country's calling code, for phone numbers */
+  dial_codes: { country: string; code: string }[];
   pathways: Pathway[];
 }
 
@@ -141,6 +143,31 @@ export interface Personal {
   city: string | null;
   country: string | null;
   student_email_id: string | null;
+  // the particulars Namibian universities ask (modules/apply/details.ts)
+  educore_title: string | null;
+  educore_previous_surname: string | null;
+  educore_marital_status: string | null;
+  educore_home_language: string | null;
+  educore_home_town: string | null;
+  educore_region_of_origin: string | null;
+  educore_minority_group: string | null;
+  educore_national_id: string | null;
+  educore_passport_number: string | null;
+  educore_passport_expiry: string | null;
+  educore_study_permit: string | null;
+  educore_alternative_phone: string | null;
+  educore_postal_address: string | null;
+  educore_kin_relationship: string | null;
+  educore_kin_name: string | null;
+  educore_kin_phone: string | null;
+  educore_kin_email: string | null;
+  educore_kin_address: string | null;
+  educore_fee_payer: string | null;
+  educore_fee_payer_name: string | null;
+  educore_fee_payer_email: string | null;
+  educore_fee_payer_phone: string | null;
+  educore_disability: 0 | 1 | null;
+  educore_support_needs: string | null;
 }
 
 export interface Application {

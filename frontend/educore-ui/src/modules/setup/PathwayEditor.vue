@@ -3,7 +3,7 @@ import { Plus, X } from "@lucide/vue";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
 import Select from "primevue/select";
-import SelectButton from "primevue/selectbutton";
+import Checkbox from "primevue/checkbox";
 import Textarea from "primevue/textarea";
 import ToggleSwitch from "primevue/toggleswitch";
 import { computed, ref, watch } from "vue";
@@ -69,8 +69,8 @@ function save() {
         >
           <InputText id="pw-name" v-model="form.pathway_name" fluid />
         </EcField>
-        <EcField label="Level">
-          <SelectButton v-model="form.level" :options="['Undergraduate', 'Postgraduate']" :allow-empty="false" aria-label="Level" size="small" />
+        <EcField label="Level" for="pw-level" label-id="pw-level-label">
+          <Select v-model="form.level" input-id="pw-level" aria-labelledby="pw-level-label" :options="['Undergraduate', 'Postgraduate']" fluid />
         </EcField>
         <EcField label="Judged on" for="pw-evidence" label-id="pw-evidence-label">
           <Select v-model="form.evidence" input-id="pw-evidence" aria-labelledby="pw-evidence-label" :options="setup.choices.evidence" fluid />
@@ -98,15 +98,7 @@ function save() {
       <div v-for="(doc, index) in form.documents" :key="index" class="doc-row">
         <Select v-model="doc.document_type" :options="documentNames" placeholder="Document" filter :aria-label="`Document ${index + 1}`" class="doc" size="small" />
         <Select v-model="doc.applies_to" :options="setup.choices.applies_to" :aria-label="`Asked of, document ${index + 1}`" size="small" />
-        <SelectButton
-          v-model="doc.required"
-          :options="[{ label: 'Required', value: true }, { label: 'Optional', value: false }]"
-          option-label="label"
-          option-value="value"
-          :allow-empty="false"
-          size="small"
-          :aria-label="`Required, document ${index + 1}`"
-        />
+        <label class="required"><Checkbox v-model="doc.required" binary :input-id="`doc-req-${index}`" /> Required</label>
         <EcButton :icon="X" size="sm" variant="ghost" :aria-label="`Remove document ${index + 1}`" @click="form.documents!.splice(index, 1)" />
       </div>
       <EcButton label="Add a document" :icon="Plus" size="sm" variant="ghost" @click="addDocument" />
@@ -143,15 +135,30 @@ p {
   margin: 0 0 0.6rem;
 }
 
+/* one line per document: which, asked of whom, required, remove */
 .doc-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(9rem, 12rem) auto auto;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
 
 .doc {
-  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.required {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 639px) {
+  .doc-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
 }
 </style>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
+import { type RouteLocationRaw, RouterLink } from "vue-router";
 
 /** A headline number: label, value, one line of context, and where to act on it */
-defineProps<{ label: string; value: string | number; hint?: string; to?: string; action?: string }>();
+defineProps<{ label: string; value: string | number; hint?: string; to?: RouteLocationRaw; action?: string }>();
 </script>
 
 <template>

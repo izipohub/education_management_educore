@@ -10,7 +10,7 @@ import os
 import frappe
 from frappe import _
 from frappe.model.workflow import apply_workflow, get_transitions
-from frappe.utils import add_months, getdate, now_datetime, nowdate
+from frappe.utils import add_months, getdate, now_datetime, nowdate, validate_email_address
 
 from educore.admissions import application as rules
 from educore.admissions import pathways
@@ -233,9 +233,17 @@ def review(name: str) -> dict:
 		if doc.get("educore_secondary_school")
 		else None
 	)
+	from educore.api.v1.apply import PERSONAL_FIELDS
+
 	return {
 		"name": doc.name,
 		"applicant": doc.title,
+		# identity, origin, next of kin, who pays, support (the particulars on the form)
+		"particulars": {
+			field: str(doc.get(field)) if field == "educore_passport_expiry" and doc.get(field) else doc.get(field)
+			for field in PERSONAL_FIELDS
+			if field.startswith("educore_")
+		},
 		"status": doc.application_status,
 		"intake": doc.student_admission,
 		"pathway": doc.get("educore_pathway"),
@@ -249,6 +257,7 @@ def review(name: str) -> dict:
 			"nationality": doc.nationality,
 			"mobile": doc.student_mobile_number,
 			"city": doc.city,
+			"address": doc.address_line_1,
 		},
 		"school": school,
 		"exam_number": doc.get("educore_exam_number"),
@@ -354,6 +363,97 @@ def extend_offer(name: str, deadline: str) -> dict:
 
 @frappe.whitelist(methods=["POST"])
 def waive_fee(name: str, reason: str) -> dict:
-	_reviewable(name, write=True)
+	"""Finance waives an application's fee, with a reason (educore.admissions.fees.WAIVE_ROLES)"""
 	fees.waive(name, reason)
-	return review(name)
+	return dict(zip(("status", "note"), frappe.db.get_value("Student Applicant", name, ["educore_fee_status", "educore_fee_note"])))
+
+
+# --- paper applications ----------------------------------------------------------------------------------
+
+#: who captures a hard-copy application received at a campus
+CAPTURE_ROLES = ("Admissions Officer", "Registrar")
+
+
+def _require_capture():
+	if not set(frappe.get_roles()) & set(CAPTURE_ROLES):
+		frappe.throw(_("Only admissions officers and the Registrar capture applications"), frappe.PermissionError)
+
+
+@frappe.whitelist(methods=["GET"])
+def capture_options() -> dict:
+	"""The intakes a paper application can be captured for (also after online applications close: forms posted in
+	time are still captured)"""
+	_require_capture()
+	intakes = frappe.get_all(
+		"Student Admission",
+		filters={"enable_admission_application": 1},
+		fields=["name", "title", "academic_year", "admission_end_date"],
+		order_by="academic_year desc, admission_end_date desc",
+	)
+	settings = rules.settings()
+	return {
+		"intakes": intakes,
+		# the fee for a paper form, paid at a campus cashier (Admission Settings)
+		"fees": {"local": settings.fee_paper_local, "international": settings.fee_paper_international},
+	}
+
+
+@frappe.whitelist(methods=["POST"])
+def capture(data: dict | str) -> dict:
+	"""A hard-copy application typed in by staff: the same details and checks as an online one, then submitted.
+
+	It has no applicant login (offers are answered in person) and was checked at the counter, so documents and
+	the fee are not asked for online. The email given on the form becomes the student's login on registration.
+	It is inserted with the officer's own permissions, so campus User Permissions apply; Frappe's workflow then
+	keeps the officer who captured it from approving it themselves."""
+	from educore.api.v1 import apply
+
+	_require_capture()
+	data = frappe.parse_json(data) if isinstance(data, str) else frappe._dict(data)
+	personal = frappe._dict(data.get("personal") or {})
+
+	intake = data.get("intake")
+	academic_year = frappe.db.get_value("Student Admission", {"name": intake, "enable_admission_application": 1}, "academic_year") if intake else None
+	if not academic_year:
+		frappe.throw(_("Choose the intake applied for"))
+	for field, label in (("first_name", _("first name")), ("last_name", _("surname")), ("date_of_birth", _("date of birth"))):
+		if not (personal.get(field) or "").strip():
+			frappe.throw(_("Give the applicant's {0}").format(label))
+	email = (data.get("email") or "").strip().lower()
+	if not email:
+		frappe.throw(_("Give the applicant's email address: it becomes their login when they register"))
+	validate_email_address(email, throw=True)
+	other = frappe.db.get_value(
+		"Student Applicant",
+		{"student_email_id": email, "academic_year": academic_year, "application_status": ("not in", ("Rejected", "Declined", "Lapsed"))},
+		"name",
+	)
+	if other:
+		frappe.throw(_("{0} already has an application for {1}: {2}").format(email, academic_year, other))
+	if not [c for c in data.get("choices") or [] if c]:
+		frappe.throw(_("Choose at least one programme"))
+
+	doc = frappe.new_doc("Student Applicant")
+	doc.update(
+		{
+			"student_email_id": email,
+			"student_admission": intake,
+			"academic_year": academic_year,
+			"academic_term": apply._first_term(academic_year),
+			"application_date": data.get("received_on") or nowdate(),
+		}
+	)
+	if not data.get("pathway"):
+		data["pathway"] = next((p["name"] for p in pathways.active()), None)
+	apply.apply_fields(doc, data)
+	# the paper fee, paid at the campus cashier: the receipt number, once paid
+	doc.educore_fee_amount = fees.fee_for(doc)
+	receipt = (data.get("receipt_number") or "").strip()
+	doc.educore_fee_status = "Paid" if receipt else "Unpaid"
+	if receipt:
+		doc.educore_fee_paid_on = doc.application_date
+		doc.educore_fee_note = _("Paid at the campus cashier, receipt {0}").format(receipt)
+	apply._insert_draft(doc)
+	doc.add_comment("Info", _("Paper application captured by {0}").format(frappe.session.user))
+	apply_workflow(doc, "Submit")
+	return {"name": doc.name}

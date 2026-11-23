@@ -60,13 +60,13 @@ watch(search, () => {
   searchTimer = setTimeout(load, 300);
 });
 watch([view, academicYear], ([, year], [, before]) => {
-  void router.replace({ query: { ...route.query, view: view.value, year: academicYear.value } });
-  if (year === before) return;
+  // the server's own choice of year is not written to the address: that would cancel a click made meanwhile
   if (adoptingYear) {
     adoptingYear = false;
     return;
   }
-  void load();
+  void router.replace({ query: { ...route.query, view: view.value, year: academicYear.value } });
+  if (year !== before) void load();
 });
 onMounted(load);
 

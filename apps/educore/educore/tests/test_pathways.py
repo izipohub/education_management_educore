@@ -8,7 +8,17 @@ from educore.admissions import application as rules
 from educore.api.v1 import apply
 
 PASSWORD = "Campus-Demo-2026"
-ADULT = {"date_of_birth": "1990-05-01", "gender": "Male", "nationality": "Namibian"}
+ADULT = {
+	"date_of_birth": "1990-05-01",
+	"gender": "Male",
+	"nationality": "Namibian",
+	"educore_national_id": "90050100456",
+	"student_mobile_number": "+264812223344",
+	"educore_kin_relationship": "Spouse or partner",
+	"educore_kin_name": "Test Partner",
+	"educore_kin_phone": "+264812223345",
+	"educore_fee_payer": "Self",
+}
 BACHELOR = {
 	"qualification": "Bachelor of Commerce",
 	"institution": "Demo Institution",

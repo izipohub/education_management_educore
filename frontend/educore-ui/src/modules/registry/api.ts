@@ -66,6 +66,7 @@ export function getEnrolment(name: string) {
   return get<EnrolmentRecord>("educore.api.v1.registry.enrolment", { name });
 }
 
-export function enrol(name: string, email: string, enrollmentDate: string) {
+/** without an email, the one on the application is the student's login */
+export function enrol(name: string, email: string | undefined, enrollmentDate: string) {
   return post<Enrolled>("educore.api.v1.registry.enrol", { name, email, enrollment_date: enrollmentDate });
 }

@@ -1,5 +1,5 @@
 import { get, post } from "@/core/api/client";
-import type { Employment, PriorQualification, Referee } from "@/modules/apply/api";
+import type { DraftChanges, Employment, Personal, PriorQualification, Referee } from "@/modules/apply/api";
 
 export const STATUSES = ["Applied", "Approved", "Rejected", "Declined", "Lapsed", "Admitted"] as const;
 /** shown only when there are some: declined and lapsed offers */
@@ -68,6 +68,8 @@ export interface ReviewDocument {
 export interface Review {
   name: string;
   applicant: string;
+  /** identity, origin, next of kin, who pays, support: the educore_ fields of the form */
+  particulars: Partial<Personal>;
   status: string;
   intake: string;
   pathway: string | null;
@@ -75,7 +77,7 @@ export interface Review {
   /** on 1 January of the intake's year */
   age: number | null;
   submitted_on: string | null;
-  personal: { email: string; date_of_birth: string | null; gender: string | null; nationality: string | null; mobile: string | null; city: string | null };
+  personal: { email: string; date_of_birth: string | null; gender: string | null; nationality: string | null; mobile: string | null; city: string | null; address: string | null };
   school: { school_name: string; town: string | null; region: string | null; centre_number: string | null; emis_number: string | null; added_by_applicant: 0 | 1 } | null;
   exam_number: string | null;
   exam_year: number | null;
@@ -111,9 +113,6 @@ export function verifyDocument(name: string, documentType: string, verdict: "Ver
   return post<Review>("educore.api.v1.admissions.verify_document", { name, document_type: documentType, verdict, reason });
 }
 
-export function waiveFee(name: string, reason: string) {
-  return post<Review>("educore.api.v1.admissions.waive_fee", { name, reason });
-}
 
 export interface Places {
   capacity: number | null;
@@ -140,4 +139,21 @@ export function decide(name: string, action: Action, reason?: string, conditions
 
 export function extendOffer(name: string, deadline: string) {
   return post<Review>("educore.api.v1.admissions.extend_offer", { name, deadline });
+}
+
+// --- paper applications --------------------------------------------------------------------------------------
+
+export interface CaptureIntake {
+  name: string;
+  title: string;
+  academic_year: string;
+  admission_end_date: string | null;
+}
+
+export const getCaptureOptions = () =>
+  get<{ intakes: CaptureIntake[]; fees: { local: number; international: number } }>("educore.api.v1.admissions.capture_options");
+
+/** A hard-copy application typed in by staff; submitted at once. The email becomes the student's login. */
+export function captureApplication(data: DraftChanges & { intake: string; email: string; received_on?: string; receipt_number?: string }) {
+  return post<{ name: string }>("educore.api.v1.admissions.capture", { data });
 }

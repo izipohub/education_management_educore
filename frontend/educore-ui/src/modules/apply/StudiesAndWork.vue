@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PhoneField from "@/core/ui/PhoneField.vue";
 import Button from "primevue/button";
 import DatePicker from "primevue/datepicker";
 import InputNumber from "primevue/inputnumber";
@@ -16,6 +17,8 @@ const props = defineProps<{
   homeCountry: string;
   countries: string[];
   workYears: number | null;
+  /** calling codes for the referees' phones */
+  dialCodes: { country: string; code: string }[];
 }>();
 const prior = defineModel<PriorQualification[]>("prior", { required: true });
 const employment = defineModel<Employment[]>("employment", { required: true });
@@ -174,7 +177,7 @@ const iso = (value: Date | Date[] | (Date | null)[] | null | undefined) => (valu
           <div class="field"><label :for="`ref-pos-${index}`">Position</label><InputText :id="`ref-pos-${index}`" v-model="row.position" fluid /></div>
           <div class="field"><label :for="`ref-inst-${index}`">Institution or employer</label><InputText :id="`ref-inst-${index}`" v-model="row.institution" fluid /></div>
           <div class="field"><label :for="`ref-email-${index}`">Email</label><InputText :id="`ref-email-${index}`" v-model="row.email" type="email" fluid /></div>
-          <div class="field"><label :for="`ref-phone-${index}`">Phone</label><InputText :id="`ref-phone-${index}`" v-model="row.phone" type="tel" fluid /></div>
+          <div class="field"><label :for="`ref-phone-${index}`">Phone</label><PhoneField v-model="row.phone" :input-id="`ref-phone-${index}`" :dial-codes="dialCodes" :home-country="homeCountry" /></div>
         </div>
         <Button label="Remove" text severity="danger" size="small" :aria-label="`Remove referee ${index + 1}`" @click="removeRow(referees, 'ref', index)" />
       </div>

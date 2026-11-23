@@ -16,6 +16,23 @@ from educore.access.demo_users import DOMAIN, new_user
 LOGIN = f"online.applicant@{DOMAIN}"
 
 
+
+def _particulars(title, national_id, mobile, language, region, kin_relationship, kin_name, payer, payer_name=None) -> dict:
+	"""What a real applicant fills in about themselves: identity, origin, contact, next of kin and who pays"""
+	return {
+		"educore_title": title,
+		"educore_national_id": national_id,
+		"student_mobile_number": mobile,
+		"educore_home_language": language,
+		"educore_region_of_origin": region,
+		"educore_kin_relationship": kin_relationship,
+		"educore_kin_name": kin_name,
+		"educore_kin_phone": mobile[:-1] + str((int(mobile[-1]) + 1) % 10),
+		"educore_fee_payer": payer,
+		"educore_fee_payer_name": payer_name,
+	}
+
+
 def demo_pdf(text: str = "DEMO CERTIFIED COPY") -> bytes:
 	"""A small valid one-page PDF (Frappe parses uploaded PDFs)"""
 	content = f"BT /F1 12 Tf 20 100 Td ({text}) Tj ET".encode()
@@ -47,7 +64,7 @@ APPLICATIONS = {
 		"Haufiku",
 		{
 			"pathway": "School leaver",
-			"personal": {"date_of_birth": "2007-11-02", "gender": "Female", "nationality": "Namibian", "city": "Ongwediva"},
+			"personal": {"date_of_birth": "2007-11-02", "gender": "Female", "nationality": "Namibian", "city": "Ongwediva", **_particulars("Ms", "07110200345", "+264813456701", "Oshiwambo", "Oshana", "Mother", "Ndapandula Haufiku", "Parent or guardian")},
 			"school": {"centre_number": "DEMO-201"},
 			"exam_number": "DEMO-201-0107",
 			"exam_year": 2026,
@@ -70,7 +87,7 @@ APPLICATIONS = {
 		"Shikongo",
 		{
 			"pathway": "Postgraduate",
-			"personal": {"date_of_birth": "1994-03-15", "gender": "Female", "nationality": "Namibian", "city": "Windhoek"},
+			"personal": {"date_of_birth": "1994-03-15", "gender": "Female", "nationality": "Namibian", "city": "Windhoek", **_particulars("Ms", "94031500812", "+264814567802", "Oshiwambo", "Khomas", "Spouse or partner", "Petrus Shikongo", "Employer", "Namibia Statistics Agency")},
 			"prior_qualifications": [
 				{"qualification": "Bachelor of Accounting", "institution": "EduCore Demo University", "country": "Namibia",
 				 "nqf_level": 7, "year_completed": 2016, "average": 68},
@@ -94,7 +111,7 @@ APPLICATIONS = {
 		"Nangolo",
 		{
 			"pathway": "Mature Age Entry",
-			"personal": {"date_of_birth": "1990-07-21", "gender": "Male", "nationality": "Namibian", "city": "Keetmanshoop"},
+			"personal": {"date_of_birth": "1990-07-21", "gender": "Male", "nationality": "Namibian", "city": "Keetmanshoop", **_particulars("Mr", "90072100567", "+264815678903", "Oshiwambo", "Karas", "Spouse or partner", "Hilma Nangolo", "Self")},
 			"employment": [
 				{"employer": "Demo Retail Group", "position": "Store Manager", "from_date": "2016-01-11", "duties": "Staff, stock, cash-up"},
 				{"employer": "Demo Supermarket", "position": "Cashier", "from_date": "2009-03-01", "to_date": "2015-12-31"},
@@ -110,7 +127,7 @@ APPLICATIONS = {
 		"Iipinge",
 		{
 			"pathway": "School leaver",
-			"personal": {"date_of_birth": "2008-01-19", "gender": "Male", "nationality": "Namibian", "city": "Windhoek"},
+			"personal": {"date_of_birth": "2008-01-19", "gender": "Male", "nationality": "Namibian", "city": "Windhoek", **_particulars("Mr", "08011900234", "+264816789004", "Oshiwambo", "Khomas", "Father", "Josef Iipinge", "Sponsor or bursary", "NSFAF")},
 			"school": {"centre_number": "DEMO-101"},
 			"exam_number": "DEMO-101-0233",
 			"exam_year": 2026,

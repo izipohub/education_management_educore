@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import EcField from "@/core/ui/EcField.vue";
+import ApplicantDetails from "./ApplicantDetails.vue";
+import { type DetailsForm, detailsFrom, detailsToApi, emptyDetails } from "./details";
 import StatusTag from "@/core/ui/StatusTag.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
 import AutoComplete from "primevue/autocomplete";
@@ -14,7 +17,7 @@ import Tag from "primevue/tag";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { eligibilityLabel } from "@/core/status";
-import { formatDate, fromIsoDate, toIsoDate } from "@/core/format";
+import { formatDate, toIsoDate } from "@/core/format";
 import FeePanel from "./FeePanel.vue";
 import OfferPanel from "./OfferPanel.vue";
 import StudiesAndWork from "./StudiesAndWork.vue";
@@ -41,7 +44,6 @@ import {
 } from "./api";
 
 const toast = useToast();
-const GENDERS = ["Female", "Male", "Other", "Prefer not to say"];
 
 const options = ref<ApplyOptions | null>(null);
 const app = ref<Application | null>(null);
@@ -136,19 +138,10 @@ async function startApplication() {
 
 // --- the forms, copied from the application so edits can be saved or dropped ---------------------------
 
-const personal = reactive({
-  first_name: "",
-  middle_name: "",
-  last_name: "",
-  date_of_birth: null as Date | null,
-  gender: "",
-  nationality: "Namibian",
-  student_mobile_number: "",
-  address_line_1: "",
-  city: "",
-  pathway: "",
-  international: false,
-});
+/** how they are applying (step 1, above the particulars) */
+const personal = reactive({ pathway: "", international: false });
+/** the particulars (modules/apply/ApplicantDetails.vue) */
+const details = ref<DetailsForm>(emptyDetails("Namibian"));
 /** choosing a route at another level drops the programmes already chosen: said before saving */
 const levelChange = computed(() => {
   const next = pathwayByName.value.get(personal.pathway);
@@ -172,20 +165,8 @@ const choices = ref<(string | null)[]>([null, null, null]);
 function resetForms() {
   const a = app.value;
   if (!a) return;
-  const p = a.personal;
-  Object.assign(personal, {
-    first_name: p.first_name ?? "",
-    middle_name: p.middle_name ?? "",
-    last_name: p.last_name ?? "",
-    date_of_birth: p.date_of_birth ? fromIsoDate(p.date_of_birth) : null,
-    gender: p.gender ?? "",
-    nationality: p.nationality ?? "Namibian",
-    student_mobile_number: p.student_mobile_number ?? "",
-    address_line_1: p.address_line_1 ?? "",
-    city: p.city ?? "",
-    pathway: a.pathway ?? "",
-    international: a.international,
-  });
+  details.value = detailsFrom(a.personal, "Namibian");
+  Object.assign(personal, { pathway: a.pathway ?? "", international: a.international });
   Object.assign(school, {
     selected: a.school,
     notListed: false,
@@ -208,17 +189,7 @@ async function savePersonal() {
   const ok = await save({
     pathway: personal.pathway || undefined,
     international: personal.international,
-    personal: {
-      first_name: personal.first_name,
-      middle_name: personal.middle_name,
-      last_name: personal.last_name,
-      date_of_birth: personal.date_of_birth ? toIsoDate(personal.date_of_birth) : null,
-      gender: personal.gender || null,
-      nationality: personal.nationality,
-      student_mobile_number: personal.student_mobile_number,
-      address_line_1: personal.address_line_1,
-      city: personal.city,
-    },
+    personal: detailsToApi(details.value),
   });
   if (ok) step.value = "school";
 }
@@ -492,20 +463,6 @@ async function submit() {
           <!-- 1 about you -->
           <article v-if="step === 'personal'" class="card form">
             <div class="grid">
-              <div class="field"><label for="fn">First name</label><InputText id="fn" v-model="personal.first_name" fluid /></div>
-              <div class="field"><label for="mn">Middle name</label><InputText id="mn" v-model="personal.middle_name" fluid /></div>
-              <div class="field"><label for="ln">Last name</label><InputText id="ln" v-model="personal.last_name" fluid /></div>
-              <div class="field">
-                <label for="dob">Date of birth</label>
-                <DatePicker v-model="personal.date_of_birth" input-id="dob" date-format="dd-mm-yy" show-icon fluid :max-date="new Date()" />
-              </div>
-              <div class="field"><label id="gender-label" for="gender">Gender</label><Select v-model="personal.gender" input-id="gender" aria-labelledby="gender-label" :options="GENDERS" fluid /></div>
-              <div class="field"><label for="nat">Nationality</label><InputText id="nat" v-model="personal.nationality" fluid /></div>
-              <div class="field"><label for="mobile">Mobile number</label><InputText id="mobile" v-model="personal.student_mobile_number" type="tel" fluid /></div>
-              <div class="field"><label for="address">Address</label><InputText id="address" v-model="personal.address_line_1" fluid /></div>
-              <div class="field"><label for="city">Town / city</label><InputText id="city" v-model="personal.city" fluid /></div>
-            </div>
-            <div class="grid">
               <div class="field">
                 <label id="pathway-label" for="pathway">Entry pathway</label>
                 <Select v-model="personal.pathway" input-id="pathway" aria-labelledby="pathway-label" :options="options?.pathways ?? []" option-label="name" option-value="name" fluid />
@@ -516,6 +473,13 @@ async function submit() {
                 <SelectButton v-model="personal.international" :options="RESIDENCY" option-label="label" option-value="value" :allow-empty="false" aria-label="Residency" />
               </div>
             </div>
+            <ApplicantDetails v-model="details" :international="personal.international" :dial-codes="options?.dial_codes ?? []" :home-country="options?.home_country ?? 'Namibia'">
+              <template #email>
+                <EcField label="Email" for="email" hint="Your sign-in; it becomes your student login">
+                  <InputText id="email" :model-value="app?.personal.student_email_id ?? ''" type="email" fluid readonly />
+                </EcField>
+              </template>
+            </ApplicantDetails>
             <Message v-if="levelChange" severity="warn" :closable="false">
               {{ personal.pathway }} is for {{ pathwayByName.get(personal.pathway)?.level.toLowerCase() }} programmes: saving removes the
               programmes you chose.
@@ -577,6 +541,7 @@ async function submit() {
               :home-country="options?.home_country ?? ''"
               :countries="options?.countries ?? []"
               :work-years="app.work_years"
+              :dial-codes="options?.dial_codes ?? []"
             />
             <div class="step-nav">
               <Button label="Back" severity="secondary" text @click="go(-1)" />

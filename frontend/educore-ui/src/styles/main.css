@@ -65,6 +65,13 @@
   --ec-on-loud: var(--brand-on-accent, #0b1f3a);
   --ec-loud-soft: color-mix(in srgb, var(--ec-loud) 18%, white);
 
+  /* chart series, fixed order (checked as a set: colour-blind separation and normal-vision floor pass; slots 3
+     and 4 sit below 3:1 on white, so every chart carries a legend with its figures) */
+  --ec-series-1: #2a78d6;
+  --ec-series-2: #eb6834;
+  --ec-series-3: #1baf7a;
+  --ec-series-4: #eda100;
+
   /* state */
   --ec-warn: #b45309;
   --ec-danger: #b91c1c;

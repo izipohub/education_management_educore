@@ -119,3 +119,31 @@ class TestAdmissionSetup(IntegrationTestCase):
 			bcs,
 			{"subject_requirements": [{"subject": "Mathematics", "level": "NSSCO", "grade": "Z"}]},
 		)
+
+
+class TestFeeSettings(IntegrationTestCase):
+	"""The fee account from ERPNext, and online and paper fees"""
+
+	def setUp(self):
+		if not frappe.db.exists("User", REGISTRAR):
+			self.skipTest("run the demo setup first")
+		frappe.set_user(REGISTRAR)
+		saved = {f: frappe.db.get_single_value("Admission Settings", f) for f in api.SETTINGS_FIELDS}
+
+		def restore():
+			frappe.set_user("Administrator")
+			doc = frappe.get_single("Admission Settings")
+			doc.update(saved)
+			doc.save(ignore_permissions=True)
+
+		self.addCleanup(restore)
+
+	def test_the_fee_account_comes_from_erpnext(self):
+		data = api.setup()
+		self.assertTrue(data["choices"]["bank_accounts"])
+		self.assertRaises(frappe.ValidationError, api.save_settings, {"fee_bank_account": "No Such Account"})
+		self.assertRaises(frappe.ValidationError, api.save_settings, {"fee_income_account": "No Such Account"})
+		account = data["choices"]["bank_accounts"][0]
+		saved = api.save_settings({"fee_bank_account": account["name"], "fee_paper_local": 220})["settings"]
+		self.assertEqual((saved["fee_bank_account"], saved["fee_paper_local"]), (account["name"], 220))
+

@@ -11,13 +11,26 @@ export interface Settings {
   notify_applicants: 0 | 1;
   certification_max_age_months: number;
   max_file_size_mb: number;
+  /** online, local and international */
   fee_namibian: number;
   fee_international: number;
-  eft_bank_name: string | null;
-  eft_account_name: string | null;
-  eft_account_number: string | null;
-  eft_branch_code: string | null;
+  /** a paper form handed in at a campus */
+  fee_paper_local: number;
+  fee_paper_international: number;
+  /** ERPNext: the Bank Account applicants pay into, and the income account fees are booked to */
+  fee_bank_account: string | null;
+  fee_income_account: string | null;
   best_subjects: number;
+}
+
+/** one of the university's bank accounts in ERPNext, with what applicants are shown */
+export interface BankAccountChoice {
+  name: string;
+  label: string;
+  bank: string | null;
+  account_number: string | null;
+  branch_code: string | null;
+  holder: string | null;
 }
 
 export interface ScaleRow {
@@ -80,6 +93,8 @@ export interface Setup {
   documents: DocumentType[];
   programmes: Programme[];
   choices: {
+    bank_accounts: BankAccountChoice[];
+    income_accounts: string[];
     countries: string[];
     subjects: string[];
     school_levels: string[];

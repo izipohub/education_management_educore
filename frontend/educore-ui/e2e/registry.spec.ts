@@ -8,12 +8,11 @@ test("a registry officer enrols their campus's admitted applicants", async ({ pa
 
   await openRow(page, "Maria Kandjii");
   await expect(record(page).getByText("N$ 33,400.00")).toBeVisible();
-  // the form asks for the login email the applicant never gave (not enrolled: demo data stays as it is)
+  // the login is the email on the application: nothing to type (not registered: demo data stays as it is)
   await expect(record(page).getByLabel("Registered from")).toHaveValue("01-02-2027");
-  const enrolButton = record(page).getByRole("button", { name: "Register", exact: true });
-  await expect(enrolButton).toBeDisabled();
-  await record(page).getByLabel("Student's email (their login)").fill("maria.kandjii@example.com");
-  await expect(enrolButton).toBeEnabled();
+  await expect(record(page).getByText("maria.kandjii@educore.localhost").first()).toBeVisible();
+  await expect(record(page).getByLabel("Student's email (their login)")).toHaveCount(0);
+  await expect(record(page).getByRole("button", { name: "Register", exact: true })).toBeEnabled();
   await page.screenshot({ path: "e2e/results/registry-waiting.png" });
 });
 

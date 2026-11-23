@@ -39,8 +39,8 @@ test("an admissions officer reviews an online application before deciding", asyn
   await expect(dialog.getByRole("button", { name: "Reject", exact: true })).toBeDisabled();
   await dialog.getByRole("button", { name: "Cancel" }).click();
 
-  await page_.getByRole("button", { name: "Waive the fee" }).click();
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Waive", exact: true })).toBeDisabled();
+  // waiving the fee is Finance's decision, not admissions'
+  await expect(page_.getByRole("button", { name: "Waive the fee" })).toHaveCount(0);
 });
 
 test("an applicant sees how to pay, with their application number as the reference", async ({ page }) => {

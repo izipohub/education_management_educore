@@ -22,8 +22,9 @@ titles (`h1`, `h2`). Both are served by `educore_theme` (`/assets/educore_theme/
 
 ## Screens
 
-- **Dashboard**: headline numbers (`StatTile`), then the work waiting as short tables (oldest first, each row opens
-  its record, "View all" opens the list) beside the year's figures.
+- **Dashboard**: a campus picker (all campuses, or one; in the address), headline numbers (`StatTile`, each linking
+  to where to act), the year in charts (applications over time, how they arrived, pathways, offer responses, by
+  programme), then the work waiting as short tables (oldest first, each row opens its record).
 - **List page**: `PageHeader` with tabs and the year, then a `DataTable` (search in its toolbar). A row opens the
   record's own page; the tab and year stay in the address, so going back returns to the same list.
 - **Record page**: `RecordPage`: a link back to the list, the title with its status, the decisions top right, the
@@ -44,6 +45,10 @@ titles (`h1`, `h2`). Both are served by `educore_theme` (`/assets/educore_theme/
 | `EmptyState` | Nothing to show |
 | `StatTile` | A headline number with its context and a link to act on it (dashboard) |
 | `BarList` | Magnitudes or meters: one row per item, one hue, shared baseline (dashboard) |
+| `LineChart` | A count over time (one series, the brand's primary colour): a 2px line, the latest value labelled, a crosshair and figure on hover |
+| `DonutChart` | One whole split into two to four parts (online / paper, entry pathways, offer responses); more fold into "Other"; a legend with each figure and share always beside it. Series colours `--ec-series-1..4`, in that order, checked as a set |
+| `SettingRow` | One setting on a settings page: label and a line of help on the left, the control on the right; rows stack in an `EcPanel`, sections listed beside them |
+| `EcSegmented` | A choice between a few views of one screen (first-year / senior students) |
 | `EcButton` | Every button. `primary` (the loud accent; one per view or pane), `secondary`, `ghost` (Edit, Cancel, Add), `danger` (refuse, remove), `quiet-danger` (a refusal inside a row); `sm` inside sections; `loading` shows a small spinner in the button |
 | `EcModal` | A small modal that asks one thing (a reason, a choice, a date) and closes; records never go in a modal |
 | `EcField` | A form field: label, control, then a hint or the error |

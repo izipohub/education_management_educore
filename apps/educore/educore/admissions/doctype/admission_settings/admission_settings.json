@@ -26,6 +26,8 @@
   "fee_section",
   "fee_namibian",
   "fee_international",
+  "fee_paper_local",
+  "fee_paper_international",
   "fee_income_account",
   "fee_bank_account",
   "fee_column",
@@ -160,30 +162,45 @@
   {
    "fieldname": "fee_namibian",
    "fieldtype": "Currency",
-   "label": "Fee for Namibian Applicants",
+   "label": "Online Fee, Local Applicants",
    "default": "150",
    "options": "NAD"
   },
   {
    "fieldname": "fee_international",
    "fieldtype": "Currency",
-   "label": "Fee for International Applicants",
+   "label": "Online Fee, International Applicants",
    "default": "300",
    "options": "NAD"
+  },
+  {
+   "fieldname": "fee_paper_local",
+   "fieldtype": "Currency",
+   "label": "Paper Fee, Local Applicants",
+   "options": "NAD",
+   "default": "150",
+   "description": "Paid at a campus when a hard-copy form is handed in."
+  },
+  {
+   "fieldname": "fee_paper_international",
+   "fieldtype": "Currency",
+   "label": "Paper Fee, International Applicants",
+   "options": "NAD",
+   "default": "300"
   },
   {
    "fieldname": "fee_income_account",
    "fieldtype": "Link",
    "label": "Income Account",
    "options": "Account",
-   "description": "Where application fees are booked."
+   "description": "Where application fees are booked in ERPNext."
   },
   {
    "fieldname": "fee_bank_account",
    "fieldtype": "Link",
    "label": "Bank Account",
    "options": "Bank Account",
-   "description": "The account applicants pay into by EFT; its statement lines are matched to applications by their reference."
+   "description": "The university’s ERPNext bank account: applicants pay into it, and deposits are matched from its statement. Its bank, number and branch are shown to applicants."
   },
   {
    "fieldname": "fee_column",
@@ -192,22 +209,34 @@
   {
    "fieldname": "eft_bank_name",
    "fieldtype": "Data",
-   "label": "Bank (shown to applicants)"
+   "label": "Bank (shown to applicants)",
+   "read_only": 1,
+   "hidden": 1,
+   "description": "No longer used: applicants are shown the ERPNext bank account."
   },
   {
    "fieldname": "eft_account_name",
    "fieldtype": "Data",
-   "label": "Account Name (shown to applicants)"
+   "label": "Account Name (shown to applicants)",
+   "read_only": 1,
+   "hidden": 1,
+   "description": "No longer used: applicants are shown the ERPNext bank account."
   },
   {
    "fieldname": "eft_account_number",
    "fieldtype": "Data",
-   "label": "Account Number (shown to applicants)"
+   "label": "Account Number (shown to applicants)",
+   "read_only": 1,
+   "hidden": 1,
+   "description": "No longer used: applicants are shown the ERPNext bank account."
   },
   {
    "fieldname": "eft_branch_code",
    "fieldtype": "Data",
-   "label": "Branch Code (shown to applicants)"
+   "label": "Branch Code (shown to applicants)",
+   "read_only": 1,
+   "hidden": 1,
+   "description": "No longer used: applicants are shown the ERPNext bank account."
   },
   {
    "fieldname": "card_payments_enabled",

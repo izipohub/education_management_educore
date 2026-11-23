@@ -36,6 +36,12 @@ export const router = createRouter({
           meta: { title: "Admissions", roles: ["Admissions Officer", "Registrar"] },
         },
         {
+          path: "admissions/new",
+          name: "capture-application",
+          component: () => import("@/modules/admissions/CaptureApplicationPage.vue"),
+          meta: { title: "New paper application", roles: ["Admissions Officer", "Registrar"] },
+        },
+        {
           path: "admissions/:name",
           name: "application-record",
           component: () => import("@/modules/admissions/ApplicationPage.vue"),

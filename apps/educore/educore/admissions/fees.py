@@ -1,13 +1,16 @@
 """The application fee (docs/architecture/online-applications.md 3.4).
 
-- The amount depends on the applicant: Namibian or international (Admission Settings).
+- The amount depends on the applicant (local or international) and how they apply (online, or a paper form handed
+  in at a campus), as the university sets it (Admission Settings).
+- The account applicants pay into is the university's ERPNext Bank Account (fee_bank_account); the bank, number and
+  branch shown to them come from it, so they are kept in one place.
 - Applicants pay by EFT with their application number as the reference. Finance imports the bank statement into
   ERPNext as usual (Bank Transactions on the fee bank account); match_bank_transactions(), run hourly and on
   demand, finds application numbers in each deposit's description and reference, books the fee (Journal Entry:
   bank debit, Application Fees credit, on the campus cost center of the first choice), reconciles the statement
   line against it with ERPNext's own reconciliation, and marks the fee paid. A deposit below the fee, or for an
   application already settled, is left for Finance with a note on the application.
-- Admissions may waive the fee, with a reason.
+- Finance may waive the fee, with a reason (WAIVE_ROLES); admissions does not: it is a decision on money owed.
 - Card payments (DPO) come once the university's merchant account exists; card_payments_enabled stays off.
 
 The booking runs as a system action: it is the consequence of the bank statement, not of anyone's accounting rights.
@@ -32,7 +35,25 @@ def is_international(doc) -> bool:
 
 def fee_for(doc) -> float:
 	settings = rules.settings()
-	return flt(settings.fee_international if is_international(doc) else settings.fee_namibian)
+	international = is_international(doc)
+	if not doc.get("educore_applicant_user"):  # a paper form handed in at a campus
+		return flt(settings.fee_paper_international if international else settings.fee_paper_local)
+	return flt(settings.fee_international if international else settings.fee_namibian)
+
+
+def bank_details() -> dict:
+	"""What applicants are shown to pay by EFT: the ERPNext Bank Account's bank, number and branch, with the
+	company as the account holder"""
+	account = rules.settings().fee_bank_account
+	if not account:
+		return {"bank_name": None, "account_name": None, "account_number": None, "branch_code": None}
+	row = frappe.db.get_value("Bank Account", account, ["bank", "company", "bank_account_no", "branch_code", "iban"], as_dict=True) or {}
+	return {
+		"bank_name": row.get("bank"),
+		"account_name": row.get("company"),
+		"account_number": row.get("bank_account_no") or row.get("iban"),
+		"branch_code": row.get("branch_code"),
+	}
 
 
 def set_fee(doc):
@@ -171,7 +192,13 @@ def match_now() -> int:
 # --- waivers -------------------------------------------------------------------------------------------
 
 
+#: who may waive an application fee: finance, not admissions
+WAIVE_ROLES = ("Bursar", "Finance Officer", "Student Fees Officer", "System Manager")
+
+
 def waive(applicant: str, reason: str):
+	if not set(frappe.get_roles()) & set(WAIVE_ROLES):
+		frappe.throw(_("Only Finance waives an application fee"), frappe.PermissionError)
 	doc = frappe.get_doc("Student Applicant", applicant)
 	if settled(doc):
 		frappe.throw(_("The fee is already {0}").format(doc.educore_fee_status.lower()))

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search } from "@lucide/vue";
+import { Plus, Search } from "@lucide/vue";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
@@ -10,6 +10,7 @@ import { useRoute, useRouter } from "vue-router";
 import { applicationLabel } from "@/core/status";
 import { formatDate } from "@/core/format";
 import DataTable, { type Column } from "@/core/ui/DataTable.vue";
+import EcButton from "@/core/ui/EcButton.vue";
 import EcTabs from "@/core/ui/EcTabs.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
@@ -58,12 +59,13 @@ watch(search, () => {
   searchTimer = setTimeout(load, 300);
 });
 watch([status, academicYear], () => {
-  // the tab and year stay in the address, so Back from an application returns to the same list
-  void router.replace({ query: { ...route.query, status: status.value, year: academicYear.value } });
+  // the server's own choice of year is not written to the address: that would cancel a click made meanwhile
   if (adoptingYear) {
     adoptingYear = false;
     return;
   }
+  // the tab and year the officer chose stay in the address, so Back from an application returns to the same list
+  void router.replace({ query: { ...route.query, status: status.value, year: academicYear.value } });
   void load();
 });
 onMounted(load);
@@ -89,6 +91,7 @@ const columns = computed<Column[]>(() => {
   <section class="list-page">
     <PageHeader title="Admissions" subtitle="Applications for the campuses you work on">
       <template #actions>
+        <EcButton label="New paper application" :icon="Plus" @click="router.push({ name: 'capture-application' })" />
         <Select v-model="academicYear" :options="page?.academic_years ?? []" placeholder="Year" aria-label="Academic year" class="year" size="small" />
       </template>
       <EcTabs v-model="status" :tabs="statusOptions" label="Status" class="tabs" />
