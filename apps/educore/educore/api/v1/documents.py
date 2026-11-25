@@ -7,7 +7,7 @@ colour (EduCore Branding); both carry the record's number so the university can 
 
 import frappe
 from frappe import _
-from frappe.utils import formatdate, fmt_money, nowdate
+from frappe.utils import flt, formatdate, fmt_money, nowdate
 from frappe.utils.pdf import get_pdf
 
 from educore.registration import rules as registration_rules
@@ -229,6 +229,16 @@ def _qr(url: str) -> str:
 @frappe.whitelist(allow_guest=True, methods=["GET"])
 def verify(ref: str, code: str):
 	"""What a scanned proof of registration leads to: whether the registration is genuine and current"""
+	if ref and code == _code(ref) and frappe.db.exists("Student", ref):
+		student = frappe.db.get_value("Student", ref, ["student_name", "educore_completed_on"], as_dict=True)
+		frappe.respond_as_web_page(
+			_("Academic record confirmed"),
+			_("{0} ({1}) is a student of record of the university{2}.").format(
+				_e(student.student_name), _e(ref), _(", who completed their programme") if student.educore_completed_on else ""
+			),
+			indicator_color="green",
+		)
+		return
 	valid = bool(ref) and code == _code(ref) and frappe.db.exists("Program Enrollment", {"name": ref, "docstatus": 1})
 	if not valid:
 		frappe.respond_as_web_page(_("Not confirmed"), _("This document could not be confirmed. Contact the Office of the Registrar."), http_status_code=404, indicator_color="red")
@@ -399,3 +409,121 @@ def proof_of_registration(enrollment: str):
 		"</tr></table>"
 	)
 	_send(f"Proof of registration {student.name} {pe.academic_year}.pdf", _page("Office of the Registrar", body))
+
+
+# --- academic record ----------------------------------------------------------------------------------
+
+
+@frappe.whitelist(methods=["GET"])
+def academic_record(student: str):
+	"""Every published result, year by year, for the student or the registry; interim until the programme is
+	completed"""
+	from educore.academics import results as exam_results
+	from educore.api.v1.student_records import RECORD_ROLES
+
+	doc = frappe.get_doc("Student", student)
+	if doc.user != frappe.session.user:
+		if not set(frappe.get_roles()) & set(RECORD_ROLES):
+			frappe.throw(_("Not permitted"), frappe.PermissionError)
+		doc.check_permission("read")
+
+	brand = _brand()
+	date = lambda d: formatdate(d, "dd MMMM yyyy") if d else None  # noqa: E731
+	latest = frappe.db.get_value(
+		"Program Enrollment",
+		{"student": student, "docstatus": 1},
+		["program", "campus", "educore_mode_of_study"],
+		as_dict=True,
+		order_by="academic_year desc",
+	) or {}
+	program = frappe.db.get_value(
+		"Program", latest.get("program"), ["educore_qualification_type", "educore_nqf_level", "educore_credits"], as_dict=True
+	) if latest.get("program") else None
+	program = program or {}
+	completed = doc.get("educore_completed_on")
+
+	rows = frappe.db.sql(
+		"""select ms.academic_year, ms.course, e.final_mark, e.grade, e.result, e.first_result
+		from `tabMark Sheet Entry` e join `tabMark Sheet` ms on ms.name = e.parent
+		where ms.status = 'Published' and e.student = %s order by ms.academic_year, ms.course""",
+		student,
+		as_dict=True,
+	)
+	years, passed_total = "", 0
+	for year in sorted({r.academic_year for r in rows}):
+		lines, attempted, passed = "", 0, 0
+		year_rows = [r for r in rows if r.academic_year == year]
+		year_rows.sort(key=lambda r: frappe.db.get_value("Course", r.course, "educore_course_code") or r.course)
+		for r in year_rows:
+			code, nqf = frappe.db.get_value("Course", r.course, ["educore_course_code", "educore_nqf_level"]) or (None, None)
+			credits = registration_rules.credits(r.course)
+			attempted += credits
+			if r.result == "Pass":
+				passed += credits
+			shown_final = f"{flt(r.final_mark):g}" if r.result not in ("Not admitted", "Absent") and r.final_mark is not None else ""
+			note = " (supplementary)" if r.first_result else ""
+			lines += (
+				f"<tr><td>{_e(code or r.course)}</td><td>{_e(r.course)}</td><td class='num'>{_e(nqf)}</td><td class='num'>{credits}</td>"
+				f"<td class='num'>{_e(shown_final)}</td><td>{_e(r.grade)}</td><td>{_e(r.result)}{_e(note)}</td></tr>"
+			)
+		passed_total += passed
+		years += (
+			f"<div class='section'>{_e(year)}</div>"
+			"<table class='list'><thead><tr><th>Code</th><th>Course</th><th class='num'>NQF</th><th class='num'>Credits</th>"
+			"<th class='num'>Final</th><th>Grade</th><th>Result</th></tr></thead>"
+			f"<tbody>{lines}</tbody>"
+			f"<tfoot><tr><td colspan='3'>Credits passed in {_e(year)}</td><td class='num'>{passed}</td><td colspan='3'>of {attempted} taken</td></tr></tfoot></table>"
+		)
+	if not rows:
+		years = "<p>No results have been published yet.</p>"
+
+	identity_label, identity = (
+		("National ID number", doc.get("educore_national_id"))
+		if doc.get("educore_national_id")
+		else ("Passport number", doc.get("educore_passport_number"))
+	)
+
+	def box(caption: str, facts: list[tuple[str, object]]) -> str:
+		body = "".join(f"<tr><td class='k'>{_e(k)}</td><td>{_e(v)}</td></tr>" for k, v in facts if v not in (None, ""))
+		return f"<div class='box'><div class='cap'>{_e(caption)}</div><table>{body}</table></div>"
+
+	required = program.get("educore_credits")
+	student_box = box("Student", [
+		("Full name", " ".join(x for x in (doc.get("educore_title"), doc.student_name) if x)),
+		("Student number", doc.name),
+		(identity_label, identity),
+		("Date of birth", date(doc.date_of_birth)),
+		("First registered", date(doc.joining_date)),
+	])
+	programme_box = box("Programme", [
+		("Programme", latest.get("program")),
+		("Qualification", program.get("educore_qualification_type")),
+		("NQF level", program.get("educore_nqf_level")),
+		("Campus", latest.get("campus")),
+		("Credits passed", f"{passed_total} of {required}" if required else passed_total),
+		("Completed", date(completed) if completed else "Not yet"),
+	])
+	bands = ", ".join(f"{g} {t:g} and above" for g, t in exam_results.grade_bands())
+	rules = exam_results.settings()
+	body = (
+		"<table class='title-row'><tr>"
+		f"<td><h1>{'ACADEMIC RECORD' if completed else 'INTERIM ACADEMIC RECORD'}</h1></td>"
+		f"<td class='ref'>Student <b>{_e(doc.name)}</b><br>Date issued <b>{date(nowdate())}</b></td>"
+		"</tr></table>"
+		f"<table class='panels'><tr><td>{student_box}</td><td>{programme_box}</td></tr></table>"
+		+ years
+		+ f"<p style='margin-top:12px;color:#6b6f7a;font-size:8.5pt'>Grades: {_e(bands)}. Pass mark {flt(rules.pass_mark):g}. "
+		"A supplementary pass is recorded at the university's set mark. Only results approved by an examination board "
+		"and published appear on this record.</p>"
+		"<table class='sign'><tr>"
+		"<td><div class='line'>Registrar<br><span style='color:#6b6f7a'>Office of the Registrar</span></div></td>"
+		"<td><div class='stamp'>Official stamp</div></td>"
+		"</tr></table>"
+		"<table class='verify'><tr>"
+		f"<td style='width:84px'><img src='{_qr(_verify_url(doc.name))}' alt=''></td>"
+		f"<td>Scan the code to confirm this record with the university, or quote student number <b>{_e(doc.name)}</b> "
+		f"and code <b>{_code(doc.name)}</b> to the Office of the Registrar.<br>"
+		f"{'Final record.' if completed else 'Interim record: the student has not completed the programme.'} Issued electronically by {_e(brand['name'])}.</td>"
+		"</tr></table>"
+	)
+	_send(f"Academic record {doc.name}.pdf", _page("Office of the Registrar", body))

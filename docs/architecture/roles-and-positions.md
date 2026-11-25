@@ -69,8 +69,10 @@ what each person sees.
 | Marks (enter, submit) | Lecturer (own classes, from My teaching) | |
 | Examinations: moderate, or return to the lecturer | Head of Department, Dean (own department or faculty) | Registrar, Faculty Officer |
 | Examinations: approve (board meeting), return to the department, publish | Examinations Officer (own campus) | Registrar, Faculty Officer |
-| Examination rules (CA weight, admission, pass, supplementary, grading scale, probation) | Registrar | Examinations Officer and the others above read them |
-| Results | Student (own, once published) | |
+| Supplementary and special examinations: grant a special for an absence with a valid reason; publish the sitting's results (board meeting) | Examinations Officer (own campus) | Registrar, Faculty Officer |
+| Supplementary and special marks (enter, submit) | Lecturer (own classes, once the first results are published) | |
+| Examination rules (CA weight, admission, pass, supplementary band and cap, grading scale, probation) | Registrar | Examinations Officer and the others above read them |
+| Results; academic record (PDF, interim until completion) | Student (own, once published) | Registry Officer, Registrar and the others who read Students download any student's record |
 | Curriculum (courses by year and semester) | Faculty Officer, Head of Department, Dean (own faculty) | Registrar (publishes it), Timetable Officer, Examinations Officer, Quality Assurance Officer |
 | Admission setup (rules, pathways, documents, entry requirements, points) | Registrar | |
 | Registration setup (periods' dates, credit limit, faculty approval) | Registrar | |

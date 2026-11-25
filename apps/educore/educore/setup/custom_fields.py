@@ -868,6 +868,15 @@ def _student_particulars() -> list[dict]:
 
 
 CUSTOM_FIELDS["Student"].extend(_student_particulars())
+# completing the programme: confirmed by the Registrar from the graduation list (educore.api.v1.graduation)
+CUSTOM_FIELDS["Student"].extend(
+	[
+		{"fieldname": "educore_completion_section", "label": "Completion", "fieldtype": "Section Break", "insert_after": "educore_support_needs", "collapsible": 1},
+		{"fieldname": "educore_completed_on", "label": "Completed On", "fieldtype": "Date", "read_only": 1, "insert_after": "educore_completion_section"},
+		{"fieldname": "educore_completed_programme", "label": "Programme Completed", "fieldtype": "Link", "options": "Program", "read_only": 1, "insert_after": "educore_completed_on"},
+		{"fieldname": "educore_completion_reference", "label": "Approved By", "fieldtype": "Data", "read_only": 1, "insert_after": "educore_completed_programme", "description": "The Senate or board meeting that approved the award."},
+	]
+)
 
 
 def sync():

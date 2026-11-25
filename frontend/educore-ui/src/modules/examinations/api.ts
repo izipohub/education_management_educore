@@ -32,6 +32,9 @@ export interface Entry {
   first_final_mark: number | null;
   first_result: Result | null;
   writes_supplementary: boolean;
+  /** the examination written at the supplementary sitting */
+  sitting: "Supplementary" | "Special" | null;
+  special_reason: string | null;
 }
 
 export interface Summary {
@@ -57,6 +60,7 @@ export interface Sheet {
   supp_status: "Open" | "Submitted" | "Published" | null;
   supp_board_reference: string | null;
   can_publish_supp?: boolean;
+  can_grant_special?: boolean;
   can_edit?: boolean;
   can_moderate?: boolean;
   can_approve?: boolean;
@@ -102,6 +106,15 @@ export const saveSupplementary = (group: string, entries: { student: string; sup
 export const submitSupplementary = (group: string) => post<Sheet>(`${API}.submit_supplementary`, { group });
 export const publishSupplementary = (group: string, boardReference: string) =>
   post<Sheet>(`${API}.publish_supplementary`, { group, board_reference: boardReference });
+
+export const grantSpecial = (group: string, student: string, reason: string) => post<Sheet>(`${API}.grant_special`, { group, student, reason });
+
+/** the second sitting as the server works it out: a special stands as the first attempt (normal rules, no cap);
+ *  a supplementary keeps the CA, and a pass is capped */
+export function workOutSitting(e: Pick<Entry, "ca_mark" | "supp_exam_mark" | "sitting">, rules: Rules): Pick<Entry, "final_mark" | "grade" | "result"> {
+  if (e.sitting === "Special") return workOut({ ca_mark: e.ca_mark, exam_mark: e.supp_exam_mark, absent: 0 }, rules);
+  return workOutSupplementary(e, rules);
+}
 
 /** a supplementary sitting as the server works it out: CA still counts, a pass is capped */
 export function workOutSupplementary(e: Pick<Entry, "ca_mark" | "supp_exam_mark">, rules: Rules): Pick<Entry, "final_mark" | "grade" | "result"> {

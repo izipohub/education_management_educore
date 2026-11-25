@@ -126,7 +126,8 @@ def summary(doc) -> dict:
 	for e in doc.entries:
 		if e.result:
 			counts[e.result] += 1
-		if e.final_mark is not None:
+		# a final mark only where one was worked out (the column reads back 0 for an absence)
+		if e.result in (PASS, SUPPLEMENTARY, FAIL):
 			finals.append(flt(e.final_mark))
 	decided = sum(counts.values())
 	return {
@@ -163,6 +164,32 @@ def work_out_supplementary(entry, rules=None, bands=None):
 
 def writes_supplementary(entry) -> bool:
 	return entry.result == SUPPLEMENTARY or entry.first_result == SUPPLEMENTARY
+
+
+def writes_special(entry) -> bool:
+	"""Absent from the examination with a valid reason: a special examination, granted by the examinations office"""
+	return bool(entry.special_granted) and (entry.result == ABSENT or entry.first_result == ABSENT)
+
+
+def second_sitting(entry) -> str | None:
+	"""Which examination the student writes at the supplementary sitting, if any"""
+	if writes_special(entry):
+		return "Special"
+	if writes_supplementary(entry):
+		return "Supplementary"
+	return None
+
+
+def work_out_special(entry, rules=None, bands=None):
+	"""A special examination stands as the first attempt: the special mark in place of the examination, the
+	normal rules, no cap. The absence is kept as the first result."""
+	if mark(entry.supp_exam_mark) is None:
+		return
+	if not entry.first_result:
+		entry.first_result, entry.first_final_mark = entry.result, entry.final_mark
+	sitting = frappe._dict(ca_mark=entry.ca_mark, exam_mark=entry.supp_exam_mark, absent=0)
+	work_out(sitting, rules, bands)
+	entry.final_mark, entry.grade, entry.result = sitting.final_mark, sitting.grade, sitting.result
 
 
 # --- standing -----------------------------------------------------------------------------------------

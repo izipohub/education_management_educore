@@ -49,7 +49,7 @@ test("a lecturer enters a supplementary mark; the examinations office sees it wa
   await signIn(page, "lecturer.comp.osh");
   await page.getByRole("link", { name: "My teaching" }).click();
   await page.getByRole("article").filter({ hasText: "CMP1521" }).getByRole("link", { name: "Marks" }).click();
-  await expect(page.getByRole("heading", { name: "Supplementary examination" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Supplementary and special examinations" })).toBeVisible();
   await page.getByRole("spinbutton", { name: /^Supplementary, / }).fill("70");
   await page.getByRole("spinbutton", { name: /^Supplementary, / }).blur();
   // CA 50, supplementary 70: 60, recorded at the cap of 50
@@ -62,4 +62,20 @@ test("a lecturer enters a supplementary mark; the examinations office sees it wa
   await page.getByRole("link", { name: "Examinations" }).click();
   await page.getByRole("tab", { name: /^Supplementary/ }).click();
   await expect(tableRow(page, "Computer Systems")).toContainText("Supplementary with lecturer");
+});
+
+test("the examinations office grants a special examination for an absence", async ({ page }) => {
+  await signIn(page, "examinations-officer.osh");
+  await page.getByRole("link", { name: "Examinations" }).click();
+  await page.getByRole("tab", { name: /^Published/ }).click();
+  await tableRow(page, "EDU1521").click();
+  await page.getByRole("button", { name: "Grant special" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("button", { name: "Grant" })).toBeDisabled();
+  await dialog.getByLabel("Reason").fill("Hospitalised, medical certificate seen");
+  await expect(dialog.getByRole("button", { name: "Grant" })).toBeEnabled();
+  await page.screenshot({ path: "e2e/results/special-grant.png", fullPage: true });
+  // not granted: the demo absence stays open for the next run
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByRole("button", { name: "Grant special" })).toBeVisible();
 });

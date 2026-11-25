@@ -8,7 +8,7 @@ import EcModal from "@/core/ui/EcModal.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
-import { type Entry, type Sheet, mySheet, saveMarks, saveSupplementary, submitMarks, submitSupplementary, workOut, workOutSupplementary } from "./api";
+import { type Entry, type Sheet, mySheet, saveMarks, saveSupplementary, submitMarks, submitSupplementary, workOut, workOutSitting } from "./api";
 
 /**
  * A lecturer's marks for one class: continuous assessment and examination per student, the final mark, grade and
@@ -81,7 +81,7 @@ const suppChanged = computed(
   () => JSON.stringify(suppRows.value.map((e) => e.supp_exam_mark)) !== JSON.stringify((sheet.value?.entries ?? []).filter((e) => e.writes_supplementary).map((e) => e.supp_exam_mark)),
 );
 const suppMissing = computed(() => suppRows.value.filter((e) => e.supp_exam_mark === null || e.supp_exam_mark === undefined).length);
-const liveSupp = (e: Entry) => (sheet.value ? workOutSupplementary(e, sheet.value.rules) : { final_mark: null, grade: null, result: null });
+const liveSupp = (e: Entry) => (sheet.value ? workOutSitting(e, sheet.value.rules) : { final_mark: null, grade: null, result: null });
 async function saveSupp(quiet = false) {
   saving.value = true;
   try {
@@ -179,7 +179,7 @@ const subtitle = computed(() => {
       </table>
     </EcPanel>
 
-    <EcPanel v-if="sheet && suppRows.length && sheet.status === 'Published'" title="Supplementary examination" :note="sheet.supp_status === 'Open' ? 'Students with a supplementary result' : sheet.supp_status === 'Submitted' ? 'Submitted to the examinations office' : 'Published'" flush>
+    <EcPanel v-if="sheet && suppRows.length && sheet.status === 'Published'" title="Supplementary and special examinations" :note="sheet.supp_status === 'Open' ? 'At the supplementary sitting' : sheet.supp_status === 'Submitted' ? 'Submitted to the examinations office' : 'Published'" flush>
       <table class="ec-table marks">
         <colgroup>
           <col />
@@ -190,14 +190,17 @@ const subtitle = computed(() => {
           <col class="c-result" />
         </colgroup>
         <thead>
-          <tr><th>Student</th><th class="num">First final</th><th class="num">Supplementary</th><th class="num">Final</th><th>Grade</th><th>Result</th></tr>
+          <tr><th>Student</th><th class="num">First attempt</th><th class="num">Examination</th><th class="num">Final</th><th>Grade</th><th>Result</th></tr>
         </thead>
         <tbody>
           <tr v-for="e in suppRows" :key="e.student">
-            <td>{{ e.student_name }}<div class="ec-muted">CA {{ e.ca_mark }}</div></td>
-            <td class="num">{{ e.first_final_mark ?? e.final_mark }}</td>
+            <td>
+              {{ e.student_name }}
+              <div class="ec-muted">{{ e.sitting }} · CA {{ e.ca_mark }}<template v-if="e.special_reason"> · {{ e.special_reason }}</template></div>
+            </td>
+            <td class="num">{{ e.sitting === "Special" ? "Absent" : (e.first_final_mark ?? e.final_mark) }}</td>
             <td class="num">
-              <InputNumber v-if="suppOpen" v-model="e.supp_exam_mark" :min="0" :max="100" :max-fraction-digits="1" size="small" :aria-label="`Supplementary, ${e.student_name}`" fluid />
+              <InputNumber v-if="suppOpen" v-model="e.supp_exam_mark" :min="0" :max="100" :max-fraction-digits="1" size="small" :aria-label="`${e.sitting}, ${e.student_name}`" fluid />
               <template v-else>{{ e.supp_exam_mark ?? "" }}</template>
             </td>
             <td class="num final">{{ suppOpen ? (liveSupp(e).final_mark ?? "") : (e.first_result ? e.final_mark : "") }}</td>
@@ -211,7 +214,7 @@ const subtitle = computed(() => {
       </table>
       <template v-if="suppOpen" #footer>
         <EcButton label="Save" size="sm" :loading="saving" :disabled="!suppChanged" @click="saveSupp()" />
-        <EcButton label="Submit supplementary marks" size="sm" variant="primary" :disabled="saving || suppMissing > 0" @click="submitSupp" />
+        <EcButton label="Submit these marks" size="sm" variant="primary" :disabled="saving || suppMissing > 0" @click="submitSupp" />
       </template>
     </EcPanel>
   </RecordPage>

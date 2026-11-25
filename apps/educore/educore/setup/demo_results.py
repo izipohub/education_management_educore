@@ -2,8 +2,8 @@
 
 The first-year courses' classes are published (entered by the lecturer, moderated by the head of department,
 approved by the faculty examination board); Computer Systems at Windhoek waits for moderation and Databases at Windhoek for its lecturer's
-marks, so each office has work to see. Marks are steady per student and course, and all pass: the demo students'
-standing stays good. Re-running adds whatever is missing.
+marks, so each office has work to see. Marks are steady per student and course; one student writes a supplementary
+and one was absent, and the demo students' standing stays good. Re-running adds whatever is missing.
 """
 
 import hashlib
@@ -19,6 +19,8 @@ NOT_STARTED = "CMP2521 WHK 2026"
 BOARD = "Faculty Examination Board, 18-11-2026"
 #: class: the student who writes a supplementary examination (CA 50, examination 42: a final mark of 46)
 SUPPLEMENTARY = {"CMP1521 OSH 2026": "student1.osh@educore.localhost"}
+#: class: the student absent from the examination (a special examination is the examinations office's to grant)
+ABSENT = {"EDU1521 OSH 2026": "student2.osh@educore.localhost"}
 
 
 def _mark(student: str, course: str, salt: str, low: int, high: int) -> int:
@@ -94,12 +96,15 @@ def create() -> int:
 				],
 			}
 		)
-		supp_user = SUPPLEMENTARY.get(name)
+		supp_user, absent_user = SUPPLEMENTARY.get(name), ABSENT.get(name)
 		for entry in sheet.entries:
-			if supp_user and frappe.db.get_value("Student", entry.student, "user") == supp_user:
+			user = frappe.db.get_value("Student", entry.student, "user")
+			if supp_user and user == supp_user:
 				entry.ca_mark, entry.exam_mark = 50, 42
+			if absent_user and user == absent_user:
+				entry.exam_mark, entry.absent = None, 1
 		results.work_out_sheet(sheet)
-		if supp_user:
+		if supp_user or absent_user:
 			sheet.supp_status = "Open"
 		sheet.update({"status": "Submitted", "submitted_by": _lecturer_user(group), "submitted_on": when})
 		if name != WAITING_FOR_MODERATION:

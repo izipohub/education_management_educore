@@ -68,9 +68,21 @@
    "read_only": 1
   },
   {
+   "fieldname": "special_granted",
+   "fieldtype": "Check",
+   "label": "Special Examination Granted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "special_reason",
+   "fieldtype": "Data",
+   "label": "Special Examination Reason",
+   "read_only": 1
+  },
+  {
    "fieldname": "supp_exam_mark",
    "fieldtype": "Data",
-   "label": "Supplementary Examination",
+   "label": "Supplementary or Special Examination",
    "description": "Empty until entered (a mark of 0 is a real mark)."
   },
   {
@@ -110,6 +122,8 @@
   "grade",
   "result",
   "moderation_note",
+  "special_granted",
+  "special_reason",
   "supp_exam_mark",
   "first_final_mark",
   "first_result"

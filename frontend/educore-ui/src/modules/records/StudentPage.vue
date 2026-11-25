@@ -3,7 +3,7 @@ import { semesterLabel } from "@/modules/curriculum/api";
 import { FileText } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { proofOfRegistrationUrl } from "@/core/documents";
+import { academicRecordUrl, proofOfRegistrationUrl } from "@/core/documents";
 import { formatDate, formatMoney } from "@/core/format";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
@@ -49,8 +49,11 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
       <span v-if="record && !record.enabled" class="left">Left</span>
     </template>
 
-    <template v-if="registered" #actions>
-      <a class="pdf" :href="proofOfRegistrationUrl(registered.name)" target="_blank" rel="noopener">
+    <template v-if="record" #actions>
+      <a class="pdf" :href="academicRecordUrl(record.name)" target="_blank" rel="noopener">
+        <FileText :size="16" aria-hidden="true" /> Academic record
+      </a>
+      <a v-if="registered" class="pdf" :href="proofOfRegistrationUrl(registered.name)" target="_blank" rel="noopener">
         <FileText :size="16" aria-hidden="true" /> Proof of registration {{ registered.academic_year }}
       </a>
     </template>
