@@ -13,6 +13,7 @@ from frappe import _
 from frappe.utils import getdate, now_datetime, nowdate
 
 from educore.api.v1.registration import REVIEW_ROLES, _student
+from educore.academics import notify
 from educore.registration import rules
 
 SUBMITTED, APPROVED, DECLINED = "Submitted", "Approved", "Declined"
@@ -224,6 +225,7 @@ def _apply(doc):
 	doc.reviewed_by = frappe.session.user
 	doc.reviewed_on = now_datetime()
 	doc.save(ignore_permissions=True)
+	notify.send(doc.student, "course_change_approved", doc, changes=_changes(doc))
 	registration.add_comment(
 		"Info",
 		_("Courses changed ({0}): {1}").format(doc.name, ", ".join(f"{i.action.lower()} {i.course_name}" for i in doc.items)),
@@ -246,4 +248,9 @@ def decline(name: str, note: str) -> dict:
 	doc.reviewed_by = frappe.session.user
 	doc.reviewed_on = now_datetime()
 	doc.save(ignore_permissions=True)
+	notify.send(doc.student, "course_change_declined", doc, changes=_changes(doc), note=doc.review_note)
 	return queue()
+
+
+def _changes(doc) -> str:
+	return ", ".join(f"{_(i.action).lower()} {i.course_name}" for i in doc.items)

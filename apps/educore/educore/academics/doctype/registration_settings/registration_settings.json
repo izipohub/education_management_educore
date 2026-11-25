@@ -10,7 +10,8 @@
   "deposit_value",
   "rules_column",
   "max_credits",
-  "approval_needed"
+  "approval_needed",
+  "notify_students"
  ],
  "fields": [
   {
@@ -58,11 +59,18 @@
    "label": "Faculty Officer Approves",
    "default": "1",
    "description": "Off: a submitted registration is approved at once."
+  },
+  {
+   "fieldname": "notify_students",
+   "fieldtype": "Check",
+   "label": "Email Students",
+   "default": "1",
+   "description": "Students are emailed when registrations, course changes, requests about their studies, results and completions are decided."
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-11-22 16:00:00.000000",
+ "modified": "2026-11-25 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Academics",
  "name": "Registration Settings",

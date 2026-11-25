@@ -285,6 +285,9 @@ def _approve(doc):
 	with _as_system():
 		doc.submit()
 	doc.add_comment("Workflow", _("Registration approved"))
+	from educore.academics import notify
+
+	notify.send(doc.student, "registration_approved", doc, academic_year=doc.academic_year, programme=doc.program)
 	# back from interrupted studies (educore.api.v1.studies_requests)
 	back_in = frappe.db.get_value("Student", doc.student, "educore_interrupted_until")
 	if back_in and str(doc.academic_year) >= str(back_in):
@@ -311,4 +314,7 @@ def return_registration(name: str, note: str) -> dict:
 	doc.flags.ignore_permissions = True
 	doc.save()
 	doc.add_comment("Workflow", _("Registration returned: {0}").format(note.strip()))
+	from educore.academics import notify
+
+	notify.send(doc.student, "registration_returned", doc, academic_year=doc.academic_year, note=note.strip())
 	return {"name": doc.name, "status": rules.RETURNED}

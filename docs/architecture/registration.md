@@ -67,6 +67,11 @@ students and `/registrations` for faculty officers).
   blocked until the return year (the Registry can lift it for an early return; approving the return year's
   registration clears it). Cancelled: the student is no longer active, and returning means applying again. What is
   owed or refunded is Finance's to decide.
+- **Emails to students** (educore.academics.notify), when the Registrar's setting "Email students" is on: the
+  registration approved or returned, a course change or a request about their studies decided (with the reason
+  when declined), results published (one email per student, however many classes are published together),
+  supplementary results published, and the programme completed. Queued through Frappe's Email Queue with the
+  deciding record as the reference; without an outgoing email account, a note on that record's timeline instead.
 
 ## Later
 

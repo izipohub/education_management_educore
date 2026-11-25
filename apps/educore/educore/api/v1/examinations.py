@@ -14,7 +14,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, now_datetime
 
-from educore.academics import results
+from educore.academics import notify, results
 from educore.api.v1.teaching import _instructors
 from educore.api.v1.teaching_allocation import _courses
 
@@ -231,6 +231,9 @@ def publish_supplementary(group: str, board_reference: str) -> dict:
 	doc.save(ignore_permissions=True)
 	doc.add_comment("Workflow", _("Supplementary results published: {0}").format(board_reference.strip()))
 	results.update_standing([e.student for e in doc.entries], doc.academic_year)
+	for entry in doc.entries:
+		if results.second_sitting(entry):
+			notify.send(entry.student, "supplementary_published", doc, courses=doc.course)
 	return sheet(group)
 
 
@@ -388,6 +391,8 @@ def publish(groups: list | str) -> dict:
 	"""Approved results to the students; academic standing follows"""
 	_require(EXAM_ROLES)
 	published, students, years = 0, [], set()
+	#: student: (their courses published now, a sheet to reference)
+	told: dict[str, tuple[list[str], object]] = {}
 	for group in frappe.parse_json(groups) or []:
 		doc = _staff_sheet(group, EXAM_ROLES, "Approved")
 		doc.update({"status": "Published", "published_on": now_datetime()})
@@ -395,9 +400,14 @@ def publish(groups: list | str) -> dict:
 		doc.add_comment("Workflow", _("Results published"))
 		students += [e.student for e in doc.entries]
 		years.add(doc.academic_year)
+		for e in doc.entries:
+			told.setdefault(e.student, ([], doc))[0].append(doc.course)
 		published += 1
 	for year in years:
 		results.update_standing([s for s in students], year)
+	# one email per student, however many classes were published together
+	for student, (courses, doc) in told.items():
+		notify.send(student, "results_published", doc, courses=notify.courses(courses))
 	return {"published": published}
 
 

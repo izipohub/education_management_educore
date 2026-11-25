@@ -26,6 +26,7 @@ SETTINGS_DEFAULTS = {
 	"deposit_value": 20,
 	"max_credits": 0,
 	"approval_needed": 1,
+	"notify_students": 1,
 }
 
 

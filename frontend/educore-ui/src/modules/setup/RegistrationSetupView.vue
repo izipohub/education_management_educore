@@ -32,7 +32,7 @@ const tabs = computed(() => [
 const setup = ref<RegistrationSetup | null>(null);
 const error = ref("");
 const saving = ref(false);
-const form = reactive<RegistrationSettings>({ max_outstanding: 0, deposit_type: "None", deposit_value: 0, max_credits: 0, approval_needed: 1 });
+const form = reactive<RegistrationSettings>({ max_outstanding: 0, deposit_type: "None", deposit_value: 0, max_credits: 0, approval_needed: 1, notify_students: 1 });
 
 onMounted(async () => {
   try {
@@ -47,6 +47,7 @@ const changed = computed(() =>
   Boolean(setup.value) && (Object.keys(form) as (keyof RegistrationSettings)[]).some((k) => form[k] !== setup.value!.settings[k]),
 );
 const approval = computed({ get: () => Boolean(form.approval_needed), set: (on: boolean) => (form.approval_needed = on ? 1 : 0) });
+const notifying = computed({ get: () => Boolean(form.notify_students), set: (on: boolean) => (form.notify_students = on ? 1 : 0) });
 const deposit = computed(() => {
   const st = setup.value?.settings;
   if (!st || st.deposit_type === "None") return "None";
@@ -124,6 +125,12 @@ const columns: Column[] = [
         </SettingRow>
         <SettingRow label="Faculty officer approves" help="Off: a submitted registration is approved at once" for="approval">
           <ToggleSwitch v-model="approval" input-id="approval" />
+        </SettingRow>
+      </EcPanel>
+
+      <EcPanel title="Notices">
+        <SettingRow label="Email students" help="Registrations, course changes, requests about their studies, results, completion" for="notify">
+          <ToggleSwitch v-model="notifying" input-id="notify" />
         </SettingRow>
       </EcPanel>
 

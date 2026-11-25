@@ -6,6 +6,7 @@ export interface RegistrationSettings {
   deposit_value: number;
   max_credits: number;
   approval_needed: 0 | 1;
+  notify_students: 0 | 1;
 }
 
 export interface Period {

@@ -81,3 +81,9 @@ def confirm(student: str, reference: str, completed_on: str):
 		student,
 		{"educore_completed_on": completed_on, "educore_completed_programme": state["program"], "educore_completion_reference": reference},
 	)
+	from educore.academics import notify
+
+	notify.send(
+		student, "programme_completed", frappe.get_doc("Student", student),
+		programme=state["program"], reference=reference, completed_on=notify.date(completed_on),
+	)

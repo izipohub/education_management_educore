@@ -11,7 +11,7 @@ from frappe.utils import cint, flt, getdate
 from educore.registration import rules
 
 SETUP_ROLES = ("Registrar", "System Manager")
-SETTINGS_FIELDS = ("max_outstanding", "deposit_type", "deposit_value", "max_credits", "approval_needed")
+SETTINGS_FIELDS = ("max_outstanding", "deposit_type", "deposit_value", "max_credits", "approval_needed", "notify_students")
 DEPOSIT_TYPES = ("None", "Amount", "Percent of the year's fees")
 #: shown on the Registrar's screen, set by Finance
 FINANCE_FIELDS = ("max_outstanding", "deposit_type", "deposit_value")
@@ -68,8 +68,9 @@ def save_settings(data: dict | str) -> dict:
 		settings.max_credits = cint(data["max_credits"])
 		if not 0 <= settings.max_credits <= 400:
 			frappe.throw(_("Most credits per year must be between 0 (no limit) and 400"))
-	if "approval_needed" in data:
-		settings.approval_needed = 1 if data["approval_needed"] in (True, 1, "1", "true") else 0
+	for flag in ("approval_needed", "notify_students"):
+		if flag in data:
+			settings.set(flag, 1 if data[flag] in (True, 1, "1", "true") else 0)
 	settings.save(ignore_permissions=True)
 	return setup()
 

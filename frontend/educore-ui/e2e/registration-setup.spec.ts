@@ -15,6 +15,7 @@ test("the registrar sees the registration periods and rules", async ({ page }) =
 
   await page.getByRole("tab", { name: "Settings" }).click();
   await expect(page.getByLabel("Most credits per year")).toBeVisible();
+  await expect(page.getByLabel("Email students")).toBeChecked();
   await expect(page.getByRole("button", { name: "Save", exact: true })).toHaveCount(0); // nothing changed
   await page.screenshot({ path: "e2e/results/registration-settings.png", fullPage: true });
 });

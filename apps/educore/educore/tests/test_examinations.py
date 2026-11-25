@@ -3,7 +3,9 @@
 import frappe
 from frappe.tests import IntegrationTestCase
 
-from educore.academics import results
+from unittest.mock import patch
+
+from educore.academics import notify, results
 from educore.api.v1 import examinations as api
 
 CLASS = "CMP1511 WHK 2026"
@@ -25,6 +27,13 @@ class TestExaminations(IntegrationTestCase):
 		if frappe.db.exists("Mark Sheet", CLASS):
 			frappe.delete_doc("Mark Sheet", CLASS, force=True, ignore_permissions=True)
 		self.addCleanup(frappe.set_user, "Administrator")
+		# emails to students are captured, not queued
+		self.sent = []
+		patcher = patch.object(notify, "_deliver", lambda recipient, subject, body, doc: self.sent.append((recipient, subject)))
+		patcher.start()
+		self.addCleanup(patcher.stop)
+		frappe.db.set_single_value("Registration Settings", "notify_students", 1)
+		frappe.clear_document_cache("Registration Settings", "Registration Settings")
 
 	def _marks(self, ca, exam):
 		sheet = api.my_sheet(CLASS)
@@ -57,6 +66,8 @@ class TestExaminations(IntegrationTestCase):
 		self.assertRaises(frappe.ValidationError, api.approve, CLASS, "")
 		self.assertEqual(api.approve(CLASS, "Faculty Examination Board, 20-11-2026")["status"], "Approved")
 		self.assertEqual(api.publish([CLASS])["published"], 1)
+		students = frappe.get_all("Mark Sheet Entry", filters={"parent": CLASS}, pluck="student")
+		self.assertEqual([subject for _r, subject in self.sent], ["Results published"] * len(students))
 
 		student = frappe.db.get_value("Mark Sheet Entry", {"parent": CLASS}, "student")
 		frappe.set_user(frappe.db.get_value("Student", student, "user"))
@@ -125,6 +136,7 @@ class TestExaminations(IntegrationTestCase):
 		_as(EXAMS)
 		self.assertRaises(frappe.ValidationError, api.publish_supplementary, CLASS, "")
 		done = api.publish_supplementary(CLASS, "Supplementary Examination Board, 20-01-2027")
+		self.assertIn("Supplementary examination results published", [subject for _r, subject in self.sent])
 		entry = done["entries"][0]
 		# 50 x 50% + 70 x 50% = 60, recorded at the cap of 50
 		self.assertEqual((entry["final_mark"], entry["result"], entry["grade"]), (50, "Pass", "C"))

@@ -13,6 +13,7 @@ import frappe
 from frappe import _
 from frappe.utils import getdate, now_datetime, nowdate
 
+from educore.academics import notify
 from educore.api.v1.registration import _student
 
 DECIDE_ROLES = ("Registrar", "Registry Officer", "System Manager")
@@ -175,6 +176,8 @@ def approve(name: str) -> dict:
 	doc.reviewed_by = frappe.session.user
 	doc.reviewed_on = now_datetime()
 	doc.save(ignore_permissions=True)
+	event = "interruption_approved" if doc.request_type == INTERRUPTION else "cancellation_approved"
+	notify.send(doc.student, event, doc, last_day=notify.date(doc.last_day), return_year=doc.return_year)
 	return queue()
 
 
@@ -188,6 +191,8 @@ def decline(name: str, note: str) -> dict:
 	doc.reviewed_by = frappe.session.user
 	doc.reviewed_on = now_datetime()
 	doc.save(ignore_permissions=True)
+	what = _("interrupt your studies") if doc.request_type == INTERRUPTION else _("cancel your studies")
+	notify.send(doc.student, "studies_request_declined", doc, what=what, note=doc.review_note)
 	return queue()
 
 
