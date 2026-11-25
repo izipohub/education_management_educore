@@ -53,6 +53,16 @@ test("the faculty officer sees the submitted registrations of their faculty and 
   await page.screenshot({ path: "e2e/results/registration-queue.png" });
 });
 
+test("the faculty officer has the students' course changes to decide", async ({ page }) => {
+  await signIn(page, "faculty-officer.fst.osh");
+  await page.getByRole("link", { name: "Registration", exact: true }).click();
+  await page.getByRole("tab", { name: /^Course changes/ }).click();
+  await expect(page.getByText("Course changes until 28-02-2027")).toBeVisible();
+  await expect(page.getByText("No course changes here")).toBeVisible();
+  await page.getByRole("group", { name: "Status" }).getByRole("button", { name: "Approved" }).click();
+  await expect(page.getByText("No course changes here")).toBeVisible();
+});
+
 test("the registrar has first-year and senior students under one Registration item", async ({ page }) => {
   await signIn(page, "registrar");
   await page.getByRole("link", { name: "Registration", exact: true }).click();

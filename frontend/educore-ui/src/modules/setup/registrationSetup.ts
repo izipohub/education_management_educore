@@ -15,6 +15,7 @@ export interface Period {
   closes_on: string | null;
   late_until: string | null;
   late_fee: number;
+  changes_until: string | null;
   state: "upcoming" | "open" | "late" | "closed" | null;
   registrations: number;
 }

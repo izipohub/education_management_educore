@@ -9,7 +9,8 @@
   "closes_on",
   "column_late",
   "late_until",
-  "late_fee"
+  "late_fee",
+  "changes_until"
  ],
  "fields": [
   {
@@ -51,11 +52,17 @@
    "label": "Late Registration Fee",
    "options": "NAD",
    "default": "0"
+  },
+  {
+   "fieldname": "changes_until",
+   "fieldtype": "Date",
+   "label": "Course Changes Until",
+   "description": "Approved students add or drop courses until this date. Empty: no changes."
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-11-22 16:00:00.000000",
+ "modified": "2026-11-25 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Academics",
  "name": "Registration Period",

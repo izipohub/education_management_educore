@@ -30,6 +30,7 @@ def _period(doc) -> dict:
 		"closes_on": str(doc.closes_on) if doc.closes_on else None,
 		"late_until": str(doc.late_until) if doc.late_until else None,
 		"late_fee": flt(doc.late_fee),
+		"changes_until": str(doc.changes_until) if doc.get("changes_until") else None,
 		"state": rules.period_state(doc) if doc.opens_on and doc.closes_on else None,
 		"registrations": frappe.db.count(
 			"Program Enrollment", {"academic_year": doc.academic_year, "educore_registration_status": ("is", "set")}
@@ -88,7 +89,7 @@ def save_period(data: dict | str, name: str | None = None) -> dict:
 			frappe.throw(_("{0} already has a registration period").format(year))
 		doc = frappe.new_doc("Registration Period")
 		doc.academic_year = year
-	for field in ("opens_on", "closes_on", "late_until"):
+	for field in ("opens_on", "closes_on", "late_until", "changes_until"):
 		if field in data:
 			doc.set(field, data[field] or None)
 	# the late fee is Finance's (educore.api.v1.fee_settings): shown here, changed there
@@ -100,6 +101,8 @@ def save_period(data: dict | str, name: str | None = None) -> dict:
 		frappe.throw(_("Registration closes before it opens"))
 	if doc.late_until and getdate(doc.late_until) < getdate(doc.closes_on):
 		frappe.throw(_("Late registration ends before registration closes"))
+	if doc.changes_until and getdate(doc.changes_until) < getdate(doc.closes_on):
+		frappe.throw(_("Course changes end before registration closes"))
 	if doc.late_fee < 0:
 		frappe.throw(_("The late fee cannot be negative"))
 	doc.flags.ignore_permissions = True

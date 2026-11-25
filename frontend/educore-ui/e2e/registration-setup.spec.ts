@@ -9,6 +9,7 @@ test("the registrar sees the registration periods and rules", async ({ page }) =
 
   await openRow(page, "2027", "Registration 2027");
   await expect(page.getByLabel("Closes")).toHaveValue("31-01-2027");
+  await expect(page.getByLabel("Course changes until")).toHaveValue("28-02-2027");
   await page.screenshot({ path: "e2e/results/registration-period.png", fullPage: true });
   await page.getByRole("button", { name: "Cancel" }).click();
 

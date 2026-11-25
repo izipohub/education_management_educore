@@ -18,7 +18,7 @@ from frappe.utils import flt
 
 from educore.access.demo_users import DOMAIN
 
-PERIOD = {"academic_year": "2027", "opens_on": "2026-11-01", "closes_on": "2027-01-31", "late_until": "2027-02-14", "late_fee": 500}
+PERIOD = {"academic_year": "2027", "opens_on": "2026-11-01", "closes_on": "2027-01-31", "late_until": "2027-02-14", "late_fee": 500, "changes_until": "2027-02-28"}
 #: login: (pays the rest of 2026, pays the deposit, registers)
 STUDENTS = {"student1.whk": (False, True, False), "student1.osh": (True, True, True)}
 ON_HOLD = {"student2.osh": "Outstanding practical teaching portfolio for 2026. See the Faculty Officer."}
@@ -103,6 +103,8 @@ def create():
 	set_curriculum()
 	if not frappe.db.exists("Registration Period", PERIOD["academic_year"]):
 		frappe.get_doc({"doctype": "Registration Period", **PERIOD}).insert(ignore_permissions=True)
+	elif not frappe.db.get_value("Registration Period", PERIOD["academic_year"], "changes_until"):
+		frappe.db.set_value("Registration Period", PERIOD["academic_year"], "changes_until", PERIOD["changes_until"])
 
 	for login, note in ON_HOLD.items():
 		student = frappe.db.get_value("Student", {"user": f"{login}@{DOMAIN}"})

@@ -10,12 +10,14 @@ import PageHeader from "@/core/ui/PageHeader.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
 import { type Queue, type QueueRow, getQueue } from "./api";
 import type { Group } from "./groups";
+import CourseChangesQueue from "./CourseChangesQueue.vue";
+import { changeQueue } from "./courseChanges";
 
 /** Registration, senior students: their course registrations to approve; a row opens the registration's page */
 defineProps<{ groups: { value: Group; label: string }[] }>();
 const group = defineModel<Group>("group", { required: true });
-type State = "Submitted" | "Returned" | "Approved";
-const STATES: State[] = ["Submitted", "Returned", "Approved"];
+type State = "Submitted" | "Returned" | "Approved" | "changes";
+const STATES: State[] = ["Submitted", "Returned", "Approved", "changes"];
 const route = useRoute();
 const router = useRouter();
 const status = ref<State>(STATES.includes(route.query.status as State) ? (route.query.status as State) : "Submitted");
@@ -23,7 +25,9 @@ const page = ref<Queue | null>(null);
 const loading = ref(false);
 const loadError = ref("");
 
+const changesToDecide = ref(0);
 async function load() {
+  if (status.value === "changes") return;
   loading.value = true;
   loadError.value = "";
   try {
@@ -34,13 +38,20 @@ async function load() {
     loading.value = false;
   }
 }
-onMounted(load);
+onMounted(() => {
+  void load();
+  void changeQueue("Submitted").then((q) => (changesToDecide.value = q.counts.Submitted)).catch(() => undefined);
+});
 watch(status, () => {
   void router.replace({ query: { ...route.query, status: status.value } });
   void load();
 });
 
-const tabs = computed(() => STATES.map((s) => ({ label: s, count: page.value?.counts[s] ?? 0, value: s })));
+const tabs = computed(() =>
+  STATES.map((s) =>
+    s === "changes" ? { label: "Course changes", count: changesToDecide.value, value: s } : { label: s, count: page.value?.counts[s] ?? 0, value: s },
+  ),
+);
 const rows = computed(() => (page.value?.rows ?? []) as unknown as Record<string, unknown>[]);
 const asRow = (item: Record<string, unknown>) => item as unknown as QueueRow;
 const columns: Column[] = [
@@ -67,7 +78,10 @@ const columns: Column[] = [
 
     <Message v-if="loadError" severity="error" :closable="false">{{ loadError }}</Message>
 
+    <CourseChangesQueue v-if="status === 'changes'" @counts="(c) => (changesToDecide = c.Submitted)" />
+
     <DataTable
+      v-else
       :columns="columns"
       :rows="rows"
       row-key="name"

@@ -9,6 +9,7 @@ import { useToast } from "primevue/usetoast";
 import { computed, onMounted, ref } from "vue";
 import { formatDate, formatMoney } from "@/core/format";
 import { type CurriculumCourse, type RegistrationState, myRegistration, saveCourses, submitRegistration } from "./api";
+import CourseChangesCard from "./CourseChangesCard.vue";
 
 const toast = useToast();
 const state = ref<RegistrationState | null>(null);
@@ -28,13 +29,14 @@ function adopt(next: RegistrationState) {
         .map((c) => c.course);
 }
 
-onMounted(async () => {
+async function load() {
   try {
     adopt(await myRegistration());
   } catch (e) {
     loadError.value = e instanceof Error ? e.message : String(e);
   }
-});
+}
+onMounted(load);
 
 const period = computed(() => state.value?.period ?? null);
 const registration = computed(() => state.value?.registration ?? null);
@@ -183,6 +185,8 @@ const headerLine = computed(() => {
             </label>
           </template>
         </article>
+
+        <CourseChangesCard v-if="registration?.status === 'Approved'" @changed="load" />
 
         <!-- the year's fees; when something blocks registration, the card above already says what is owed -->
         <article v-if="state.fees && !(blocked && editable)" class="card fees">

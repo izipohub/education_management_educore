@@ -42,7 +42,7 @@ students and `/registrations` for faculty officers).
   when they run, Semester 1, Semester 2 or the full year, with credits per period. Registration, the approval page,
   the student record and the proof of registration all read it. Later: changes approved by Senate before they apply.
 - **Registration setup** (Registrar): each academic year's period (opens, closes, late registration until, late
-  fee) and the rules (outstanding balance allowed, deposit, most credits per year, faculty approval).
+  fee, course changes until) and the rules (outstanding balance allowed, deposit, most credits per year, faculty approval).
 
 - **Student payments** (Finance): fees paid by EFT with the student number as the reference are matched hourly from
   the bank statement (educore.finance.student_payments): a Payment Entry against the oldest unpaid invoices, the bank
@@ -56,6 +56,13 @@ students and `/registrations` for faculty officers).
   registration a course passed already is not offered; a course not passed earlier is a repeat, offered first and,
   if required, must be taken; a course whose prerequisite is not passed cannot be chosen, with the reason shown;
   the year's required courses must be taken unless a prerequisite blocks them. The approval page marks repeats.
+- **Course changes** (educore.api.v1.course_changes): once their registration is approved, a student asks to add or
+  drop courses until the year's course change date, one request at a time; the faculty officer approves or declines
+  with a reason. The registration rules hold for the courses after the change (required courses stay, prerequisites,
+  credit limit). Approving updates the registration's courses and Course Enrollments; the class lists then show as
+  out of date on Teaching. The year's fees do not depend on the courses, so no invoice changes.
 
 ## Later
+
+- Cancelling or interrupting studies: the student asks, the Registry decides; fees and refunds by Finance.
 

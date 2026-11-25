@@ -64,6 +64,7 @@ what each person sees.
 | Admissions (decide, capture paper forms) | Admissions Officer | Registrar (oversight, reconsiders rejections) |
 | Registration: first-year students | Registry Officer | Registrar |
 | Registration: senior students (approve) | Faculty Officer | Registrar (exceptions) |
+| Course changes after approval (add or drop, until the course change date) | Student asks; Faculty Officer approves or declines | Registrar |
 | Students (records, proof of registration) | Registry Officer, Registrar | Faculty Officer, Dean, Head of Department, Campus Director, Executive Management, Examinations Officer, Student Affairs Officer, Financial Aid Officer |
 | Teaching (classes from approved registrations, lecturers allocated) | Head of Department, Dean (own department or faculty) | Faculty Officer, Timetable Officer, Registrar, Campus Director; lecturers see their own classes in My teaching |
 | Marks (enter, submit) | Lecturer (own classes, from My teaching) | |

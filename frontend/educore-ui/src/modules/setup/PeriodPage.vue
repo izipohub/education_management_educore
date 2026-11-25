@@ -21,7 +21,7 @@ const error = ref("");
 const saving = ref(false);
 const isNew = computed(() => props.name === "new");
 const existing = computed<Period | null>(() => setup.value?.periods.find((p) => p.name === props.name) ?? null);
-const form = reactive({ academic_year: "", opens_on: null as Date | null, closes_on: null as Date | null, late_until: null as Date | null, late_fee: 0 });
+const form = reactive({ academic_year: "", opens_on: null as Date | null, closes_on: null as Date | null, late_until: null as Date | null, changes_until: null as Date | null, late_fee: 0 });
 
 onMounted(async () => {
   try {
@@ -33,6 +33,7 @@ onMounted(async () => {
         opens_on: p.opens_on ? fromIsoDate(p.opens_on) : null,
         closes_on: p.closes_on ? fromIsoDate(p.closes_on) : null,
         late_until: p.late_until ? fromIsoDate(p.late_until) : null,
+        changes_until: p.changes_until ? fromIsoDate(p.changes_until) : null,
         late_fee: p.late_fee,
       });
     } else if (!isNew.value) {
@@ -56,6 +57,7 @@ async function save() {
         opens_on: form.opens_on ? toIsoDate(form.opens_on) : null,
         closes_on: form.closes_on ? toIsoDate(form.closes_on) : null,
         late_until: form.late_until ? toIsoDate(form.late_until) : null,
+        changes_until: form.changes_until ? toIsoDate(form.changes_until) : null,
       },
       isNew.value ? undefined : props.name,
     );
@@ -98,6 +100,9 @@ async function save() {
       </SettingRow>
       <SettingRow v-if="form.late_until && !isNew" label="Late registration fee" help="Set by Finance">
         <span class="value">{{ formatMoney(form.late_fee) }}</span>
+      </SettingRow>
+      <SettingRow label="Course changes until" help="Adding and dropping courses after approval; empty for none" for="changes">
+        <DatePicker v-model="form.changes_until" input-id="changes" date-format="dd-mm-yy" show-icon show-button-bar fluid :min-date="form.closes_on ?? undefined" />
       </SettingRow>
     </EcPanel>
   </RecordPage>
