@@ -64,6 +64,12 @@ def progress(student: str) -> dict:
 	needed = frappe.get_cached_value("Program", program, "educore_credits") or 0
 	out.update(assess(rules.curriculum(program), rules.results_by_course(student), needed))
 	out["status"] = COMPLETED if doc.completed_on else ELIGIBLE if out.pop("meets") else NOT_YET
+	# financial clearance, which graduation needs where the university requires it (educore.finance.clearance)
+	if out["status"] == ELIGIBLE:
+		from educore.finance import clearance
+
+		state = clearance.status(student)
+		out["clearance"] = {"cleared": state["cleared"], "reasons": state["reasons"], "needed": clearance.graduation_needs_clearance()}
 	return out
 
 
@@ -76,6 +82,9 @@ def confirm(student: str, reference: str, completed_on: str):
 		frappe.throw(_("{0} does not yet meet the requirements of {1}").format(state["student_name"], state["program"]))
 	if state["held"]:
 		frappe.throw(_("{0} is {1}: clear that first").format(state["student_name"], state["held"].lower()))
+	from educore.finance.clearance import require_for_graduation
+
+	require_for_graduation(student, state["student_name"])
 	frappe.db.set_value(
 		"Student",
 		student,

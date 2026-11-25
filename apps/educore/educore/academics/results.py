@@ -15,7 +15,7 @@ from frappe import _
 from frappe.utils import flt
 
 #: Examination Settings: the defaults, written once if the site has never had a value
-DEFAULTS = {"ca_weight": 50, "exam_admission_ca": 40, "pass_mark": 50, "supplementary_from": 45, "supplementary_cap": 50, "probation_share": 50}
+DEFAULTS = {"ca_weight": 50, "exam_admission_ca": 40, "pass_mark": 50, "supplementary_from": 45, "supplementary_cap": 50, "probation_share": 50, "min_attendance": 0}
 #: the university's grading scale until it loads its own (grade, lowest final mark)
 DEFAULT_SCALE = ("EduCore Standard", (("A+", 80), ("A", 70), ("B", 60), ("C", 50), ("D", 40), ("E", 0)))
 

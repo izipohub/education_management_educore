@@ -191,6 +191,8 @@ def student(name: str) -> dict:
 		},
 		"guardians": guardians,
 		"sponsors": sponsored,
+		# Finance's holds, read only here (educore.finance.clearance)
+		"holds": _holds(name),
 		"enrolments": enrolments,
 		"invoices": invoices,
 		# what is owed (a credit is not a negative debt: it counts towards the next deposit)
@@ -203,3 +205,9 @@ def _cover(row) -> str:
 	from educore.api.v1.sponsors import _cover_label
 
 	return _cover_label(row)
+
+
+def _holds(student: str) -> list[dict]:
+	from educore.finance.clearance import active_holds
+
+	return [{"reason": h.reason, "placed_on": str(h.placed_on)} for h in active_holds(student)]

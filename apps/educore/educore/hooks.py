@@ -42,6 +42,9 @@ scheduler_events = {
 before_request = ["educore.access.desk.redirect_from_desk"]
 get_website_user_home_page = "educore.access.desk.website_user_home_page"
 
+# class attendance without a holiday list, and a friendlier holiday message (educore.academics.attendance)
+override_doctype_class = {"Student Attendance": "educore.academics.attendance.StudentAttendance"}
+
 doc_events = {
 	# Desk users get the back-office Module Profile; lecturers get their Instructor record
 	"User": {

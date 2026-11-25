@@ -33,6 +33,8 @@ export interface Candidate {
   status: Completion;
   completed_on: string | null;
   reference: string | null;
+  /** eligible students: financial clearance, which graduation needs where the university requires it */
+  clearance?: { cleared: boolean; reasons: string[]; needed: boolean };
 }
 
 export interface Candidates {

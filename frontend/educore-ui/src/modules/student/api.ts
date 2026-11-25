@@ -47,7 +47,24 @@ export interface Fees {
   };
 }
 
+/** class attendance this year, per class (educore.academics.attendance) */
+export interface ClassAttendance {
+  group: string;
+  course: string;
+  code: string | null;
+  academic_year: string;
+  present: number;
+  absent: number;
+  excused: number;
+  rate: number | null;
+  below: boolean;
+  minimum: number;
+}
+
 export interface StudentOverview {
+  attendance: ClassAttendance[];
+  /** Finance's holds: they block registration until lifted */
+  holds: { reason: string; placed_on: string }[];
   student: {
     number: string;
     name: string;

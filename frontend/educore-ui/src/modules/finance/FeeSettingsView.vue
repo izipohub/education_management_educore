@@ -3,6 +3,7 @@ import InputNumber from "primevue/inputnumber";
 import MultiSelect from "primevue/multiselect";
 import Message from "primevue/message";
 import Select from "primevue/select";
+import ToggleSwitch from "primevue/toggleswitch";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, ref } from "vue";
 import { formatDate } from "@/core/format";
@@ -71,6 +72,11 @@ async function save() {
   }
 }
 const undo = () => saved.value && take(saved.value);
+/** stored as 0 or 1 */
+const needsClearance = computed({
+  get: () => Boolean(form.value?.registration.graduation_needs_clearance),
+  set: (on: boolean) => form.value && (form.value.registration.graduation_needs_clearance = on ? 1 : 0),
+});
 </script>
 
 <template>
@@ -137,6 +143,15 @@ const undo = () => saved.value && take(saved.value);
         <SettingRow v-if="form.registration.deposit_type !== 'None'" :label="depositLabel" for="deposit">
           <InputNumber v-if="percent" v-model="form.registration.deposit_value" input-id="deposit" :min="0" :max="100" suffix=" %" show-buttons :disabled="!editable" fluid />
           <InputNumber v-else v-model="form.registration.deposit_value" input-id="deposit" :min="0" :min-fraction-digits="2" prefix="N$ " :disabled="!editable" fluid />
+        </SettingRow>
+      </EcPanel>
+
+      <EcPanel title="Financial clearance">
+        <SettingRow label="Owing allowed at clearance" help="A student owing more, or on hold, is not cleared" for="clear-owing">
+          <InputNumber v-model="form.registration.clearance_max_owing" input-id="clear-owing" :min="0" :min-fraction-digits="2" prefix="N$ " :disabled="!editable" fluid />
+        </SettingRow>
+        <SettingRow label="Graduation needs clearance" help="Completion and the award certificate only for cleared students" for="clear-grad">
+          <ToggleSwitch v-model="needsClearance" input-id="clear-grad" :disabled="!editable" />
         </SettingRow>
       </EcPanel>
 

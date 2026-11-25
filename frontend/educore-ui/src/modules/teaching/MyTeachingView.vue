@@ -72,6 +72,7 @@ const totalStudents = computed(() => new Set(data.value?.classes.flatMap((c) => 
         </div>
         <div class="class-actions">
           <Tag :value="`${cls.students.length} ${cls.students.length === 1 ? 'student' : 'students'}`" severity="secondary" />
+          <RouterLink v-if="cls.students.length" :to="{ name: 'class-attendance', params: { group: cls.name } }" class="marks-link">Attendance</RouterLink>
           <RouterLink v-if="cls.students.length" :to="{ name: 'class-marks', params: { group: cls.name } }" class="marks-link">Marks</RouterLink>
         </div>
       </header>

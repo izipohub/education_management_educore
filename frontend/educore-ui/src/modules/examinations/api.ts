@@ -19,6 +19,8 @@ export const EXAMINATION_ROLES = [
 export interface Rules {
   ca_weight: number;
   exam_admission_ca: number;
+  /** class attendance below it is flagged; 0: none */
+  min_attendance: number;
   pass_mark: number;
   supplementary_from: number;
   supplementary_cap: number;

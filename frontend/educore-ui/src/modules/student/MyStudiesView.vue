@@ -78,6 +78,7 @@ const feeStatus = computed(() => {
           <p class="sub">owing of {{ formatMoney(data.fees.billed) }} billed</p>
           <Tag v-if="feeStatus" :severity="feeStatus.severity" :value="feeStatus.label" />
           <p v-if="data.fees.in_advance" class="sub">{{ formatMoney(data.fees.in_advance) }} paid in advance</p>
+          <p v-for="h in data.holds" :key="h.reason" class="sub">Financial hold: {{ h.reason }}. Contact Finance.</p>
           <dl v-if="data.fees.how_to_pay.bank.account_number" class="pay">
             <div><dt>Pay by EFT to</dt><dd>{{ data.fees.how_to_pay.bank.bank_name }} · {{ data.fees.how_to_pay.bank.account_name }}</dd></div>
             <div><dt>Account number</dt><dd>{{ data.fees.how_to_pay.bank.account_number }}<template v-if="data.fees.how_to_pay.bank.branch_code"> · branch {{ data.fees.how_to_pay.bank.branch_code }}</template></dd></div>
@@ -115,6 +116,27 @@ const feeStatus = computed(() => {
             <template #body="{ data: course }">{{ course.nqf_level ?? "" }}</template>
           </Column>
         </DataTable>
+      </section>
+
+      <section v-if="data.attendance.some((a) => a.rate !== null)" class="block">
+        <h2>Class attendance {{ data.attendance[0].academic_year }}</h2>
+        <table class="results">
+          <thead>
+            <tr><th>Code</th><th>Course</th><th class="num">Present</th><th class="num">Absent</th><th class="num">Attendance</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="a in data.attendance" :key="a.group">
+              <td>{{ a.code }}</td>
+              <td>{{ a.course }}</td>
+              <td class="num">{{ a.present }}</td>
+              <td class="num">{{ a.absent }}<template v-if="a.excused"> · {{ a.excused }} excused</template></td>
+              <td class="num">
+                <template v-if="a.rate !== null">{{ a.rate }}%</template>
+                <div v-if="a.below" class="sub">Below the {{ a.minimum }}% required</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </section>
 
       <section class="block">

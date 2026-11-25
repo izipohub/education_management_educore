@@ -18,7 +18,7 @@ OTHER_FEES = {"Registration Fee": 1_500, "Examination Fee": 1_200, "Technology L
 INCREASE = {"2026": 1.0, "2027": 1.06}
 
 #: student login: share of the invoice paid
-PAYMENTS = {"student1.whk": 1.0, "student1.kmp": 0.5}
+PAYMENTS = {"student1.whk": 1.0, "student1.kmp": 0.5, "student2.kmp": 1.0}
 
 
 def _round(amount):
@@ -148,3 +148,29 @@ def create_sponsors() -> dict:
 			if sponsors.record_payment(sponsor, line.name):
 				paid += 1
 	return {"sponsors": made, "sponsor_payments": paid}
+
+
+#: login: a hold Finance placed (educore.finance.clearance)
+HOLDS = {"student2.osh": "Payment arrangement for the 2026 fees not kept"}
+
+
+def create_holds() -> int:
+	from frappe.utils import add_days, nowdate
+
+	made = 0
+	for login, reason in HOLDS.items():
+		student = frappe.db.get_value("Student", {"user": f"{login}@educore.localhost"})
+		if not student or frappe.db.exists("Student Hold", {"student": student}):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Student Hold",
+				"student": student,
+				"reason": reason,
+				"status": "Active",
+				"placed_by": "student-fees-officer.osh@educore.localhost",
+				"placed_on": add_days(nowdate(), -12),
+			}
+		).insert(ignore_permissions=True)
+		made += 1
+	return made

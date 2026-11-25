@@ -88,7 +88,8 @@ const columns: Column[] = [
 const share = (r: Candidate) => (r.credits_needed ? Math.min(100, Math.round((100 * r.credits_passed) / r.credits_needed)) : 100);
 
 // recording the completions the Senate approved (Registrar)
-const ready = computed(() => (page.value?.rows ?? []).filter((r) => r.status === "Eligible" && !r.held));
+const notCleared = (r: Candidate) => Boolean(r.clearance?.needed && !r.clearance.cleared);
+const ready = computed(() => (page.value?.rows ?? []).filter((r) => r.status === "Eligible" && !r.held && !notCleared(r)));
 const confirming = ref(false);
 const chosen = ref<string[]>([]);
 const reference = ref("");
@@ -164,6 +165,7 @@ async function confirm() {
       <template #cell-status="{ row: r }">
         <StatusTag kind="completion" :value="row(r).status" />
         <span v-if="row(r).held && row(r).status !== 'Completed'" class="sub">{{ row(r).held }}</span>
+        <span v-else-if="notCleared(row(r))" class="sub">Not financially cleared</span>
       </template>
     </DataTable>
   </section>

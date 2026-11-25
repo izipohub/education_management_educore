@@ -72,6 +72,7 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
       <StatusTag v-if="record?.completion" kind="completion" value="Completed" />
       <span v-if="record?.studies.interrupted_until" class="left">Interrupted</span>
       <span v-if="record && !record.enabled" class="left">Left</span>
+      <span v-if="record?.holds.length" class="left">Financial hold</span>
     </template>
 
     <template v-if="record" #actions>
@@ -188,6 +189,10 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
           </div>
         </dl>
         <p v-else class="none ec-muted">Not recorded</p>
+      </EcPanel>
+
+      <EcPanel v-if="record.holds.length" title="Financial hold">
+        <p v-for="h in record.holds" :key="h.reason" class="none">{{ h.reason }} · since {{ formatDate(h.placed_on) }}</p>
       </EcPanel>
 
       <EcPanel title="Fees paid by">

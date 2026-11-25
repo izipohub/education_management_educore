@@ -574,6 +574,10 @@ def award_certificate(student: str):
 	doc.check_permission("read")
 	if not doc.get("educore_completed_on"):
 		frappe.throw(_("{0} has not completed a programme").format(doc.student_name))
+	# the original certificate is handed over once the student is financially cleared (educore.finance.clearance)
+	from educore.finance.clearance import require_for_graduation
+
+	require_for_graduation(doc.name, doc.student_name)
 	program = doc.educore_completed_programme
 	nqf, qualification = frappe.db.get_value("Program", program, ["educore_nqf_level", "educore_qualification_type"]) or (None, None)
 	brand = _brand()

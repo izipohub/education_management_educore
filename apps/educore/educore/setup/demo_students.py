@@ -188,8 +188,14 @@ def create():
 	from educore.setup.demo_finance import create_sponsors
 
 	print(f"Sponsors: {create_sponsors()}")
+	from educore.setup.demo_finance import create_holds
+
+	print(f"{create_holds()} financial holds placed")
 	groups = create_course_groups()
 	print(f"{groups} course groups created")
+	from educore.setup import demo_attendance
+
+	print(f"{demo_attendance.create()} class registers taken")
 	from educore.setup import demo_results
 
 	print(f"{demo_results.create()} mark sheets created")

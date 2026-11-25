@@ -97,6 +97,21 @@ const subtitle = computed(() => {
     </template>
 
     <template v-if="data" #aside>
+      <EcPanel title="Attendance" :note="data.attendance.sessions.length ? `${data.attendance.sessions.length} sessions` : undefined" :flush="data.attendance.sessions.length > 0">
+        <table v-if="data.attendance.sessions.length" class="ec-table">
+          <tbody>
+            <tr v-for="s in data.attendance.students" :key="s.student">
+              <td>
+                {{ s.student_name }}
+                <div v-if="s.below" class="ec-muted">Below {{ data.attendance.minimum }}%</div>
+              </td>
+              <td class="num ec-nowrap">{{ s.rate === null ? "" : `${s.rate}%` }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else class="none ec-muted">No register taken yet</p>
+      </EcPanel>
+
       <EcPanel title="Lecturers" flush>
         <ul v-if="lecturers.length" class="lecturers">
           <li v-for="l in lecturers" :key="l">

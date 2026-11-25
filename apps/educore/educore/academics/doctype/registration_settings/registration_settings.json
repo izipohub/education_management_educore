@@ -8,6 +8,8 @@
   "max_outstanding",
   "deposit_type",
   "deposit_value",
+  "clearance_max_owing",
+  "graduation_needs_clearance",
   "rules_column",
   "max_credits",
   "approval_needed",
@@ -41,6 +43,20 @@
    "default": "20",
    "depends_on": "eval:doc.deposit_type != 'None'",
    "description": "Paid in advance before registering."
+  },
+  {
+   "fieldname": "clearance_max_owing",
+   "fieldtype": "Currency",
+   "label": "Owing Allowed at Clearance",
+   "default": "0",
+   "description": "A student owing more is not financially cleared."
+  },
+  {
+   "fieldname": "graduation_needs_clearance",
+   "fieldtype": "Check",
+   "label": "Graduation Needs Financial Clearance",
+   "default": "1",
+   "description": "Completion is recorded, and the award certificate printed, only for students financially cleared."
   },
   {
    "fieldname": "rules_column",

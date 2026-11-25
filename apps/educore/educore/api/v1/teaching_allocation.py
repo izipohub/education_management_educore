@@ -230,6 +230,8 @@ def class_detail(group: str) -> dict:
 			key=lambda i: (i["department"] != ((course.department if course else "") or "").rsplit(" - ", 1)[0], i["instructor_name"]),
 		),
 		"can_edit": can_edit(),
+		# each student's class attendance so far (educore.academics.attendance)
+		"attendance": _attendance(doc.name),
 		# the class's course in Moodle, once ICT connects it (educore.learning.moodle)
 		"moodle": {
 			"connected": bool(frappe.db.get_single_value("Learning Platform Settings", "moodle_enabled")),
@@ -257,3 +259,9 @@ def set_lecturers(group: str, instructors: list | str) -> dict:
 	doc.flags.ignore_permissions = True
 	doc.save()
 	return class_detail(group)
+
+
+def _attendance(group: str) -> dict:
+	from educore.academics import attendance
+
+	return attendance.summary(group)

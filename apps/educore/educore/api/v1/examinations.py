@@ -23,7 +23,7 @@ EXAM_ROLES = ("Examinations Officer", "System Manager")
 RULES_ROLES = ("Registrar", "System Manager")
 #: Campus Director, Quality Assurance and Executive Management follow results; they decide nothing here
 READ_ROLES = (*MODERATE_ROLES, *EXAM_ROLES, "Registrar", "Faculty Officer", "Campus Director", "Quality Assurance Officer", "Executive Management")
-RULE_FIELDS = ("ca_weight", "exam_admission_ca", "pass_mark", "supplementary_from", "supplementary_cap", "probation_share", "grading_scale")
+RULE_FIELDS = ("ca_weight", "exam_admission_ca", "min_attendance", "pass_mark", "supplementary_from", "supplementary_cap", "probation_share", "grading_scale")
 
 
 def _has(roles) -> bool:
@@ -437,7 +437,7 @@ def save_rules(data: dict | str) -> dict:
 	for field in RULE_FIELDS:
 		if field in data:
 			s.set(field, data[field])
-	for field in ("ca_weight", "exam_admission_ca", "pass_mark", "supplementary_from", "probation_share"):
+	for field in ("ca_weight", "exam_admission_ca", "min_attendance", "pass_mark", "supplementary_from", "probation_share"):
 		if not 0 <= flt(s.get(field)) <= 100:
 			frappe.throw(_("{0} must be between 0 and 100").format(s.meta.get_label(field)))
 	if flt(s.supplementary_from) > flt(s.pass_mark):

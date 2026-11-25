@@ -1,0 +1,168 @@
+{
+ "creation": "2026-11-26 08:00:00.000000",
+ "modified": "2026-11-26 08:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Finance",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "actions": [],
+ "links": [],
+ "states": [],
+ "name": "Student Hold",
+ "autoname": "format:HLD-{YYYY}-{#####}",
+ "track_changes": 1,
+ "title_field": "student_name",
+ "description": "A hold Finance places on a student (with the reason) until it is lifted: it blocks registration and financial clearance, which graduation and the award certificate need (educore.finance.clearance).",
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "read_only": 1,
+   "fetch_from": "student.student_name"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "read_only": 1,
+   "fetch_from": "student.campus",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Active\nLifted",
+   "default": "Active",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "placed_by",
+   "fieldtype": "Link",
+   "label": "Placed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "placed_on",
+   "fieldtype": "Date",
+   "label": "Placed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "lifted_by",
+   "fieldtype": "Link",
+   "label": "Lifted By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "lifted_on",
+   "fieldtype": "Date",
+   "label": "Lifted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "lift_note",
+   "fieldtype": "Small Text",
+   "label": "Why Lifted",
+   "read_only": 1
+  }
+ ],
+ "field_order": [
+  "student",
+  "student_name",
+  "campus",
+  "reason",
+  "column_status",
+  "status",
+  "placed_by",
+  "placed_on",
+  "lifted_by",
+  "lifted_on",
+  "lift_note"
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Bursar",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Finance Officer",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Student Fees Officer",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Registry Officer",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  }
+ ]
+}

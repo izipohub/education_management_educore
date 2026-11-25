@@ -10,6 +10,7 @@ import { RECORD_ROLES } from "@/modules/records/api";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
 import { STAFF_ROLES } from "@/modules/staff/api";
 import { SPONSOR_ROLES } from "@/modules/finance/sponsors";
+import { CLEARANCE_ROLES } from "@/modules/finance/clearance";
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -187,6 +188,13 @@ export const router = createRouter({
           meta: { title: "Graduation", roles: GRADUATION_ROLES },
         },
         {
+          path: "my-teaching/:group/attendance",
+          name: "class-attendance",
+          component: () => import("@/modules/teaching/AttendancePage.vue"),
+          props: true,
+          meta: { title: "Attendance", roles: ["Lecturer"] },
+        },
+        {
           path: "my-teaching/:group/marks",
           name: "class-marks",
           component: () => import("@/modules/examinations/MarkEntryPage.vue"),
@@ -230,6 +238,19 @@ export const router = createRouter({
           component: () => import("@/modules/finance/SponsorPage.vue"),
           props: true,
           meta: { title: "Sponsor", roles: SPONSOR_ROLES },
+        },
+        {
+          path: "clearance",
+          name: "clearance",
+          component: () => import("@/modules/finance/ClearanceView.vue"),
+          meta: { title: "Financial clearance", roles: CLEARANCE_ROLES },
+        },
+        {
+          path: "clearance/:name",
+          name: "clearance-student",
+          component: () => import("@/modules/finance/ClearancePage.vue"),
+          props: true,
+          meta: { title: "Financial clearance", roles: CLEARANCE_ROLES },
         },
         {
           path: "fee-settings",

@@ -39,6 +39,13 @@
    "default": "40"
   },
   {
+   "fieldname": "min_attendance",
+   "fieldtype": "Percent",
+   "label": "Minimum Class Attendance",
+   "default": "0",
+   "description": "Students below it are flagged to the lecturer and the department. 0: none."
+  },
+  {
    "fieldname": "marks_column",
    "fieldtype": "Column Break"
   },
@@ -102,6 +109,7 @@
   "marks_section",
   "ca_weight",
   "exam_admission_ca",
+  "min_attendance",
   "marks_column",
   "pass_mark",
   "supplementary_from",

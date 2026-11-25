@@ -27,6 +27,8 @@ SETTINGS_DEFAULTS = {
 	"max_credits": 0,
 	"approval_needed": 1,
 	"notify_students": 1,
+	"clearance_max_owing": 0,
+	"graduation_needs_clearance": 1,
 }
 
 
@@ -257,6 +259,11 @@ def blockers(student: str, offering: str, period) -> list[str]:
 	standing, note = frappe.db.get_value("Student", student, ["educore_academic_standing", "educore_standing_note"])
 	if standing in BLOCKING_STANDING:
 		found.append(_("Academic standing: {0}{1}").format(standing, f". {note}" if note else ""))
+
+	from educore.finance.clearance import active_holds
+
+	for hold in active_holds(student):
+		found.append(_("Financial hold: {0}. Contact Finance").format(hold.reason))
 
 	owed = outstanding(student, period.academic_year)
 	allowed = flt(settings().max_outstanding)

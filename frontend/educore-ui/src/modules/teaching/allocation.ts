@@ -1,5 +1,6 @@
 import { get, post } from "@/core/api/client";
 import type { Semester } from "@/modules/curriculum/api";
+import type { AttendanceSummary } from "./attendance";
 
 /** who allocates lecturers and updates class lists; who reads (educore.api.v1.teaching_allocation) */
 export const ALLOCATION_ROLES = [
@@ -42,6 +43,8 @@ export interface Allocation {
 }
 
 export interface ClassDetail {
+  /** each student's class attendance so far */
+  attendance: AttendanceSummary;
   name: string;
   course: string;
   code: string | null;

@@ -69,6 +69,7 @@ what each person sees.
 | Students (records, proof of registration) | Registry Officer, Registrar | Faculty Officer, Dean, Head of Department, Campus Director, Executive Management, Examinations Officer, Student Affairs Officer, Financial Aid Officer, Accommodation Officer |
 | Teaching (classes from approved registrations, lecturers allocated) | Head of Department, Dean (own department or faculty) | Faculty Officer, Timetable Officer, Registrar, Campus Director, Examinations Officer, Quality Assurance Officer, Executive Management (own campus where limited to one); lecturers see their own classes in My teaching |
 | Academic staff (lecturers: department, campuses, left or active; each lecturer's classes). A login given the Lecturer position gets its lecturer record automatically, department and campuses from its User Permissions | Head of Department, Dean (own department or faculty); HR Manager, HR User link the HR staff record | Faculty Officer, Registrar, Campus Director, Timetable Officer, Quality Assurance Officer, Executive Management |
+| Class attendance (the register per class and day; excused absences left out; below the minimum flagged) | Lecturer (own classes, from My teaching) | Head of Department, Dean and the others who read Teaching (class page); the student (own, My studies); minimum set by the Registrar with the examination rules |
 | Marks (enter, submit) | Lecturer (own classes, from My teaching) | |
 | Examinations: moderate, or return to the lecturer | Head of Department, Dean (own department or faculty) | Registrar, Faculty Officer, Campus Director, Quality Assurance Officer, Executive Management |
 | Examinations: approve (board meeting), return to the department, publish | Examinations Officer (own campus) | Registrar, Faculty Officer |
@@ -86,6 +87,7 @@ what each person sees.
 | Fee settings (application fees by nationality: home, regional, international; the funding routes that pay no application fee; ERPNext accounts, deposit, balance allowed, late fee) | Bursar | Finance Officer, Student Fees Officer; shown read only on the Registrar's setup screens |
 | Application fees (outstanding, paid, waived; waiving) | Bursar, Finance Officer, Student Fees Officer | |
 | Student payments (matched from the bank statement by student number; assigning deposits without one to a student or a sponsor) | Bursar, Finance Officer, Student Fees Officer, Cashier | |
+| Financial clearance (holds with a reason, placed and lifted; what each student owes; graduation and the award certificate need clearance, a setting) | Bursar, Finance Officer, Student Fees Officer (own campus) | Registry and the others who read Students see the hold on the record; the student sees it on My studies |
 | Sponsors (bursaries, loan funds, employers: the students each pays for in a year, its invoices, payments by sponsor number, statement PDF) | Bursar, Finance Officer, Student Fees Officer, Financial Aid Officer | Student record shows who pays (Registry and the others who read Students) |
 
 ## Demo users (development only)

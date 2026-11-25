@@ -115,7 +115,7 @@ async function publishAll() {
 
 // the rules (Registrar)
 const rules = ref<(Rules & { grading_scales: string[]; can_edit: boolean }) | null>(null);
-const form = reactive({ ca_weight: 50, exam_admission_ca: 40, pass_mark: 50, supplementary_from: 45, supplementary_cap: 50, probation_share: 50, grading_scale: "" as string | null });
+const form = reactive({ ca_weight: 50, exam_admission_ca: 40, min_attendance: 0, pass_mark: 50, supplementary_from: 45, supplementary_cap: 50, probation_share: 50, grading_scale: "" as string | null });
 watch(
   tab,
   async (t) => {
@@ -161,6 +161,9 @@ async function saveTheRules() {
           </SettingRow>
           <SettingRow label="Continuous assessment for examination admission" for="adm">
             <InputNumber v-model="form.exam_admission_ca" input-id="adm" :min="0" :max="100" suffix=" %" show-buttons :disabled="!rules.can_edit" fluid />
+          </SettingRow>
+          <SettingRow label="Minimum class attendance" help="Students below it are flagged. 0: none" for="att">
+            <InputNumber v-model="form.min_attendance" input-id="att" :min="0" :max="100" suffix=" %" show-buttons :disabled="!rules.can_edit" fluid />
           </SettingRow>
           <SettingRow label="Pass mark" for="pass">
             <InputNumber v-model="form.pass_mark" input-id="pass" :min="0" :max="100" suffix=" %" show-buttons :disabled="!rules.can_edit" fluid />

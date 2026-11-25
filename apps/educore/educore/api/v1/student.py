@@ -150,4 +150,20 @@ def overview() -> dict:
 		},
 		"enrolments": _enrolments(student.name),
 		"fees": _fee_statement(student.name),
+		# class attendance this year, per class (educore.academics.attendance)
+		"attendance": _attendance(student.name),
+		# Finance's holds on the student, with the reason
+		"holds": _holds(student.name),
 	}
+
+
+def _attendance(student: str) -> list[dict]:
+	from educore.academics import attendance
+
+	return attendance.of_student(student)
+
+
+def _holds(student: str) -> list[dict]:
+	from educore.finance.clearance import active_holds
+
+	return [{"reason": h.reason, "placed_on": str(h.placed_on)} for h in active_holds(student)]
