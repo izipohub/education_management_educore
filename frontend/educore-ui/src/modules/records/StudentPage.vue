@@ -46,6 +46,7 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
   <RecordPage :back="back" :title="record?.student_name" :subtitle="subtitle" :error="error">
     <template #tags>
       <StatusTag v-if="record" kind="standing" :value="record.standing" />
+      <StatusTag v-if="record?.completion" kind="completion" value="Completed" />
       <span v-if="record && !record.enabled" class="left">Left</span>
     </template>
 
@@ -168,6 +169,10 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
 
       <EcPanel v-if="p.educore_disability" title="Support">
         <p class="none">{{ p.educore_support_needs || "Has a disability or impairment" }}</p>
+      </EcPanel>
+
+      <EcPanel v-if="record.completion" title="Programme completed">
+        <p class="none">{{ record.completion.programme }}, {{ formatDate(record.completion.on) }}<template v-if="record.completion.reference"> · {{ record.completion.reference }}</template></p>
       </EcPanel>
 
       <EcPanel v-if="record.standing_note" title="Standing">

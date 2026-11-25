@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  Award,
   Banknote,
   BookOpen,
   CalendarCog,
@@ -30,6 +31,7 @@ import { useBranding } from "@/core/branding";
 import { CURRICULUM_ROLES } from "@/modules/curriculum/api";
 import { FEE_SETTINGS_ROLES, FINANCE_ROLES } from "@/modules/finance/api";
 import { EXAMINATION_ROLES } from "@/modules/examinations/api";
+import { GRADUATION_ROLES } from "@/modules/graduation/api";
 import { ICT_ROLES } from "@/modules/integrations/api";
 import { ALLOCATION_ROLES } from "@/modules/teaching/allocation";
 import { RECORD_ROLES } from "@/modules/records/api";
@@ -84,6 +86,7 @@ const NAV: NavItem[] = [
   { label: "Curriculum", icon: LibraryBig, to: "/curriculum", roles: CURRICULUM_ROLES },
   { label: "Teaching", icon: Presentation, to: "/teaching", roles: ALLOCATION_ROLES },
   { label: "Examinations", icon: FileCheck, to: "/examinations", roles: EXAMINATION_ROLES },
+  { label: "Graduation", icon: Award, to: "/graduation", roles: GRADUATION_ROLES },
   { label: "Student payments", icon: Landmark, to: "/student-payments", roles: FINANCE_ROLES },
   { label: "Application fees", icon: Banknote, to: "/application-fees", roles: FINANCE_ROLES },
   { label: "Fee settings", icon: SlidersHorizontal, to: "/fee-settings", roles: FEE_SETTINGS_ROLES },

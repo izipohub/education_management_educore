@@ -3,6 +3,7 @@ import { useSession } from "@/core/auth/session";
 import { CURRICULUM_ROLES } from "@/modules/curriculum/api";
 import { FEE_SETTINGS_ROLES, FINANCE_ROLES } from "@/modules/finance/api";
 import { EXAMINATION_ROLES } from "@/modules/examinations/api";
+import { GRADUATION_ROLES } from "@/modules/graduation/api";
 import { ICT_ROLES } from "@/modules/integrations/api";
 import { ALLOCATION_ROLES } from "@/modules/teaching/allocation";
 import { RECORD_ROLES } from "@/modules/records/api";
@@ -163,6 +164,12 @@ export const router = createRouter({
           component: () => import("@/modules/examinations/SheetPage.vue"),
           props: true,
           meta: { title: "Marks", roles: EXAMINATION_ROLES },
+        },
+        {
+          path: "graduation",
+          name: "graduation",
+          component: () => import("@/modules/graduation/GraduationView.vue"),
+          meta: { title: "Graduation", roles: GRADUATION_ROLES },
         },
         {
           path: "my-teaching/:group/marks",
