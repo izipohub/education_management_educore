@@ -5,6 +5,7 @@ from frappe.tests import IntegrationTestCase
 from frappe.utils import add_days, nowdate
 
 from educore.academics import graduation
+from educore.api.v1 import documents
 from educore.api.v1 import graduation as api
 
 #: a diploma student who has passed every course on the (demo) curriculum: 48 credits
@@ -98,3 +99,25 @@ class TestGraduation(IntegrationTestCase):
 	def test_students_have_no_graduation_list(self):
 		frappe.set_user(FINISHER)
 		self.assertRaises(frappe.PermissionError, api.candidates)
+
+	def _pdf(self, method, **kwargs):
+		frappe.local.response = frappe._dict()
+		method(**kwargs)
+		return frappe.local.response
+
+	def test_the_registry_prints_the_certificate_once_completed(self):
+		frappe.set_user(REGISTRAR)
+		self.assertRaises(frappe.ValidationError, self._pdf, documents.award_certificate, student=self.student)
+		api.confirm([self.student], SENATE)
+		response = self._pdf(documents.award_certificate, student=self.student)
+		self.assertTrue(response.filecontent.startswith(b"%PDF"))
+		listed = self._pdf(documents.ceremony_list, reference=SENATE)
+		self.assertTrue(listed.filecontent.startswith(b"%PDF"))
+
+	def test_students_and_the_examinations_office_do_not_print_certificates(self):
+		frappe.set_user(REGISTRAR)
+		api.confirm([self.student], SENATE)
+		for user in (FINISHER, EXAMS):
+			frappe.set_user(user)
+			self.assertRaises(frappe.PermissionError, self._pdf, documents.award_certificate, student=self.student)
+			self.assertRaises(frappe.PermissionError, self._pdf, documents.ceremony_list)

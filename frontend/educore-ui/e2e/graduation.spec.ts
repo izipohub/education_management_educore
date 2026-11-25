@@ -10,6 +10,7 @@ test("the registrar sees each student's progress towards completing their progra
   await expect(row).toContainText("64 of 360");
   await expect(row).toContainText("Corporate Finance");
   await expect(row).toContainText("Not yet");
+  await expect(page.getByRole("link", { name: /^Graduation list/ })).toHaveAttribute("href", /ceremony_list\?year=/);
   await page.screenshot({ path: "e2e/results/graduation.png", fullPage: true });
   await page.getByRole("tab", { name: /^Completed/ }).click();
   await expect(page.getByText("No students here")).toBeVisible();
@@ -20,6 +21,7 @@ test("the examinations office reads the list; students have no graduation screen
   await page.getByRole("link", { name: "Graduation" }).click();
   await expect(tableRow(page, "EDU-STU-2026-00004")).toContainText("On hold");
   await expect(page.getByRole("button", { name: /^Record/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /^Graduation list/ })).toHaveCount(0);
 
   await page.context().clearCookies();
   await signIn(page, "student1.osh");

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search } from "@lucide/vue";
+import { FileText, Search } from "@lucide/vue";
 import Checkbox from "primevue/checkbox";
 import DatePicker from "primevue/datepicker";
 import IconField from "primevue/iconfield";
@@ -10,6 +10,8 @@ import Select from "primevue/select";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useSession } from "@/core/auth/session";
+import { CERTIFICATE_ROLES, graduationListUrl } from "@/core/documents";
 import { formatDate, toIsoDate } from "@/core/format";
 import DataTable, { type Column } from "@/core/ui/DataTable.vue";
 import EcButton from "@/core/ui/EcButton.vue";
@@ -29,6 +31,8 @@ type Tab = "all" | Completion;
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+const session = useSession();
+const thisYear = new Date().getFullYear();
 const tab = ref<Tab>((route.query.tab as Tab) || "all");
 const programme = ref<string | null>((route.query.programme as string) || null);
 const campus = ref<string | null>((route.query.campus as string) || null);
@@ -115,6 +119,9 @@ async function confirm() {
   <section class="list-page">
     <PageHeader title="Graduation" subtitle="Progress towards each programme's requirements, from published results">
       <template #actions>
+        <a v-if="session.hasRole(...CERTIFICATE_ROLES)" class="pdf" :href="graduationListUrl(thisYear)" target="_blank" rel="noopener">
+          <FileText :size="16" aria-hidden="true" /> Graduation list {{ thisYear }}
+        </a>
         <EcButton v-if="page?.can_confirm && ready.length" :label="`Record ${ready.length} completions`" variant="primary" @click="openConfirm" />
       </template>
       <EcTabs v-model="tab" :tabs="tabs" label="Status" class="tabs" />
@@ -185,6 +192,16 @@ async function confirm() {
 .list-page {
   display: grid;
   gap: 1rem;
+}
+
+.pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ec-accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .tabs {

@@ -3,12 +3,15 @@ import { semesterLabel } from "@/modules/curriculum/api";
 import { FileText } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { academicRecordUrl, proofOfRegistrationUrl } from "@/core/documents";
+import { useSession } from "@/core/auth/session";
+import { CERTIFICATE_ROLES, academicRecordUrl, awardCertificateUrl, proofOfRegistrationUrl } from "@/core/documents";
 import { formatDate, formatMoney } from "@/core/format";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
 import { type StudentRecord, getStudent } from "./api";
+
+const session = useSession();
 
 /** One student's record: each year's registration, fees, documents; who they are and who to reach beside it */
 const props = defineProps<{ name: string }>();
@@ -53,6 +56,9 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
     <template v-if="record" #actions>
       <a class="pdf" :href="academicRecordUrl(record.name)" target="_blank" rel="noopener">
         <FileText :size="16" aria-hidden="true" /> Academic record
+      </a>
+      <a v-if="record.completion && session.hasRole(...CERTIFICATE_ROLES)" class="pdf" :href="awardCertificateUrl(record.name)" target="_blank" rel="noopener">
+        <FileText :size="16" aria-hidden="true" /> Award certificate
       </a>
       <a v-if="registered" class="pdf" :href="proofOfRegistrationUrl(registered.name)" target="_blank" rel="noopener">
         <FileText :size="16" aria-hidden="true" /> Proof of registration {{ registered.academic_year }}

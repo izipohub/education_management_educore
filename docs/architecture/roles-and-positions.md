@@ -75,6 +75,7 @@ what each person sees.
 | Results; academic record (PDF, interim until completion) | Student (own, once published) | Registry Officer, Registrar and the others who read Students download any student's record |
 | Graduation: progress towards each programme's requirements (required courses passed, credits) | Examinations Officer, Faculty Officer, Dean (own campus or faculty) prepare the list for the Senate | Registry Officer |
 | Graduation: record the completions the Senate approved (the academic record then reads final) | Registrar | |
+| Award certificates and the graduation list (PDF; the original certificate is handed over once) | Registrar, Registry Officer | |
 | Curriculum (courses by year and semester) | Faculty Officer, Head of Department, Dean (own faculty) | Registrar (publishes it), Timetable Officer, Examinations Officer, Quality Assurance Officer |
 | Admission setup (rules, pathways, documents, entry requirements, points) | Registrar | |
 | Registration setup (periods' dates, credit limit, faculty approval) | Registrar | |

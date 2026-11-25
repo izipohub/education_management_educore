@@ -1,4 +1,5 @@
-"""Documents a student or applicant takes away as PDF: the offer letter and the proof of registration.
+"""Documents as PDF: the offer letter, the proof of registration, the academic record, the award certificate and
+the graduation ceremony list.
 
 Each is open to the person it is about (the applicant's login, the student's login) and to staff who may read
 the record (campus and faculty User Permissions apply). The letterhead is the university's name in its brand
@@ -7,7 +8,7 @@ colour (EduCore Branding); both carry the record's number so the university can 
 
 import frappe
 from frappe import _
-from frappe.utils import flt, formatdate, fmt_money, nowdate
+from frappe.utils import flt, formatdate, fmt_money, getdate, nowdate
 from frappe.utils.pdf import get_pdf
 
 from educore.registration import rules as registration_rules
@@ -184,12 +185,12 @@ def _page(office: str, body: str) -> str:
 	)
 
 
-def _send(filename: str, html: str):
+def _send(filename: str, html: str, orientation: str = "Portrait", margin: str = "14mm", shrink: bool = True):
 	frappe.local.response.filename = filename
 	frappe.local.response.filecontent = get_pdf(
 		html,
-		{"margin-top": "14mm", "margin-bottom": "14mm", "margin-left": "16mm", "margin-right": "16mm", "page-size": "A4"},
-		smart_shrinking=True,
+		{"margin-top": margin, "margin-bottom": margin, "margin-left": "16mm", "margin-right": "16mm", "page-size": "A4", "orientation": orientation},
+		smart_shrinking=shrink,
 	)
 	frappe.local.response.type = "pdf"
 
@@ -230,12 +231,15 @@ def _qr(url: str) -> str:
 def verify(ref: str, code: str):
 	"""What a scanned proof of registration leads to: whether the registration is genuine and current"""
 	if ref and code == _code(ref) and frappe.db.exists("Student", ref):
-		student = frappe.db.get_value("Student", ref, ["student_name", "educore_completed_on"], as_dict=True)
+		student = frappe.db.get_value("Student", ref, ["student_name", "educore_completed_on", "educore_completed_programme"], as_dict=True)
+		completed = (
+			_(", who completed the {0} on {1}").format(_e(student.educore_completed_programme), formatdate(student.educore_completed_on, "dd MMMM yyyy"))
+			if student.educore_completed_on
+			else ""
+		)
 		frappe.respond_as_web_page(
 			_("Academic record confirmed"),
-			_("{0} ({1}) is a student of record of the university{2}.").format(
-				_e(student.student_name), _e(ref), _(", who completed their programme") if student.educore_completed_on else ""
-			),
+			_("{0} ({1}) is a student of record of the university{2}.").format(_e(student.student_name), _e(ref), completed),
 			indicator_color="green",
 		)
 		return
@@ -527,3 +531,129 @@ def academic_record(student: str):
 		"</tr></table>"
 	)
 	_send(f"Academic record {doc.name}.pdf", _page("Office of the Registrar", body))
+
+
+# --- completing a programme -----------------------------------------------------------------------------------
+
+#: who prints award certificates (the original is handed over once, by the registry) and ceremony lists
+CERTIFICATE_ROLES = ("Registrar", "Registry Officer", "System Manager")
+
+CERTIFICATE_STYLE = """
+<style>
+  body { font-family: "DejaVu Serif", serif; color: #1f2430; margin: 0; }
+  .frame { border: 3px solid %(colour)s; padding: 5px; }
+  .inner { border: 1px solid %(accent)s; padding: 9mm 18mm 6mm; text-align: center; height: 155mm; }
+  .logo img { height: 22mm !important; width: auto; }
+  .logo .brandname { display: none; }
+  .uni { font-size: 24pt; letter-spacing: 3px; color: %(colour)s; margin: 4mm 0 9mm; text-transform: uppercase; }
+  .lead { font-size: 12pt; font-style: italic; color: #4b4f5a; margin: 0 0 4mm; }
+  .name { font-size: 28pt; font-weight: bold; margin: 0 0 6mm; }
+  .qual { font-size: 20pt; font-weight: bold; color: %(colour)s; margin: 3mm 0 2mm; }
+  .nqf { font-size: 10.5pt; color: #4b4f5a; margin: 0 0 7mm; font-family: "DejaVu Sans", sans-serif; }
+  .sign { width: 100%%; border-collapse: collapse; margin-top: 20mm; }
+  .sign td { width: 33%%; vertical-align: bottom; text-align: center; font-family: "DejaVu Sans", sans-serif; font-size: 9pt; }
+  .sign .line { border-top: 1px solid #1f2430; width: 75%%; margin: 0 auto; padding-top: 4px; }
+  .foot { width: 100%%; border-collapse: collapse; margin-top: 10mm; font-family: "DejaVu Sans", sans-serif; font-size: 7.5pt; color: #6b6f7a; text-align: left; }
+  .foot td { vertical-align: middle; }
+  .foot img { width: 62px; height: 62px; }
+  .foot b { color: #1f2430; }
+</style>
+"""
+
+
+def _require_certificate_role():
+	if not set(frappe.get_roles()) & set(CERTIFICATE_ROLES):
+		frappe.throw(_("Certificates are printed by the Office of the Registrar"), frappe.PermissionError)
+
+
+@frappe.whitelist(methods=["GET"])
+def award_certificate(student: str):
+	"""The award certificate for a completed programme, as the Senate approved it; printed by the registry"""
+	_require_certificate_role()
+	doc = frappe.get_doc("Student", student)
+	doc.check_permission("read")
+	if not doc.get("educore_completed_on"):
+		frappe.throw(_("{0} has not completed a programme").format(doc.student_name))
+	program = doc.educore_completed_programme
+	nqf, qualification = frappe.db.get_value("Program", program, ["educore_nqf_level", "educore_qualification_type"]) or (None, None)
+	brand = _brand()
+	completed = formatdate(doc.educore_completed_on, "dd MMMM yyyy")
+	number = f"{doc.name}/{getdate(doc.educore_completed_on).year}"
+	body = (
+		"<div class='frame'><div class='inner'>"
+		f"<div class='logo'>{_logo_html(brand)}</div>"
+		f"<div class='uni'>{_e(brand['name'])}</div>"
+		"<p class='lead'>This is to certify that</p>"
+		f"<div class='name'>{_e(doc.student_name)}</div>"
+		"<p class='lead'>having fulfilled the requirements prescribed by the university, was awarded the</p>"
+		f"<div class='qual'>{_e(program)}</div>"
+		f"<div class='nqf'>{_e(qualification) + ' · ' if qualification else ''}{'NQF level ' + _e(nqf) if nqf else ''}</div>"
+		f"<p class='lead'>on {_e(completed)}{', by resolution of the ' + _e(doc.educore_completion_reference) if doc.get('educore_completion_reference') else ''}.</p>"
+		"<table class='sign'><tr>"
+		"<td><div class='line'>Vice-Chancellor</div></td>"
+		"<td></td>"
+		"<td><div class='line'>Registrar</div></td>"
+		"</tr></table>"
+		"<table class='foot'><tr>"
+		f"<td style='width:70px'><img src='{_qr(_verify_url(doc.name))}' alt=''></td>"
+		f"<td>Certificate <b>{_e(number)}</b> · student number <b>{_e(doc.name)}</b> · code <b>{_code(doc.name)}</b><br>"
+		"Scan the code, or quote the student number and code to the Office of the Registrar, to confirm this award.</td>"
+		"</tr></table>"
+		"</div></div>"
+	)
+	html = (
+		"<html><head><meta charset='utf-8'>"
+		+ CERTIFICATE_STYLE % {"colour": _e(brand["colour"]), "accent": _e(brand["accent"])}
+		+ f"</head><body>{body}</body></html>"
+	)
+	_send(f"Certificate {doc.name}.pdf", html, orientation="Landscape", margin="10mm", shrink=False)
+
+
+@frappe.whitelist(methods=["GET"])
+def ceremony_list(reference: str | None = None, year: str | None = None):
+	"""The graduation ceremony list: completed students by faculty and qualification, for one Senate meeting or a
+	year's completions"""
+	_require_certificate_role()
+	filters = {"educore_completed_on": ("is", "set")}
+	if reference:
+		filters["educore_completion_reference"] = reference
+	if year:
+		filters["educore_completed_on"] = ("between", (f"{year}-01-01", f"{year}-12-31"))
+	students = frappe.get_list(
+		"Student",
+		filters=filters,
+		fields=["name", "student_name", "educore_completed_programme as program", "educore_completed_on as completed_on", "educore_completion_reference as reference"],
+		order_by="student_name asc",
+		limit=0,
+	)
+	groups: dict[str, dict[str, list]] = {}
+	for s in students:
+		department, nqf = frappe.db.get_value("Program", s.program, ["department", "educore_nqf_level"]) or (None, None)
+		faculty = (department or _("Other")).rsplit(" - ", 1)[0]
+		groups.setdefault(faculty, {}).setdefault(s.program, []).append(frappe._dict(s, nqf=nqf))
+	sections = ""
+	for faculty in sorted(groups):
+		sections += f"<div class='section' style='font-size:10pt;color:#1f2430'>{_e(faculty)}</div>"
+		for program in sorted(groups[faculty], key=lambda p: (-(flt(groups[faculty][p][0]["nqf"])), p)):
+			rows = groups[faculty][program]
+			lines = "".join(
+				f"<tr><td class='num'>{i}</td><td>{_e(r.student_name)}</td><td>{_e(r.name)}</td><td>{formatdate(r.completed_on, 'dd-MM-yyyy')}</td></tr>"
+				for i, r in enumerate(rows, 1)
+			)
+			sections += (
+				f"<table class='list'><thead><tr><th colspan='4'>{_e(program)} ({len(rows)})</th></tr>"
+				"<tr><th class='num' style='width:28px'>#</th><th>Name</th><th>Student number</th><th>Completed</th></tr></thead>"
+				f"<tbody>{lines}</tbody></table>"
+			)
+	if not students:
+		sections = "<p>No completions recorded for this selection.</p>"
+	scope = reference or (_("Completions in {0}").format(year) if year else _("All completions"))
+	body = (
+		"<table class='title-row'><tr>"
+		"<td><h1>GRADUATION LIST</h1></td>"
+		f"<td class='ref'>{_e(scope)}<br>Graduates <b>{len(students)}</b><br>Date printed <b>{formatdate(nowdate(), 'dd MMMM yyyy')}</b></td>"
+		"</tr></table>"
+		+ sections
+		+ "<p class='foot'>Students whose completion the Senate approved, as recorded by the Office of the Registrar.</p>"
+	)
+	_send("Graduation list.pdf", _page("Office of the Registrar", body))
