@@ -11,6 +11,7 @@ import { formatDate, formatMoney } from "@/core/format";
 import StatusTag from "@/core/ui/StatusTag.vue";
 import { myResults } from "@/modules/examinations/api";
 import { type StudentOverview, getOverview } from "./api";
+import StudiesRequestCard from "./StudiesRequestCard.vue";
 
 const data = ref<StudentOverview | null>(null);
 const error = ref("");
@@ -144,6 +145,8 @@ const feeStatus = computed(() => {
           </Column>
         </DataTable>
       </section>
+
+      <StudiesRequestCard />
     </template>
   </section>
 </template>

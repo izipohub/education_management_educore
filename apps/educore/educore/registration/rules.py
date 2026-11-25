@@ -230,6 +230,12 @@ def blockers(student: str, offering: str, period) -> list[str]:
 	elif state == "closed":
 		found.append(_("Registration for {0} has closed").format(period.academic_year))
 
+	enabled, interrupted_until = frappe.db.get_value("Student", student, ["enabled", "educore_interrupted_until"])
+	if not enabled:
+		found.append(_("Your studies are cancelled; apply again to return"))
+	elif interrupted_until and str(period.academic_year) < str(interrupted_until):
+		found.append(_("Your studies are interrupted; you register again for {0}").format(interrupted_until))
+
 	standing, note = frappe.db.get_value("Student", student, ["educore_academic_standing", "educore_standing_note"])
 	if standing in BLOCKING_STANDING:
 		found.append(_("Academic standing: {0}{1}").format(standing, f". {note}" if note else ""))

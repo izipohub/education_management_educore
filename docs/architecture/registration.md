@@ -61,8 +61,13 @@ students and `/registrations` for faculty officers).
   with a reason. The registration rules hold for the courses after the change (required courses stay, prerequisites,
   credit limit). Approving updates the registration's courses and Course Enrollments; the class lists then show as
   out of date on Teaching. The year's fees do not depend on the courses, so no invoice changes.
+- **Interrupting or cancelling studies** (educore.api.v1.studies_requests): the student asks from My studies, with
+  the last day attending, a reason and, to interrupt, the year they return in; the Registry (own campus) approves or
+  declines with a reason. Either way the student comes off this year's class lists. Interrupted: registration is
+  blocked until the return year (the Registry can lift it for an early return; approving the return year's
+  registration clears it). Cancelled: the student is no longer active, and returning means applying again. What is
+  owed or refunded is Finance's to decide.
 
 ## Later
 
-- Cancelling or interrupting studies: the student asks, the Registry decides; fees and refunds by Finance.
 

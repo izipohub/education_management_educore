@@ -47,6 +47,7 @@ export interface StudentRecord {
   standing: string | null;
   standing_note: string | null;
   /** the programme completed, as the Senate approved it */
+  studies: { left_on: string | null; interrupted_until: string | null; note: string | null };
   completion: { on: string; programme: string | null; reference: string | null } | null;
   personal: { email: string | null; mobile: string | null; date_of_birth: string | null; gender: string | null; nationality: string | null; address: string | null; city: string | null };
   particulars: Partial<Personal>;

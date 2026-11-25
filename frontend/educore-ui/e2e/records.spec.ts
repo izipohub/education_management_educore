@@ -50,3 +50,15 @@ test("admissions downloads the offer letter as a PDF", async ({ page }) => {
   const pdf = await page.request.get(href!);
   expect(pdf.headers()["content-type"]).toContain("application/pdf");
 });
+
+test("the registry decides requests to interrupt or cancel studies; the faculty does not", async ({ page }) => {
+  await signIn(page, "registry-officer.osh");
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Students" }).click();
+  await page.getByRole("tab", { name: /^Requests/ }).click();
+  await expect(page.getByText("No requests here")).toBeVisible();
+
+  await page.context().clearCookies();
+  await signIn(page, "faculty-officer.fst.osh");
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Students" }).click();
+  await expect(page.getByRole("tab", { name: /^Requests/ })).toHaveCount(0);
+});

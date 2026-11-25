@@ -1,0 +1,171 @@
+{
+ "creation": "2026-11-25 12:00:00.000000",
+ "modified": "2026-11-25 12:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Academics",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "actions": [],
+ "links": [],
+ "states": [],
+ "name": "Studies Request",
+ "autoname": "format:STR-{YYYY}-{#####}",
+ "track_changes": 1,
+ "title_field": "student_name",
+ "description": "A student's request to interrupt (pause, returning in a later year) or cancel their studies; decided by the Registry (educore.api.v1.studies_requests).",
+ "fields": [
+  {
+   "fieldname": "request_type",
+   "fieldtype": "Select",
+   "label": "Request",
+   "options": "Interruption\nCancellation",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "read_only": 1,
+   "fetch_from": "student.student_name"
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Programme",
+   "options": "Program",
+   "read_only": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "read_only": 1
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_day",
+   "fieldtype": "Date",
+   "label": "Last Day Attending",
+   "reqd": 1
+  },
+  {
+   "fieldname": "return_year",
+   "fieldtype": "Link",
+   "label": "Returns In",
+   "options": "Academic Year",
+   "depends_on": "eval:doc.request_type=='Interruption'"
+  },
+  {
+   "fieldname": "column_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Submitted\nApproved\nDeclined",
+   "default": "Submitted",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reviewed_by",
+   "fieldtype": "Link",
+   "label": "Decided By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reviewed_on",
+   "fieldtype": "Datetime",
+   "label": "Decided On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_reason",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "review_note",
+   "fieldtype": "Small Text",
+   "label": "Registry Note"
+  }
+ ],
+ "field_order": [
+  "request_type",
+  "student",
+  "student_name",
+  "program",
+  "campus",
+  "academic_year",
+  "last_day",
+  "return_year",
+  "column_status",
+  "status",
+  "submitted_on",
+  "reviewed_by",
+  "reviewed_on",
+  "section_reason",
+  "reason",
+  "review_note"
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Registry Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  }
+ ]
+}

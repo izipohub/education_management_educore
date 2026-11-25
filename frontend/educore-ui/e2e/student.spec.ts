@@ -35,3 +35,18 @@ test("staff have no student page", async ({ page }) => {
   await page.goto("/my-studies");
   await expect(page.getByRole("heading", { name: /^Good (morning|afternoon|evening)/ })).toBeVisible();
 });
+
+test("a student asks the Registry to interrupt their studies", async ({ page }) => {
+  await signIn(page, "student1.whk");
+  await expect(page.getByRole("heading", { name: "Interrupting or cancelling studies" })).toBeVisible();
+  await page.getByRole("button", { name: "Ask the Registry" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("button", { name: "Send" })).toBeDisabled();
+  await dialog.getByLabel("Reason").fill("Family responsibilities");
+  await expect(dialog.getByRole("button", { name: "Send" })).toBeEnabled();
+  await dialog.getByRole("group", { name: "Request" }).getByRole("button", { name: "Cancel studies" }).click();
+  await expect(dialog.getByLabel("Returning in")).toHaveCount(0);
+  await page.screenshot({ path: "e2e/results/studies-request.png", fullPage: true });
+  // not sent: the demo student stays as she is
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+});

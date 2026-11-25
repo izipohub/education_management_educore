@@ -285,6 +285,10 @@ def _approve(doc):
 	with _as_system():
 		doc.submit()
 	doc.add_comment("Workflow", _("Registration approved"))
+	# back from interrupted studies (educore.api.v1.studies_requests)
+	back_in = frappe.db.get_value("Student", doc.student, "educore_interrupted_until")
+	if back_in and str(doc.academic_year) >= str(back_in):
+		frappe.db.set_value("Student", doc.student, {"educore_interrupted_until": None, "educore_left_reason": None, "educore_left_on": None})
 
 
 @frappe.whitelist(methods=["POST"])

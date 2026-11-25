@@ -152,6 +152,11 @@ def student(name: str) -> dict:
 		"login": doc.user,
 		"standing": doc.get("educore_academic_standing"),
 		"standing_note": doc.get("educore_standing_note"),
+		"studies": {
+			"left_on": str(doc.educore_left_on) if doc.get("educore_left_on") else None,
+			"interrupted_until": doc.get("educore_interrupted_until"),
+			"note": doc.get("educore_left_reason"),
+		},
 		"completion": {
 			"on": str(doc.educore_completed_on),
 			"programme": doc.get("educore_completed_programme"),

@@ -2,9 +2,12 @@
 import { semesterLabel } from "@/modules/curriculum/api";
 import { FileText } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
+import { useToast } from "primevue/usetoast";
 import { useRoute } from "vue-router";
+import EcButton from "@/core/ui/EcButton.vue";
 import { useSession } from "@/core/auth/session";
 import { CERTIFICATE_ROLES, academicRecordUrl, awardCertificateUrl, proofOfRegistrationUrl } from "@/core/documents";
+import { DECIDE_ROLES, resumeStudies } from "./studiesRequests";
 import { formatDate, formatMoney } from "@/core/format";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
@@ -33,6 +36,23 @@ watch(
   { immediate: true },
 );
 
+// an interrupted student returning before the year they gave (the Registry)
+const toast = useToast();
+const resuming = ref(false);
+async function resume() {
+  if (!record.value) return;
+  resuming.value = true;
+  try {
+    await resumeStudies(record.value.name);
+    record.value = await getStudent(props.name);
+    toast.add({ severity: "success", summary: "Interruption lifted", life: 2500 });
+  } catch (e) {
+    toast.add({ severity: "error", summary: "Not changed", detail: e instanceof Error ? e.message : String(e), life: 8000 });
+  } finally {
+    resuming.value = false;
+  }
+}
+
 const back = computed(() => ({ to: { name: "students", query: route.query }, label: "Students" }));
 const p = computed(() => record.value?.particulars ?? {});
 const current = computed(() => record.value?.enrolments[0] ?? null);
@@ -50,6 +70,7 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
     <template #tags>
       <StatusTag v-if="record" kind="standing" :value="record.standing" />
       <StatusTag v-if="record?.completion" kind="completion" value="Completed" />
+      <span v-if="record?.studies.interrupted_until" class="left">Interrupted</span>
       <span v-if="record && !record.enabled" class="left">Left</span>
     </template>
 
@@ -175,6 +196,15 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
 
       <EcPanel v-if="p.educore_disability" title="Support">
         <p class="none">{{ p.educore_support_needs || "Has a disability or impairment" }}</p>
+      </EcPanel>
+
+      <EcPanel v-if="record.studies.left_on" :title="record.studies.interrupted_until ? 'Studies interrupted' : 'Studies ended'">
+        <p class="none">
+          Last day attending {{ formatDate(record.studies.left_on) }}<template v-if="record.studies.interrupted_until"> · registers again for {{ record.studies.interrupted_until }}</template><template v-if="record.studies.note"> · {{ record.studies.note }}</template>
+        </p>
+        <template v-if="record.studies.interrupted_until && session.hasRole(...DECIDE_ROLES)" #footer>
+          <EcButton label="Returning early" size="sm" :loading="resuming" @click="resume" />
+        </template>
       </EcPanel>
 
       <EcPanel v-if="record.completion" title="Programme completed">

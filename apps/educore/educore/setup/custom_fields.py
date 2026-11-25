@@ -877,6 +877,15 @@ CUSTOM_FIELDS["Student"].extend(
 		{"fieldname": "educore_completion_reference", "label": "Approved By", "fieldtype": "Data", "read_only": 1, "insert_after": "educore_completed_programme", "description": "The Senate or board meeting that approved the award."},
 	]
 )
+# interrupting or cancelling studies: decided by the Registry (educore.api.v1.studies_requests)
+CUSTOM_FIELDS["Student"].extend(
+	[
+		{"fieldname": "educore_studies_section", "label": "Interrupted or Cancelled Studies", "fieldtype": "Section Break", "insert_after": "educore_completion_reference", "collapsible": 1},
+		{"fieldname": "educore_left_on", "label": "Last Day Attending", "fieldtype": "Date", "read_only": 1, "insert_after": "educore_studies_section"},
+		{"fieldname": "educore_interrupted_until", "label": "Returns In", "fieldtype": "Link", "options": "Academic Year", "read_only": 1, "insert_after": "educore_left_on", "description": "Interrupted studies: registers again from this academic year."},
+		{"fieldname": "educore_left_reason", "label": "Note", "fieldtype": "Data", "read_only": 1, "insert_after": "educore_interrupted_until"},
+	]
+)
 
 
 def sync():
