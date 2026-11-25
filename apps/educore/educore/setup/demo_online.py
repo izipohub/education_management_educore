@@ -87,7 +87,7 @@ APPLICATIONS = {
 		"Shikongo",
 		{
 			"pathway": "Postgraduate",
-			"personal": {"date_of_birth": "1994-03-15", "gender": "Female", "nationality": "Namibia", "city": "Windhoek", **_particulars("Ms", "94031500812", "+264814567802", "Oshiwambo", "Khomas", "Spouse or partner", "Petrus Shikongo", "Employer", "Namibia Statistics Agency")},
+			"personal": {"date_of_birth": "1994-03-15", "gender": "Female", "nationality": "Namibia", "city": "Windhoek", **_particulars("Ms", "94031500812", "+264814567802", "Oshiwambo", "Khomas", "Spouse or partner", "Petrus Shikongo", "Employer", "Demo Mining Ltd")},
 			"prior_qualifications": [
 				{"qualification": "Bachelor of Accounting", "institution": "EduCore Demo University", "country": "Namibia",
 				 "nqf_level": 7, "year_completed": 2016, "average": 68},
@@ -102,7 +102,7 @@ APPLICATIONS = {
 			"choices": ["MBA-WHK-PT"],
 		},
 		("National ID or Passport", "Birth Certificate", "Degree or Diploma Certificate", "Academic Record",
-		 "Curriculum Vitae", "Motivation Letter"),
+		 "Curriculum Vitae", "Motivation Letter", "Employer sponsorship letter"),
 		True,
 	),
 	# mature age entry, still a draft: school results short of the points, ten years in retail

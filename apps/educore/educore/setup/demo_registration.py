@@ -126,7 +126,13 @@ def create():
 			try:
 				state = registration.status()
 				year = state["year_of_study"]
-				courses = [c["course"] for c in state["courses"] if c["year"] == year]
+				# the year's courses still open to the student (not passed already, prerequisites passed), and the
+				# courses failed earlier, which must be repeated
+				courses = [
+					c["course"]
+					for c in state["courses"]
+					if (c["year"] == year and c.get("state") not in ("passed", "blocked")) or c.get("state") == "repeat"
+				]
 				registration.save(courses)
 				registration.submit()
 			finally:

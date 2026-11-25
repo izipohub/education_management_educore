@@ -65,7 +65,11 @@ def _prerequisites():
 
 
 def create() -> int:
+	from educore.setup.demo_registration import set_curriculum
+
 	results.ensure_defaults()
+	# each course's year of study first: only first-year courses get 2026 results (a fresh site has no curriculum yet)
+	set_curriculum()
 	_prerequisites()
 	made, published = 0, []
 	when = get_datetime(add_days(nowdate(), -6))
