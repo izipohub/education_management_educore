@@ -9,7 +9,7 @@ from frappe import _
 
 from educore.admissions.fees import WAIVE_ROLES
 
-STATUSES = ("Unpaid", "Paid", "Waived")
+STATUSES = ("Unpaid", "Paid", "Waived", "Not required")
 
 
 @frappe.whitelist(methods=["GET"])

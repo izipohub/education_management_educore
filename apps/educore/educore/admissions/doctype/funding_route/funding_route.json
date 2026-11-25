@@ -1,0 +1,137 @@
+{
+ "creation": "2026-11-25 21:00:00.000000",
+ "modified": "2026-11-25 21:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Admissions",
+ "index_web_pages_for_search": 0,
+ "actions": [],
+ "links": [],
+ "states": [],
+ "name": "Funding Route",
+ "autoname": "field:route_name",
+ "title_field": "route_name",
+ "sort_field": "sort_order",
+ "sort_order": "ASC",
+ "track_changes": 1,
+ "description": "How an applicant's studies are paid for (self, family, employer, NSFAF, NTA, a bursary): the documents asked and whether the application fee is paid (educore.admissions.funding).",
+ "fields": [
+  {
+   "fieldname": "route_name",
+   "fieldtype": "Data",
+   "label": "Funding Route",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "kind",
+   "fieldtype": "Select",
+   "label": "Kind",
+   "options": "Self\nFamily\nEmployer\nGovernment fund\nBursary or scholarship",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "sponsor",
+   "fieldtype": "Link",
+   "label": "Sponsor",
+   "options": "Sponsor",
+   "description": "The sponsor that pays for students on this route: Finance sees who named it (educore.finance.sponsors)."
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Shown to Applicants"
+  },
+  {
+   "fieldname": "column_rules",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pays_application_fee",
+   "fieldtype": "Check",
+   "label": "Pays the Application Fee",
+   "default": "1",
+   "description": "Off: applicants on this route pay no application fee (set by the Bursar)."
+  },
+  {
+   "fieldname": "ask_who",
+   "fieldtype": "Check",
+   "label": "Ask Who Pays",
+   "default": "1",
+   "description": "Ask the name, email and phone of the person or institution paying."
+  },
+  {
+   "fieldname": "sort_order",
+   "fieldtype": "Int",
+   "label": "Order",
+   "default": "0"
+  },
+  {
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Offered",
+   "default": "1",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "documents_section",
+   "fieldtype": "Section Break",
+   "label": "Documents"
+  },
+  {
+   "fieldname": "documents",
+   "fieldtype": "Table",
+   "label": "Documents",
+   "options": "Pathway Document",
+   "description": "Asked of applicants on this route, besides the pathway's."
+  }
+ ],
+ "field_order": [
+  "route_name",
+  "kind",
+  "sponsor",
+  "description",
+  "column_rules",
+  "pays_application_fee",
+  "ask_who",
+  "sort_order",
+  "active",
+  "documents_section",
+  "documents"
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Bursar",
+   "read": 1,
+   "write": 1,
+   "report": 1
+  },
+  {
+   "role": "University Staff",
+   "read": 1
+  }
+ ]
+}

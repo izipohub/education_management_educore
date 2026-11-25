@@ -83,7 +83,11 @@ Create account (email verified)
 - An application is **complete** when every required document is verified and the fee is settled.
 
 ### 3.4 Application fee
-- Amount by intake and applicant type (Namibian / international), non-refundable; late fee in the late window.
+- Amount by nationality (home, regional: the countries the university lists, SADC by default; international) and
+  how the application came in (online, paper), non-refundable; late fee in the late window.
+- **Funding routes** (Admission setup): who pays (self, parent or guardian, employer, NSFAF, NTA, a bursary), each
+  with its documents; routes the Bursar marks pay no application fee (NSFAF and NTA by default), the fee then
+  "Not required" (`educore.admissions.funding`). A route may name its Sponsor: Finance sees the students who chose it.
 - **EFT**: each application gets a unique reference; ERPNext's bank statement import matches it and marks the fee
   paid (no proof-of-payment upload). **Card**: through **DPO** (decided, section 4).
 - **Waivers**: recorded with a reason and approver (e.g. a scheme for marginalised applicants).

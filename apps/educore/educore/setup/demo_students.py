@@ -30,9 +30,9 @@ ENROLLED = [
 #: what each enrolled student wrote on their form: gender, national ID, home language, region, town, next of kin
 #: (relationship, name), who pays (and the sponsor)
 PARTICULARS = {
-	"student1.whk": ("Female", "06041200711", "Oshiwambo", "Omusati", "Outapi", "Mother", "Hileni Amukoto", "Sponsor or bursary", "NSFAF"),
+	"student1.whk": ("Female", "06041200711", "Oshiwambo", "Omusati", "Outapi", "Mother", "Hileni Amukoto", "NSFAF", "NSFAF"),
 	"student2.whk": ("Male", "05090300422", "Damara/Nama", "Erongo", "Omaruru", "Father", "Johannes Garoeb", "Parent or guardian", None),
-	"student1.osh": ("Female", "05112500198", "Oshiwambo", "Oshana", "Ondangwa", "Mother", "Ndeshi Shilongo", "Sponsor or bursary", "NSFAF"),
+	"student1.osh": ("Female", "05112500198", "Oshiwambo", "Oshana", "Ondangwa", "Mother", "Ndeshi Shilongo", "NSFAF", "NSFAF"),
 	"student2.osh": ("Male", "06020800356", "Oshiwambo", "Ohangwena", "Eenhana", "Guardian", "Selma Iiyambo", "Parent or guardian", None),
 	"student1.kmp": ("Female", "99070100845", "Afrikaans", "Karas", "Keetmanshoop", "Spouse or partner", "Jacobus Beukes", "Employer", "Karas Regional Council"),
 	"student2.kmp": ("Male", "05031700623", "Afrikaans", "Hardap", "Mariental", "Father", "Willem Kooper", "Self", None),
@@ -98,7 +98,7 @@ def _applicant(first, last, offering, year, email=None, approve=False):
 					"academic_term": term(year, "Semester 1"),
 					"application_date": f"{year - 1}-09-15",
 					"student_email_id": email,
-					"nationality": "Namibian",
+					"nationality": "Namibia",
 				}
 			)
 			.insert(ignore_permissions=True)
@@ -185,6 +185,9 @@ def create():
 	from educore.setup.demo_teaching import create_course_groups
 
 	fees = invoice_and_pay()
+	from educore.setup.demo_finance import create_sponsors
+
+	print(f"Sponsors: {create_sponsors()}")
 	groups = create_course_groups()
 	print(f"{groups} course groups created")
 	from educore.setup import demo_results

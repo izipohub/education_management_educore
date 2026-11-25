@@ -191,7 +191,13 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
       </EcPanel>
 
       <EcPanel title="Fees paid by">
-        <p class="none">{{ p.educore_fee_payer ? (p.educore_fee_payer_name || p.educore_fee_payer) : "Not recorded" }}</p>
+        <dl v-if="record.sponsors.length" class="ec-facts stacked">
+          <div v-for="s in record.sponsors" :key="`${s.sponsor_name}-${s.academic_year}`">
+            <dt>{{ s.academic_year }}</dt>
+            <dd>{{ s.sponsor_name }} · {{ s.cover }}<template v-if="s.amount"> · {{ formatMoney(s.amount) }}</template><template v-if="s.sponsor_reference"> · {{ s.sponsor_reference }}</template></dd>
+          </div>
+        </dl>
+        <p v-else class="none">{{ p.educore_fee_payer ? (p.educore_fee_payer_name || p.educore_fee_payer) : "Not recorded" }}</p>
       </EcPanel>
 
       <EcPanel v-if="p.educore_disability" title="Support">

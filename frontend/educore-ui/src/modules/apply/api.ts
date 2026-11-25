@@ -65,6 +65,8 @@ export interface ApplyOptions {
   countries: string[];
   /** each country's calling code, for phone numbers */
   dial_codes: { country: string; code: string }[];
+  /** who pays: the funding routes applicants choose from (educore.admissions.funding) */
+  funding_routes: FundingRouteOption[];
   pathways: Pathway[];
 }
 
@@ -220,7 +222,7 @@ export interface Offer {
 
 export interface Fee {
   amount: number | null;
-  status: "Unpaid" | "Paid" | "Waived";
+  status: "Unpaid" | "Paid" | "Waived" | "Not required";
   paid_on: string | null;
   /** the application number: the EFT reference */
   reference: string;
@@ -272,4 +274,12 @@ export async function uploadDocument(documentType: string, file: File, certified
   } catch (error) {
     throw toApiError(error);
   }
+}
+
+export interface FundingRouteOption {
+  name: string;
+  kind: string;
+  description: string | null;
+  pays_application_fee: boolean;
+  ask_who: boolean;
 }

@@ -21,7 +21,8 @@ from educore.api.v1.teaching_allocation import _courses
 MODERATE_ROLES = ("Head of Department", "Dean", "System Manager")
 EXAM_ROLES = ("Examinations Officer", "System Manager")
 RULES_ROLES = ("Registrar", "System Manager")
-READ_ROLES = (*MODERATE_ROLES, *EXAM_ROLES, "Registrar", "Faculty Officer")
+#: Campus Director, Quality Assurance and Executive Management follow results; they decide nothing here
+READ_ROLES = (*MODERATE_ROLES, *EXAM_ROLES, "Registrar", "Faculty Officer", "Campus Director", "Quality Assurance Officer", "Executive Management")
 RULE_FIELDS = ("ca_weight", "exam_admission_ca", "pass_mark", "supplementary_from", "supplementary_cap", "probation_share", "grading_scale")
 
 
@@ -44,12 +45,20 @@ def _teaches(group: str) -> bool:
 	return bool(mine) and bool(frappe.get_all("Student Group Instructor", filters={"parent": group, "instructor": ("in", list(mine))}, limit=1))
 
 
+def _campus_scope() -> set[str]:
+	from educore.access.scope import campuses
+
+	return campuses()
+
+
 def _in_scope(group: str) -> bool:
 	"""A staff member's scope: the class's course in their department or faculty, and its campus theirs"""
 	course, campus = frappe.db.get_value("Student Group", group, ["course", "campus"]) or (None, None)
 	if course not in _courses():
 		return False
-	return not campus or campus in frappe.get_list("Campus", pluck="name", limit=0)
+	from educore.access.scope import campuses
+
+	return not campus or campus in campuses()
 
 
 def _sheet(group: str, create: bool = False):
@@ -276,7 +285,7 @@ def sheets(academic_year: str | None = None) -> dict:
 			"academic_year": academic_year,
 			"disabled": 0,
 			"course": ("in", list(courses) or [""]),
-			"campus": ("in", frappe.get_list("Campus", pluck="name", limit=0) or [""]),
+			"campus": ("in", list(_campus_scope()) or [""]),
 		},
 		fields=["name", "course", "campus"],
 		order_by="name asc",

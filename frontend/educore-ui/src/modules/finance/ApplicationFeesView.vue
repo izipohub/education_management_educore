@@ -43,7 +43,7 @@ watch(search, () => {
 });
 
 const tabs = computed(() =>
-  (["Unpaid", "Paid", "Waived"] as FeeStatus[]).map((s) => ({ label: s === "Unpaid" ? "Outstanding" : s, value: s, count: page.value?.counts[s] ?? 0 })),
+  (["Unpaid", "Paid", "Waived", "Not required"] as FeeStatus[]).map((s) => ({ label: s === "Unpaid" ? "Outstanding" : s, value: s, count: page.value?.counts[s] ?? 0 })),
 );
 const rows = computed(() => (page.value?.rows ?? []) as unknown as Record<string, unknown>[]);
 const row = (r: Record<string, unknown>) => r as unknown as ApplicationFee;

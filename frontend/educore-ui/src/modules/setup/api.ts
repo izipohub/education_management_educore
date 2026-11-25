@@ -92,6 +92,7 @@ export interface Setup {
   pathways: Pathway[];
   documents: DocumentType[];
   programmes: Programme[];
+  funding_routes: FundingRoute[];
   choices: {
     bank_accounts: BankAccountChoice[];
     income_accounts: string[];
@@ -101,7 +102,24 @@ export interface Setup {
     evidence: string[];
     required_for: string[];
     applies_to: string[];
+    funding_kinds: string[];
+    sponsors: { name: string; sponsor_name: string }[];
   };
+}
+
+/** who pays: a funding route (educore.admissions.funding); whether it pays the application fee is the Bursar's */
+export interface FundingRoute {
+  name: string;
+  route_name: string;
+  kind: string;
+  sponsor: string | null;
+  sponsor_name: string | null;
+  description: string | null;
+  ask_who: 0 | 1;
+  sort_order: number;
+  active: 0 | 1;
+  pays_application_fee: boolean;
+  documents: PathwayDocument[];
 }
 
 const API = "educore.api.v1.admission_setup";
@@ -113,4 +131,5 @@ export const savePathway = (data: Partial<Pathway> & { pathway_name?: string }, 
   post<Setup>(`${API}.save_pathway`, { data, name });
 export const saveDocumentType = (data: Partial<DocumentType> & { document_name?: string }, name?: string) =>
   post<Setup>(`${API}.save_document_type`, { data, name });
+export const saveFundingRoute = (data: Partial<FundingRoute>, name?: string) => post<Setup>(`${API}.save_funding_route`, { data, name });
 export const saveProgramme = (name: string, data: Partial<Programme>) => post<Setup>(`${API}.save_programme`, { name, data });

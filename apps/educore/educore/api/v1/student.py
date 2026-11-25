@@ -110,7 +110,7 @@ def _fee_statement(student: str) -> dict:
 	return {
 		"billed": round(sum(flt(i.grand_total) for i in invoices), 2),
 		"paid": round(sum(flt(p.amount) for p in payments), 2),
-		"owing": round(sum(flt(i.outstanding_amount) for i in invoices), 2),
+		"owing": round(sum(flt(i.outstanding_amount) for i in unpaid), 2),
 		"overdue": round(sum(flt(i.outstanding_amount) for i in unpaid if getdate(i.due_date) < today), 2),
 		"next_due": str(min(getdate(i.due_date) for i in unpaid)) if unpaid else None,
 		"invoices": [

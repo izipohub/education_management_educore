@@ -29,6 +29,8 @@ scheduler_events = {
 	"hourly": [
 		"educore.admissions.fees.match_bank_transactions",
 		"educore.finance.student_payments.match_bank_transactions",
+		# and sponsors' payments, by sponsor number
+		"educore.finance.sponsors.match_bank_transactions",
 		# classes, students and lecturers kept in Moodle, once ICT connects it
 		"educore.learning.moodle.sync_all",
 	],
@@ -41,8 +43,13 @@ before_request = ["educore.access.desk.redirect_from_desk"]
 get_website_user_home_page = "educore.access.desk.website_user_home_page"
 
 doc_events = {
-	# Desk users get the back-office Module Profile
-	"User": {"validate": "educore.access.desk.assign_module_profile"},
+	# Desk users get the back-office Module Profile; lecturers get their Instructor record
+	"User": {
+		"validate": "educore.access.desk.assign_module_profile",
+		"on_update": "educore.academics.lecturers.on_user_update",
+	},
+	"User Permission": {"after_insert": "educore.academics.lecturers.on_user_permission_change"},
+	"Employee": {"on_update": "educore.academics.lecturers.on_employee_update"},
 	# Faculties, schools and departments live in ERPNext's Department tree
 	"Department": {"validate": "educore.institution.department.validate"},
 	# Programmes and courses belong to academic units, with codes, credits and NQF levels

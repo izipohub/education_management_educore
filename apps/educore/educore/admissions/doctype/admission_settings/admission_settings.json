@@ -26,8 +26,11 @@
   "fee_section",
   "fee_namibian",
   "fee_international",
+  "fee_regional",
   "fee_paper_local",
   "fee_paper_international",
+  "fee_paper_regional",
+  "regional_countries",
   "fee_income_account",
   "fee_bank_account",
   "fee_column",
@@ -174,6 +177,12 @@
    "options": "NAD"
   },
   {
+   "fieldname": "fee_regional",
+   "fieldtype": "Currency",
+   "label": "Fee, Regional Applicants (Online)",
+   "description": "Citizens of the regional countries below (e.g. SADC). Empty: the international fee."
+  },
+  {
    "fieldname": "fee_paper_local",
    "fieldtype": "Currency",
    "label": "Paper Fee, Local Applicants",
@@ -189,6 +198,19 @@
    "default": "300"
   },
   {
+   "fieldname": "fee_paper_regional",
+   "fieldtype": "Currency",
+   "label": "Fee, Regional Applicants (Paper Form)",
+   "description": "Empty: the international paper fee."
+  },
+  {
+   "fieldname": "regional_countries",
+   "fieldtype": "Table MultiSelect",
+   "label": "Regional Countries",
+   "options": "Admission Country",
+   "description": "Applicants from these countries pay the regional fee."
+  },
+  {
    "fieldname": "fee_income_account",
    "fieldtype": "Link",
    "label": "Income Account",
@@ -200,7 +222,7 @@
    "fieldtype": "Link",
    "label": "Bank Account",
    "options": "Bank Account",
-   "description": "The university’s ERPNext bank account: applicants pay into it, and deposits are matched from its statement. Its bank, number and branch are shown to applicants."
+   "description": "The university\u2019s ERPNext bank account: applicants pay into it, and deposits are matched from its statement. Its bank, number and branch are shown to applicants."
   },
   {
    "fieldname": "fee_column",

@@ -17,7 +17,10 @@ EDIT_ROLES = ("Bursar", "System Manager")
 #: who reads them
 READ_ROLES = (*EDIT_ROLES, "Finance Officer", "Student Fees Officer")
 
-APPLICATION_FIELDS = ("fee_namibian", "fee_international", "fee_paper_local", "fee_paper_international", "fee_bank_account", "fee_income_account")
+APPLICATION_FIELDS = (
+	"fee_namibian", "fee_international", "fee_regional", "fee_paper_local", "fee_paper_international", "fee_paper_regional",
+	"fee_bank_account", "fee_income_account",
+)
 REGISTRATION_FIELDS = ("max_outstanding", "deposit_type", "deposit_value")
 
 
@@ -38,7 +41,14 @@ def settings() -> dict:
 	periods = [frappe.get_doc("Registration Period", n) for n in frappe.get_all("Registration Period", pluck="name")]
 	periods.sort(key=lambda p: str(p.academic_year), reverse=True)
 	return {
-		"application": {f: admission.get(f) for f in APPLICATION_FIELDS},
+		# a regional fee of 0 is no regional fee: those applicants pay the international one
+		"application": {
+			f: (admission.get(f) or None) if f in ("fee_regional", "fee_paper_regional") else admission.get(f) for f in APPLICATION_FIELDS
+		},
+		# who pays the regional fee, and which funding routes pay no application fee (educore.admissions.funding)
+		"regional_countries": [r.country for r in admission.regional_countries],
+		"funding_routes": frappe.get_all("Funding Route", fields=["name", "pays_application_fee", "active"], order_by="sort_order asc, name asc"),
+		"countries": frappe.get_all("Country", pluck="name", order_by="name asc"),
 		"registration": {f: registration.get(f) for f in REGISTRATION_FIELDS},
 		"late_fees": [
 			{"name": p.name, "academic_year": p.academic_year, "late_until": str(p.late_until) if p.late_until else None, "late_fee": flt(p.late_fee)}
@@ -60,12 +70,34 @@ def save(data: dict | str) -> dict:
 	data = frappe.parse_json(data)
 
 	application = data.get("application") or {}
-	if application:
+	if application or "regional_countries" in data:
 		doc = frappe.get_single("Admission Settings")
 		for field in APPLICATION_FIELDS:
 			if field in application:
+				if field in ("fee_regional", "fee_paper_regional"):
+					value = flt(application[field], 2) if application[field] not in (None, "") else None
+					if value is not None and value < 0:
+						frappe.throw(_("A fee cannot be negative"))
+					doc.set(field, value)
+					continue
 				doc.set(field, admission_setup._clean(field, admission_setup.SETTINGS_FIELDS[field], application[field]))
+		if "regional_countries" in data:
+			doc.regional_countries = []
+			for country in dict.fromkeys(data["regional_countries"] or []):
+				if not frappe.db.exists("Country", country):
+					frappe.throw(_("Unknown country {0}").format(country))
+				doc.append("regional_countries", {"country": country})
 		doc.save(ignore_permissions=True)
+
+	# routes that pay no application fee (NSFAF, NTA): the Bursar's decision
+	if "fee_free_routes" in data:
+		free = set(data["fee_free_routes"] or [])
+		for route in frappe.get_all("Funding Route", pluck="name"):
+			doc = frappe.get_doc("Funding Route", route)
+			pays = 0 if route in free else 1
+			if doc.pays_application_fee != pays:
+				doc.pays_application_fee = pays
+				doc.save(ignore_permissions=True)
 
 	registration = data.get("registration") or {}
 	if registration:

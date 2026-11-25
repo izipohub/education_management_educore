@@ -66,7 +66,9 @@ def _state(student: str) -> dict:
 			"fees": {
 				"year": rules.year_fees(offering, period.academic_year),
 				"outstanding": rules.outstanding(student, period.academic_year),
-				"deposit_required": rules.deposit_required(offering, period.academic_year),
+				"deposit_required": rules.deposit_required(offering, period.academic_year, student),
+				# the sponsors' share of the year's fees (educore.finance.sponsors)
+				"sponsored": _sponsored(student, period.academic_year, rules.year_fees(offering, period.academic_year)),
 				"paid_in_advance": rules.paid_in_advance(student),
 			},
 			"blockers": rules.blockers(student, offering, period),
@@ -318,3 +320,9 @@ def return_registration(name: str, note: str) -> dict:
 
 	notify.send(doc.student, "registration_returned", doc, academic_year=doc.academic_year, note=note.strip())
 	return {"name": doc.name, "status": rules.RETURNED}
+
+
+def _sponsored(student: str, academic_year: str, fees: float) -> float:
+	from educore.finance.sponsors import sponsored_estimate
+
+	return sponsored_estimate(student, academic_year, fees)

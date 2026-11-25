@@ -25,6 +25,10 @@ CURRICULUM_ROLES = (
 	"Timetable Officer",
 	"Examinations Officer",
 	"Quality Assurance Officer",
+	# read only: the registry registers students on it; campus and university leadership oversee it
+	"Registry Officer",
+	"Campus Director",
+	"Executive Management",
 	"System Manager",
 )
 #: who lays it out: the academic side, each in their own faculty (the Registrar reads it, does not change it)

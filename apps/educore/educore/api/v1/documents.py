@@ -657,3 +657,63 @@ def ceremony_list(reference: str | None = None, year: str | None = None):
 		+ "<p class='foot'>Students whose completion the Senate approved, as recorded by the Office of the Registrar.</p>"
 	)
 	_send("Graduation list.pdf", _page("Office of the Registrar", body))
+
+
+# --- sponsor statement ---------------------------------------------------------------------------------------
+
+
+@frappe.whitelist(methods=["GET"])
+def sponsor_statement(sponsor: str, academic_year: str):
+	"""The students a sponsor pays for in a year, with what it was invoiced, has paid and owes: what Finance sends a
+	sponsor to claim the fees (educore.finance.sponsors)"""
+	from educore.admissions.fees import bank_details
+	from educore.api.v1.sponsors import SPONSOR_ROLES
+
+	if not set(frappe.get_roles()) & set(SPONSOR_ROLES):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	doc = frappe.get_doc("Sponsor", sponsor)
+	brand = _brand()
+	date = lambda d: formatdate(d, "dd MMMM yyyy") if d else ""  # noqa: E731
+	money = lambda v: f"N$ {frappe.utils.fmt_money(v, precision=2)}"  # noqa: E731
+
+	rows, invoiced, owing = "", 0.0, 0.0
+	for s in frappe.get_all(
+		"Sponsorship",
+		filters={"sponsor": sponsor, "academic_year": academic_year, "status": "Invoiced"},
+		fields=["student", "student_name", "sponsor_reference", "sponsor_invoice", "amount"],
+		order_by="student_name asc",
+	):
+		program = frappe.db.get_value("Program Enrollment", {"student": s.student, "academic_year": academic_year, "docstatus": 1}, "program")
+		left = flt(frappe.db.get_value("Sales Invoice", s.sponsor_invoice, "outstanding_amount"))
+		invoiced += flt(s.amount)
+		owing += left
+		rows += (
+			f"<tr><td>{_e(s.student)}</td><td>{_e(s.student_name)}</td><td>{_e(program)}</td><td>{_e(s.sponsor_reference)}</td>"
+			f"<td>{_e(s.sponsor_invoice)}</td><td class='num'>{money(s.amount)}</td><td class='num'>{money(flt(s.amount) - left)}</td>"
+			f"<td class='num'>{money(left)}</td></tr>"
+		)
+	bank = bank_details()
+	addressee = "".join(f"<div>{_e(line)}</div>" for line in (doc.contact_person, doc.sponsor_name, *(doc.address or "").splitlines()) if line)
+	body = (
+		"<table class='title-row'><tr>"
+		f"<td><h1>SPONSOR STATEMENT {_e(academic_year)}</h1></td>"
+		f"<td class='ref'>Sponsor number <b>{_e(doc.name)}</b><br>Date issued <b>{date(nowdate())}</b></td>"
+		"</tr></table>"
+		f"<div style='margin-bottom:10px'>{addressee}</div>"
+		f"<p>The fees of the students below for the {_e(academic_year)} academic year, invoiced to {_e(doc.sponsor_name)}.</p>"
+		"<table class='list'><thead><tr><th>Student number</th><th>Student</th><th>Programme</th><th>Your reference</th>"
+		"<th>Invoice</th><th class='num'>Invoiced</th><th class='num'>Paid</th><th class='num'>Due</th></tr></thead>"
+		f"<tbody>{rows or '<tr><td colspan=8>No students invoiced for this year.</td></tr>'}</tbody>"
+		f"<tfoot><tr><td colspan='5'>Total</td><td class='num'>{money(invoiced)}</td><td class='num'>{money(invoiced - owing)}</td>"
+		f"<td class='num'>{money(owing)}</td></tr></tfoot></table>"
+		+ (
+			"<div class='section'>Payment</div>"
+			f"<p>By EFT to {_e(bank['bank_name'])}, {_e(bank['account_name'])}, account {_e(bank['account_number'])}"
+			+ (f", branch {_e(bank['branch_code'])}" if bank.get("branch_code") else "")
+			+ f". Please quote <b>{_e(doc.name)}</b> as the reference.</p>"
+			if bank.get("account_number")
+			else ""
+		)
+		+ f"<p style='color:#6b6f7a'>Issued electronically by {_e(brand['name'])}, Finance.</p>"
+	)
+	_send(f"Sponsor statement {doc.name} {academic_year}.pdf", _page("Finance", body), orientation="Landscape")

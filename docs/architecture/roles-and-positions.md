@@ -49,9 +49,9 @@ positions there, not in the Role Profile form, or the next migrate puts them bac
 | | Sponsor | Sponsor (portal) | |
 | | External Examiner | External Examiner (portal) | |
 
-Positions with an EduCore role but no upstream roles (Head of Department, Financial Aid Officer, Student
-Affairs Officer, Accommodation Officer, Facilities Manager, the portal users) can log in but do not see
-anything yet: their screens and permissions come with the EduCore modules that serve them.
+Positions whose modules are not built yet (Facilities Manager; the Guardian, Sponsor and External Examiner portals)
+can log in but see only their home page; their screens come with those modules. Student Affairs, Financial Aid and
+Accommodation officers read student records until their own modules exist.
 
 ## Who does what in the Vue app
 
@@ -66,25 +66,27 @@ what each person sees.
 | Registration: senior students (approve) | Faculty Officer | Registrar (exceptions) |
 | Course changes after approval (add or drop, until the course change date) | Student asks; Faculty Officer approves or declines | Registrar |
 | Interrupting or cancelling studies | Student asks; Registry Officer, Registrar decide (Students → Requests) | |
-| Students (records, proof of registration) | Registry Officer, Registrar | Faculty Officer, Dean, Head of Department, Campus Director, Executive Management, Examinations Officer, Student Affairs Officer, Financial Aid Officer |
-| Teaching (classes from approved registrations, lecturers allocated) | Head of Department, Dean (own department or faculty) | Faculty Officer, Timetable Officer, Registrar, Campus Director; lecturers see their own classes in My teaching |
+| Students (records, proof of registration) | Registry Officer, Registrar | Faculty Officer, Dean, Head of Department, Campus Director, Executive Management, Examinations Officer, Student Affairs Officer, Financial Aid Officer, Accommodation Officer |
+| Teaching (classes from approved registrations, lecturers allocated) | Head of Department, Dean (own department or faculty) | Faculty Officer, Timetable Officer, Registrar, Campus Director, Examinations Officer, Quality Assurance Officer, Executive Management (own campus where limited to one); lecturers see their own classes in My teaching |
+| Academic staff (lecturers: department, campuses, left or active; each lecturer's classes). A login given the Lecturer position gets its lecturer record automatically, department and campuses from its User Permissions | Head of Department, Dean (own department or faculty); HR Manager, HR User link the HR staff record | Faculty Officer, Registrar, Campus Director, Timetable Officer, Quality Assurance Officer, Executive Management |
 | Marks (enter, submit) | Lecturer (own classes, from My teaching) | |
-| Examinations: moderate, or return to the lecturer | Head of Department, Dean (own department or faculty) | Registrar, Faculty Officer |
+| Examinations: moderate, or return to the lecturer | Head of Department, Dean (own department or faculty) | Registrar, Faculty Officer, Campus Director, Quality Assurance Officer, Executive Management |
 | Examinations: approve (board meeting), return to the department, publish | Examinations Officer (own campus) | Registrar, Faculty Officer |
 | Supplementary and special examinations: grant a special for an absence with a valid reason; publish the sitting's results (board meeting) | Examinations Officer (own campus) | Registrar, Faculty Officer |
 | Supplementary and special marks (enter, submit) | Lecturer (own classes, once the first results are published) | |
 | Examination rules (CA weight, admission, pass, supplementary band and cap, grading scale, probation) | Registrar | Examinations Officer and the others above read them |
 | Results; academic record (PDF, interim until completion) | Student (own, once published) | Registry Officer, Registrar and the others who read Students download any student's record |
-| Graduation: progress towards each programme's requirements (required courses passed, credits) | Examinations Officer, Faculty Officer, Dean (own campus or faculty) prepare the list for the Senate | Registry Officer |
+| Graduation: progress towards each programme's requirements (required courses passed, credits) | Examinations Officer, Faculty Officer, Dean (own campus or faculty) prepare the list for the Senate | Registry Officer, Head of Department, Campus Director, Executive Management |
 | Graduation: record the completions the Senate approved (the academic record then reads final) | Registrar | |
 | Award certificates and the graduation list (PDF; the original certificate is handed over once) | Registrar, Registry Officer | |
-| Curriculum (courses by year and semester) | Faculty Officer, Head of Department, Dean (own faculty) | Registrar (publishes it), Timetable Officer, Examinations Officer, Quality Assurance Officer |
-| Admission setup (rules, pathways, documents, entry requirements, points) | Registrar | |
+| Curriculum (courses by year and semester) | Faculty Officer, Head of Department, Dean (own faculty) | Registrar (publishes it), Timetable Officer, Examinations Officer, Quality Assurance Officer, Registry Officer, Campus Director, Executive Management |
+| Admission setup (rules, pathways, documents, funding routes and their documents, entry requirements, points) | Registrar | |
 | Registration setup (periods' dates, credit limit, faculty approval) | Registrar | |
 | Integrations (Moodle: address, token, sync) | ICT Administrator (System Manager) | The class page shows its Moodle course to the faculty |
-| Fee settings (application fees, ERPNext accounts, deposit, balance allowed, late fee) | Bursar | Finance Officer, Student Fees Officer; shown read only on the Registrar's setup screens |
+| Fee settings (application fees by nationality: home, regional, international; the funding routes that pay no application fee; ERPNext accounts, deposit, balance allowed, late fee) | Bursar | Finance Officer, Student Fees Officer; shown read only on the Registrar's setup screens |
 | Application fees (outstanding, paid, waived; waiving) | Bursar, Finance Officer, Student Fees Officer | |
-| Student payments (matched from the bank statement by student number; assigning deposits without one) | Bursar, Finance Officer, Student Fees Officer | |
+| Student payments (matched from the bank statement by student number; assigning deposits without one to a student or a sponsor) | Bursar, Finance Officer, Student Fees Officer, Cashier | |
+| Sponsors (bursaries, loan funds, employers: the students each pays for in a year, its invoices, payments by sponsor number, statement PDF) | Bursar, Finance Officer, Student Fees Officer, Financial Aid Officer | Student record shows who pays (Registry and the others who read Students) |
 
 ## Demo users (development only)
 

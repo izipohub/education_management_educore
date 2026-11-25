@@ -15,6 +15,7 @@ import DataTable, { type Column } from "@/core/ui/DataTable.vue";
 import RulesForm from "./RulesForm.vue";
 import {
   type DocumentType,
+  type FundingRoute,
   type Pathway,
   type Programme,
   type ScaleRow,
@@ -31,10 +32,10 @@ const setup = ref<Setup | null>(null);
 const loadError = ref("");
 const saving = ref(false);
 
-type Tab = "rules" | "pathways" | "documents" | "programmes" | "points";
+type Tab = "rules" | "pathways" | "documents" | "funding" | "programmes" | "points";
 const route = useRoute();
 const router = useRouter();
-const TABS: Tab[] = ["rules", "pathways", "documents", "programmes", "points"];
+const TABS: Tab[] = ["rules", "pathways", "documents", "funding", "programmes", "points"];
 const tab = ref<Tab>(TABS.includes(route.query.tab as Tab) ? (route.query.tab as Tab) : "rules");
 // the tab stays in the address, so Back from an item returns to its list
 watch(tab, (t) => void router.replace({ query: t === "rules" ? {} : { tab: t } }));
@@ -42,6 +43,7 @@ const tabs = computed(() => [
   { label: "Settings", value: "rules" as Tab },
   { label: "Entry pathways", value: "pathways" as Tab, count: setup.value?.pathways.length },
   { label: "Documents", value: "documents" as Tab, count: setup.value?.documents.length },
+  { label: "Funding routes", value: "funding" as Tab, count: setup.value?.funding_routes.length },
   { label: "Programmes", value: "programmes" as Tab, count: setup.value?.programmes.length },
   { label: "Admission point scale", value: "points" as Tab },
 ]);
@@ -74,11 +76,19 @@ async function run(call: () => Promise<Setup>, message: string): Promise<boolean
 const rows = computed(() => {
   const st = setup.value;
   if (!st) return [];
-  const list = tab.value === "pathways" ? st.pathways : tab.value === "documents" ? st.documents : tab.value === "programmes" ? st.programmes : [];
+  const list =
+    tab.value === "pathways" ? st.pathways : tab.value === "documents" ? st.documents : tab.value === "funding" ? st.funding_routes : tab.value === "programmes" ? st.programmes : [];
   return list as unknown as Record<string, unknown>[];
 });
 const itemLink = (r: Record<string, unknown>) => ({ name: "setup-item", params: { section: tab.value, name: String(r.name) } });
-const COLUMNS: Record<"pathways" | "documents" | "programmes", Column[]> = {
+const COLUMNS: Record<"pathways" | "documents" | "funding" | "programmes", Column[]> = {
+  funding: [
+    { key: "name", label: "Funding route" },
+    { key: "kind", label: "Kind", wide: true },
+    { key: "fee", label: "Application fee", wide: true },
+    { key: "documents", label: "Documents", align: "right", wide: true },
+    { key: "active", label: "Status" },
+  ],
   pathways: [
     { key: "name", label: "Entry pathway" },
     { key: "level", label: "Level", wide: true },
@@ -99,7 +109,11 @@ const COLUMNS: Record<"pathways" | "documents" | "programmes", Column[]> = {
     { key: "entry", label: "Entry requirement" },
   ],
 };
-const listTab = computed(() => (tab.value === "pathways" || tab.value === "documents" || tab.value === "programmes" ? tab.value : null));
+const listTab = computed(() =>
+  tab.value === "pathways" || tab.value === "documents" || tab.value === "funding" || tab.value === "programmes" ? tab.value : null,
+);
+const asRoute = (i: Record<string, unknown>) => i as unknown as FundingRoute;
+const ADD_LABEL = { pathways: "Add an entry pathway", documents: "Add a document", funding: "Add a funding route" } as const;
 
 const asPathway = (i: Record<string, unknown>) => i as unknown as Pathway;
 const asDocument = (i: Record<string, unknown>) => i as unknown as DocumentType;
@@ -173,12 +187,12 @@ async function onSaveScale() {
       :rows="rows"
       row-key="name"
       :to="itemLink"
-      :noun="listTab === 'pathways' ? 'entry pathways' : listTab"
+      :noun="listTab === 'pathways' ? 'entry pathways' : listTab === 'funding' ? 'funding routes' : listTab"
       empty-title="Nothing set up yet"
     >
       <template v-if="listTab !== 'programmes'" #toolbar>
         <EcButton
-          :label="listTab === 'pathways' ? 'Add an entry pathway' : 'Add a document'"
+          :label="ADD_LABEL[listTab]"
           :icon="Plus"
           size="sm"
           @click="router.push({ name: 'setup-item', params: { section: listTab, name: 'new' } })"
@@ -188,9 +202,11 @@ async function onSaveScale() {
       <template #cell-evidence="{ row: r }">{{ asPathway(r).evidence }}<template v-if="asPathway(r).min_age"> · from age {{ asPathway(r).min_age }}</template></template>
       <template #cell-applications="{ row: r }">{{ asPathway(r).applications || "" }}</template>
       <template #cell-active="{ row: r }">
-        <span class="dot" :class="{ on: r.active }">{{ r.active ? (listTab === "pathways" ? "Open" : "In use") : listTab === "pathways" ? "Closed" : "Not in use" }}</span>
+        <span class="dot" :class="{ on: r.active }">{{ r.active ? (listTab === "pathways" ? "Open" : listTab === "funding" ? "Offered" : "In use") : listTab === "pathways" ? "Closed" : listTab === "funding" ? "Not offered" : "Not in use" }}</span>
       </template>
       <template #cell-must_be_certified="{ row: r }">{{ asDocument(r).must_be_certified ? "Required" : "" }}</template>
+      <template #cell-fee="{ row: r }">{{ asRoute(r).pays_application_fee ? "Pays" : "None" }}</template>
+      <template #cell-documents="{ row: r }">{{ asRoute(r).documents?.length || "" }}</template>
       <template #cell-entry="{ row: r }">{{ entry(asProgramme(r)) }}</template>
     </DataTable>
   </template>

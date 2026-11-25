@@ -4,7 +4,17 @@ export type SheetStatus = "Not started" | "Draft" | "Submitted" | "Moderated" | 
 export type Result = "Pass" | "Supplementary" | "Fail" | "Not admitted" | "Absent";
 
 /** who sees the Examinations screen (educore.api.v1.examinations.READ_ROLES) */
-export const EXAMINATION_ROLES = ["Head of Department", "Dean", "Examinations Officer", "Registrar", "Faculty Officer", "System Manager"];
+export const EXAMINATION_ROLES = [
+  "Head of Department",
+  "Dean",
+  "Examinations Officer",
+  "Registrar",
+  "Faculty Officer",
+  "Campus Director",
+  "Quality Assurance Officer",
+  "Executive Management",
+  "System Manager",
+];
 
 export interface Rules {
   ca_weight: number;

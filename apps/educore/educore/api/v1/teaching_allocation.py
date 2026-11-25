@@ -18,7 +18,11 @@ from educore.academics.calendar import term
 #: who allocates lecturers and updates class lists
 EDIT_ROLES = ("Head of Department", "Dean", "System Manager")
 #: who reads the allocation
-READ_ROLES = (*EDIT_ROLES, "Faculty Officer", "Timetable Officer", "Registrar", "Campus Director")
+#: Examinations Officer (who teaches a class whose marks are late), Quality Assurance, Executive Management: read only
+READ_ROLES = (
+	*EDIT_ROLES, "Faculty Officer", "Timetable Officer", "Registrar", "Campus Director",
+	"Examinations Officer", "Quality Assurance Officer", "Executive Management",
+)
 
 
 def can_edit() -> bool:
@@ -40,6 +44,12 @@ def _courses() -> dict[str, dict]:
 			limit=0,
 		)
 	}
+
+
+def _campuses() -> set[str]:
+	from educore.access.scope import campuses
+
+	return campuses()
 
 
 def _semester_of(course: str) -> str:
@@ -94,9 +104,10 @@ def classes(academic_year: str | None = None) -> dict:
 		fields=["name", "course", "campus"],
 	)
 	by_key = {(g.course, g.campus): g.name for g in groups}
+	campuses = _campuses()
 
 	rows = []
-	for key in sorted(set(registered) | set(by_key), key=lambda k: ((courses[k[0]].get("code") or k[0]), k[1] or "")):
+	for key in sorted({k for k in set(registered) | set(by_key) if not k[1] or k[1] in campuses}, key=lambda k: ((courses[k[0]].get("code") or k[0]), k[1] or "")):
 		course, campus = key
 		info = courses[course]
 		group = by_key.get(key)
@@ -185,6 +196,8 @@ def class_detail(group: str) -> dict:
 	"""One class: its students and lecturers, and the lecturers who could be allocated"""
 	_require(READ_ROLES)
 	doc = frappe.get_doc("Student Group", group)
+	if doc.get("campus") and doc.campus not in _campuses():
+		frappe.throw(_("This class is on another campus"), frappe.PermissionError)
 	if doc.course not in _courses():
 		frappe.throw(_("This class is not in your department or faculty"), frappe.PermissionError)
 	course = frappe.db.get_value("Course", doc.course, ["educore_course_code", "educore_credits", "department"], as_dict=True)

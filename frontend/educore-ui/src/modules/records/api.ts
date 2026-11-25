@@ -52,6 +52,8 @@ export interface StudentRecord {
   personal: { email: string | null; mobile: string | null; date_of_birth: string | null; gender: string | null; nationality: string | null; address: string | null; city: string | null };
   particulars: Partial<Personal>;
   guardians: { name: string; relation: string | null; phone: string | null; email: string | null; address: string | null }[];
+  /** sponsors paying the student's fees, by year (educore.finance.sponsors) */
+  sponsors: { sponsor_name: string; academic_year: string; cover: string; amount: number; status: string; sponsor_reference: string | null }[];
   enrolments: Enrolment[];
   invoices: { name: string; posting_date: string; grand_total: number; outstanding_amount: number; status: string }[];
   owing: number;
@@ -76,5 +78,6 @@ export const RECORD_ROLES = [
   "Examinations Officer",
   "Student Affairs Officer",
   "Financial Aid Officer",
+  "Accommodation Officer",
   "System Manager",
 ];

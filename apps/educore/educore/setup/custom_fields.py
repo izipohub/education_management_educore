@@ -469,7 +469,7 @@ CUSTOM_FIELDS = {
 			"fieldname": "educore_fee_status",
 			"label": "Fee Status",
 			"fieldtype": "Select",
-			"options": "Unpaid\nPaid\nWaived",
+			"options": "Unpaid\nPaid\nWaived\nNot required",
 			"default": "Unpaid",
 			"read_only": 1,
 			"insert_after": "educore_fee_amount",
@@ -582,7 +582,8 @@ CUSTOM_FIELDS = {
 			"insert_after": "educore_kin_address",
 			"collapsible": 1,
 		},
-		{"fieldname": "educore_fee_payer", "label": "Who Pays", "fieldtype": "Select", "options": "\nSelf\nParent or guardian\nSponsor or bursary\nEmployer", "insert_after": "educore_payer_section"},
+		# the funding route (educore.admissions.funding): its documents and whether the application fee is paid
+		{"fieldname": "educore_fee_payer", "label": "Who Pays", "fieldtype": "Link", "options": "Funding Route", "insert_after": "educore_payer_section"},
 		{"fieldname": "educore_fee_payer_name", "label": "Name of Person or Institution", "fieldtype": "Data", "insert_after": "educore_fee_payer", "description": "E.g. NSFAF, an employer or a parent."},
 		{"fieldname": "educore_payer_column", "fieldtype": "Column Break", "insert_after": "educore_fee_payer_name"},
 		{"fieldname": "educore_fee_payer_email", "label": "Payer Email", "fieldtype": "Data", "options": "Email", "insert_after": "educore_payer_column"},
@@ -803,6 +804,24 @@ CUSTOM_FIELDS = {
 			"read_only": 1,
 			"insert_after": "educore_program_enrollment",
 		},
+		# sponsors (educore.finance.sponsors): the credit note to the student and the invoice to the sponsor
+		{
+			"fieldname": "educore_sponsorship",
+			"label": "Sponsorship",
+			"fieldtype": "Link",
+			"options": "Sponsorship",
+			"read_only": 1,
+			"insert_after": "educore_fee_structure",
+		},
+		{
+			"fieldname": "educore_sponsored_student",
+			"label": "Sponsored Student",
+			"fieldtype": "Link",
+			"options": "Student",
+			"read_only": 1,
+			"insert_after": "educore_sponsorship",
+			"description": "On an invoice to a sponsor: the student whose fees it pays.",
+		},
 	],
 	"Payment Entry": [
 		{
@@ -831,6 +850,27 @@ CUSTOM_FIELDS = {
 		{"fieldname": "educore_moodle_course_id", "label": "Moodle Course ID", "fieldtype": "Int", "read_only": 1, "insert_after": "educore_moodle_section"},
 		{"fieldname": "educore_moodle_synced_on", "label": "Synced With Moodle", "fieldtype": "Datetime", "read_only": 1, "insert_after": "educore_moodle_course_id"},
 		{"fieldname": "educore_moodle_error", "label": "Moodle Error", "fieldtype": "Small Text", "read_only": 1, "insert_after": "educore_moodle_synced_on"},
+	],
+	# lecturers: made automatically for every login with the Lecturer position (educore.academics.lecturers)
+	"Instructor": [
+		{
+			"fieldname": "educore_user",
+			"label": "Login",
+			"fieldtype": "Link",
+			"options": "User",
+			"insert_after": "employee",
+			"unique": 1,
+			"in_standard_filter": 1,
+			"description": "The lecturer's login. Their HR staff record is linked once HR adds it.",
+		},
+		{
+			"fieldname": "educore_campuses",
+			"label": "Campuses",
+			"fieldtype": "Table MultiSelect",
+			"options": "Unit Campus",
+			"insert_after": "department",
+			"description": "Campuses the lecturer teaches on.",
+		},
 	],
 	"Room": [
 		{
@@ -892,6 +932,7 @@ def sync():
 	from frappe.custom.doctype.property_setter.property_setter import make_property_setter
 
 	_pathway_select_to_link()
+	_fee_payer_select_to_link()
 	create_custom_fields(CUSTOM_FIELDS, update=True)
 	for doctype, field, prop, value, prop_type in PROPERTY_SETTERS:
 		make_property_setter(doctype, field, prop, value, prop_type, validate_fields_for_doctype=False)
@@ -905,3 +946,13 @@ def _pathway_select_to_link():
 	if frappe.db.get_value("Custom Field", name, "fieldtype") == "Select":
 		frappe.db.set_value("Custom Field", name, {"fieldtype": "Link", "options": "Admission Pathway", "default": None})
 		frappe.clear_cache(doctype="Student Applicant")
+
+
+def _fee_payer_select_to_link():
+	"""Who pays was a Select before funding routes were records (educore.admissions.funding); converted the same way,
+	on the application and the student (the patch funding_routes moved the old values)"""
+	for doctype in ("Student Applicant", "Student"):
+		name = f"{doctype}-educore_fee_payer"
+		if frappe.db.get_value("Custom Field", name, "fieldtype") == "Select":
+			frappe.db.set_value("Custom Field", name, {"fieldtype": "Link", "options": "Funding Route", "default": None})
+			frappe.clear_cache(doctype=doctype)

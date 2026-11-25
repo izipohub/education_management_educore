@@ -7,9 +7,9 @@ import Textarea from "primevue/textarea";
 import { computed } from "vue";
 import EcField from "@/core/ui/EcField.vue";
 import PhoneField from "@/core/ui/PhoneField.vue";
+import type { FundingRouteOption } from "./api";
 import {
   type DetailsForm,
-  FEE_PAYERS,
   GENDERS,
   KIN_RELATIONSHIPS,
   MARITAL_STATUSES,
@@ -29,6 +29,10 @@ const props = withDefaults(
     international: boolean;
     dialCodes: { country: string; code: string }[];
     homeCountry: string;
+    /** who pays: the funding routes offered */
+    fundingRoutes: FundingRouteOption[];
+    /** nationality is a country: the application fee follows it (home, regional, international) */
+    countries: string[];
     staff?: boolean;
   }>(),
   { staff: false },
@@ -37,7 +41,13 @@ const form = defineModel<DetailsForm>({ required: true });
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const badEmail = (v: string) => Boolean(v.trim()) && !EMAIL.test(v.trim());
 const theyHave = computed(() => (props.staff ? "The applicant has" : "I have"));
-const paidBySomeoneElse = computed(() => Boolean(form.value.educore_fee_payer) && form.value.educore_fee_payer !== "Self");
+const route = computed(() => props.fundingRoutes.find((r) => r.name === form.value.educore_fee_payer) ?? null);
+const paidBySomeoneElse = computed(() => Boolean(route.value?.ask_who));
+const routeHint = computed(() => {
+  const r = route.value;
+  if (!r) return undefined;
+  return [r.description, r.pays_application_fee ? null : "No application fee"].filter(Boolean).join(" ");
+});
 </script>
 
 <template>
@@ -63,7 +73,7 @@ const paidBySomeoneElse = computed(() => Boolean(form.value.educore_fee_payer) &
       <h3>Identity and origin</h3>
       <div class="grid">
         <EcField label="Nationality" for="d-nat">
-          <InputText id="d-nat" v-model="form.nationality" fluid />
+          <Select v-model="form.nationality" input-id="d-nat" :options="countries" filter fluid />
         </EcField>
         <template v-if="!international">
           <EcField label="National ID number" for="d-id"><InputText id="d-id" v-model="form.educore_national_id" inputmode="numeric" fluid /></EcField>
@@ -115,9 +125,11 @@ const paidBySomeoneElse = computed(() => Boolean(form.value.educore_fee_payer) &
     <section class="group">
       <h3>Fees</h3>
       <div class="grid">
-        <EcField label="Who pays the fees" for="d-payer"><Select v-model="form.educore_fee_payer" input-id="d-payer" :options="FEE_PAYERS" fluid /></EcField>
+        <EcField label="Who pays the fees" for="d-payer" :hint="routeHint">
+          <Select v-model="form.educore_fee_payer" input-id="d-payer" :options="fundingRoutes" option-label="name" option-value="name" fluid />
+        </EcField>
         <template v-if="paidBySomeoneElse">
-          <EcField label="Name of person or institution" for="d-payer-name" hint="E.g. NSFAF, an employer or a parent">
+          <EcField label="Name of person or institution" for="d-payer-name">
             <InputText id="d-payer-name" v-model="form.educore_fee_payer_name" fluid />
           </EcField>
           <EcField label="Their email" for="d-payer-email" :error="badEmail(form.educore_fee_payer_email) ? 'Not a valid email address' : undefined">

@@ -1,0 +1,161 @@
+{
+ "creation": "2026-11-25 19:00:00.000000",
+ "modified": "2026-11-25 19:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Finance",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "actions": [],
+ "links": [],
+ "states": [],
+ "name": "Sponsor",
+ "autoname": "naming_series:",
+ "track_changes": 1,
+ "title_field": "sponsor_name",
+ "description": "A bursary, scholarship, loan fund or employer that pays students' fees: invoiced for its share as an ERPNext Customer; its number is the reference on its EFT payments (educore.finance.sponsors).",
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "SPN-.#####",
+   "default": "SPN-.#####",
+   "hidden": 1
+  },
+  {
+   "fieldname": "sponsor_name",
+   "fieldtype": "Data",
+   "label": "Sponsor",
+   "reqd": 1,
+   "in_list_view": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "sponsor_type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "Government fund\nBursary\nScholarship\nEmployer\nOther",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "read_only": 1,
+   "description": "Made automatically: the sponsor's invoices and payments in ERPNext."
+  },
+  {
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "No longer sponsoring",
+   "default": "0"
+  },
+  {
+   "fieldname": "column_contact",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "contact_person",
+   "fieldtype": "Data",
+   "label": "Contact Person"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Telephone"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Small Text",
+   "label": "Postal Address"
+  },
+  {
+   "fieldname": "payment_days",
+   "fieldtype": "Int",
+   "label": "Pays Within (Days)",
+   "default": "60",
+   "description": "Due date of its invoices, from the invoice date."
+  }
+ ],
+ "field_order": [
+  "naming_series",
+  "sponsor_name",
+  "sponsor_type",
+  "customer",
+  "disabled",
+  "column_contact",
+  "contact_person",
+  "email",
+  "phone",
+  "address",
+  "payment_days"
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Bursar",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Finance Officer",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Student Fees Officer",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Financial Aid Officer",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  }
+ ]
+}

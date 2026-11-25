@@ -21,7 +21,7 @@ GOOD_RESULTS = [
 PERSONAL = {
 	"date_of_birth": "2008-03-14",
 	"gender": "Female",
-	"nationality": "Namibian",
+	"nationality": "Namibia",
 	# the particulars an application needs before it is submitted
 	"educore_national_id": "08031400123",
 	"student_mobile_number": "+264 81 123 4567",

@@ -43,7 +43,7 @@ export interface RegistrationState {
   year_of_study?: number;
   courses?: CurriculumCourse[];
   max_credits?: number;
-  fees?: { year: number; outstanding: number; deposit_required: number; paid_in_advance: number };
+  fees?: { year: number; outstanding: number; deposit_required: number; paid_in_advance: number; sponsored: number };
   /** what stops registering, in plain words; empty: nothing */
   blockers?: string[];
   registration?: MyRegistration | null;

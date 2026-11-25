@@ -12,9 +12,10 @@ import DataTable, { type Column } from "@/core/ui/DataTable.vue";
 import EcButton from "@/core/ui/EcButton.vue";
 import EcField from "@/core/ui/EcField.vue";
 import EcModal from "@/core/ui/EcModal.vue";
+import EcSegmented from "@/core/ui/EcSegmented.vue";
 import EcTabs from "@/core/ui/EcTabs.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
-import { type ReceivedPayment, type WaitingDeposit, assignDeposit, findStudents, listStudentPayments, matchStudentPayments } from "./api";
+import { type ReceivedPayment, type WaitingDeposit, assignDeposit, findPayingSponsors, findStudents, listStudentPayments, matchStudentPayments } from "./api";
 
 /**
  * Student fees received from the bank statement (matched by student number), and deposits waiting to be
@@ -96,21 +97,33 @@ async function matchNow() {
   }
 }
 
-// assigning a deposit to a student
+// assigning a deposit to a student, or to a sponsor (educore.finance.sponsors)
+type Payer = "student" | "sponsor";
+const payer = ref<Payer>("student");
+const payers = [
+  { value: "student" as Payer, label: "Student" },
+  { value: "sponsor" as Payer, label: "Sponsor" },
+];
 const assigning = ref<WaitingDeposit | null>(null);
-const chosen = ref<{ name: string; student_name: string } | null>(null);
-const suggestions = ref<{ name: string; student_name: string; campus: string | null; label: string }[]>([]);
+const chosen = ref<{ name: string; label: string; who: string } | null>(null);
+const suggestions = ref<{ name: string; label: string; who: string }[]>([]);
+watch(payer, () => (chosen.value = null));
 async function searchStudents(event: { query: string }) {
+  if (payer.value === "sponsor") {
+    const found = await findPayingSponsors(event.query).catch(() => []);
+    suggestions.value = found.map((s) => ({ name: s.name, who: s.sponsor_name, label: `${s.sponsor_name} · ${s.name}` }));
+    return;
+  }
   const found = await findStudents(event.query).catch(() => []);
-  suggestions.value = found.map((s) => ({ ...s, label: `${s.student_name} · ${s.name}` }));
+  suggestions.value = found.map((s) => ({ name: s.name, who: s.student_name, label: `${s.student_name} · ${s.name}` }));
 }
 const busy = ref(false);
 async function confirmAssign() {
   if (!assigning.value || !chosen.value) return;
   busy.value = true;
   try {
-    await assignDeposit(assigning.value.name, chosen.value.name);
-    toast.add({ severity: "success", summary: `${formatMoney(assigning.value.amount)} recorded for ${chosen.value.student_name}`, life: 3000 });
+    await assignDeposit(assigning.value.name, { [payer.value]: chosen.value.name });
+    toast.add({ severity: "success", summary: `${formatMoney(assigning.value.amount)} recorded for ${chosen.value.who}`, life: 3000 });
     assigning.value = null;
     chosen.value = null;
     await load();
@@ -156,13 +169,14 @@ async function confirmAssign() {
       <template #cell-date="{ row: r }"><span class="ec-nowrap">{{ formatDate(wait(r).date) }}</span></template>
       <template #cell-amount="{ row: r }"><span class="ec-nowrap">{{ formatMoney(wait(r).amount) }}</span></template>
       <template #cell-action="{ row: r }">
-        <EcButton label="Assign to a student" size="sm" variant="ghost" @click="(assigning = wait(r)), (chosen = null)" />
+        <EcButton label="Assign" size="sm" variant="ghost" @click="(assigning = wait(r)), (chosen = null), (payer = 'student')" />
       </template>
     </DataTable>
   </section>
 
   <EcModal :open="assigning !== null" :title="`Assign ${assigning ? formatMoney(assigning.amount) : ''}`" :description="assigning?.description ?? undefined" @update:open="(v: boolean) => !v && (assigning = null)">
-    <EcField label="Student" for="assign-student" hint="Name, student number or ID number">
+    <EcSegmented v-model="payer" :options="payers" label="Paid by" class="payer" />
+    <EcField :label="payer === 'student' ? 'Student' : 'Sponsor'" for="assign-student" :hint="payer === 'student' ? 'Name, student number or ID number' : 'Name or sponsor number'">
       <AutoComplete v-model="chosen" input-id="assign-student" :suggestions="suggestions" option-label="label" fluid @complete="searchStudents" />
     </EcField>
     <template #footer>
@@ -180,6 +194,10 @@ async function confirmAssign() {
 
 .tabs {
   flex: 1;
+}
+
+.payer {
+  margin-bottom: 0.75rem;
 }
 
 .search {

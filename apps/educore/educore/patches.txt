@@ -3,3 +3,5 @@
 [post_model_sync]
 educore.patches.v0_1.set_student_department
 educore.patches.v1_0.entry_pathway_names
+educore.patches.v1_1.funding_routes
+educore.patches.v1_1.nationality_countries

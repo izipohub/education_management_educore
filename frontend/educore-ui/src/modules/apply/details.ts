@@ -63,7 +63,6 @@ export const REGIONS = [
 ];
 export const MINORITY_GROUPS = ["None", "San", "Ovahimba", "Ovazemba", "Ovatue", "Ovatjimba"];
 export const KIN_RELATIONSHIPS = ["Mother", "Father", "Guardian", "Spouse or partner", "Other"];
-export const FEE_PAYERS = ["Self", "Parent or guardian", "Sponsor or bursary", "Employer"];
 
 const DATES = ["date_of_birth", "educore_passport_expiry"] as const;
 

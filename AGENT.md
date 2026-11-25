@@ -1100,7 +1100,61 @@ The roadmap is phased. Do not implement every module at once.
   production                          transcripts, analytics, governance,
                                       security hardening, performance and
                                       production readiness
+
+  M8 --- Integrations and services    AI assistant, online payments,
+                                      SMS, funder (NSFAF, NTA, sponsors)
+                                      and authority (NQA, NTA) reporting,
+                                      Microsoft 365 / Google Workspace
+                                      sign-in
   -----------------------------------------------------------------------
+
+### 12.0 Status and committed scope (as of 2026-11-26)
+
+EduCore is now also offered to private training institutes (multi-campus,
+NQA-accredited, certificate to degree level), not only universities.
+Client proposals present the full scope below as part of the product, so
+it is **committed**: build it before the client's campuses reach it in
+their rollout.
+
+**Built (in the app):** multi-campus institution and roles; admissions
+(online and paper applications, entry rules and pathways, funding routes
+with their documents (NSFAF and NTA applicants pay no application fee),
+application fees by nationality (home, regional, international) matched
+by EFT reference, offers and letters); student records;
+curriculum by year and semester with prerequisites; registration with
+faculty approval, deposit and fee rules, late fees, proof of
+registration; course changes; interruption and cancellation of studies;
+teaching allocation and class lists; lecturers set up from the Lecturer position, with an Academic staff screen; marks, moderation, board approval,
+publication, supplementary and special examinations, academic standing;
+graduation list, academic record, award certificate, QR verification;
+student fees with EFT matching by student number; sponsor accounts (sponsors invoiced for their share of a student's year by credit note and sponsor invoice, paid by EFT with the sponsor number, statement PDF; the registration deposit on the student's own share); Moodle course and
+enrolment sync; registrar dashboard; email to applicants and students.
+
+**Committed, not yet built:**
+
+| Area | Still to build | Milestone |
+|---|---|---|
+| Institution | Institutional calendar and policies UI, approval matrix, committees and policy register | M1, M7 |
+| Programmes | Curriculum versions (changes apply to new intakes), programme accreditation records, NQF levels on qualifications | M2 |
+| Student records | Status history, campus transfers, disciplinary cases, service requests | M2 |
+| Teaching | Timetables with venues and laboratories, class attendance (next), lecturer workload | M2, M3 |
+| Examinations | Examination sessions, venues and invigilation | M7 |
+| Graduation | Financial clearance before graduation, transcript requests | M7 |
+| Student fees | Instalment plans, waivers, holds and clearance. Per-campus fees need nothing new: fees are set per programme offering (one campus each) and campus cost centres report per campus | M6 |
+| HR | Vue staff self-service (leave, payslips, details); lecturer qualifications and appointments; payroll validated for Namibian statutory rules | M6 |
+| Procurement and assets | Purchase requests with budget-holder approval, stores per campus, asset custody per campus | M6 |
+| Campus facilities | Rooms and laboratories, booking, maintenance requests | M6 |
+| Learning | Moodle single sign-on; Moodle marks imported for moderation and approval | M3, M5 |
+| Management | Dashboards for results, fees and staff per campus; Excel export of every report | M7 |
+| Integrations | AI assistant (applicant and student questions, staff drafting; suggests only, staff decide); payment gateway (card, instant EFT); SMS notices; NSFAF, NTA and sponsor invoicing and reports; NQA and NTA returns; Microsoft 365 / Google Workspace sign-in | M8 |
+
+**Service commitments in proposals:** support Monday to Friday, 08:00
+to 17:00 by email and telephone; response within 2 working hours
+(critical), the same working day (high), 2 working days (normal);
+updates outside working hours with notice; monitoring; daily backups
+to a separate location and a disaster-recovery plan, with a full
+restore tested before go-live and regularly after it; training by
+role at each campus before it goes live, with a guide per role.
 
 ### 12.1 First engineering tasks
 
@@ -1209,6 +1263,10 @@ These items are not fully settled and must be validated during M0:
     requirements.
 -   Backup, retention, availability, RPO and RTO requirements.
 -   Repository split and release/versioning strategy.
+-   M8 providers and formats (waiting on third parties): payment
+    gateway provider; SMS provider; NSFAF, NTA and NQA data formats
+    and submission channels; AI assistant model provider, what data
+    it may see, and where it runs.
 
 Do not present these open items as already implemented or confirmed.
 

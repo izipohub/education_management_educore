@@ -79,6 +79,10 @@ def ensure_fee_setup(company: str):
 			{"doctype": "Item Group", "item_group_name": "Fee Component", "parent_item_group": "All Item Groups"}
 		).insert(ignore_permissions=True)
 
+	from educore.finance.sponsors import ensure_sponsor_setup
+
+	ensure_sponsor_setup(company)
+
 	for category, income_account, description in FEE_CATEGORIES:
 		if frappe.db.exists("Fee Category", category):
 			continue
@@ -283,6 +287,10 @@ def _invoice_enrollment(enrollment, enrolled_by: str) -> str | None:
 		)
 	invoice.insert(ignore_permissions=True)
 	invoice.submit()
+	# sponsors recorded before the registration was approved: their share moves to them now
+	from educore.finance.sponsors import apply_for
+
+	apply_for(enrollment.student, enrollment.academic_year)
 	return invoice.name
 
 

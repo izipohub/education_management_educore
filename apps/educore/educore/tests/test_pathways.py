@@ -12,7 +12,7 @@ PASSWORD = "Campus-Demo-2026"
 ADULT = {
 	"date_of_birth": "1990-05-01",
 	"gender": "Male",
-	"nationality": "Namibian",
+	"nationality": "Namibia",
 	"educore_national_id": "90050100456",
 	"student_mobile_number": "+264812223344",
 	"educore_kin_relationship": "Spouse or partner",

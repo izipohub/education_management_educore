@@ -1,0 +1,194 @@
+{
+ "creation": "2026-11-25 19:00:00.000000",
+ "modified": "2026-11-25 19:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Finance",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "actions": [],
+ "links": [],
+ "states": [],
+ "name": "Sponsorship",
+ "autoname": "format:SPS-{YYYY}-{#####}",
+ "track_changes": 1,
+ "title_field": "student_name",
+ "description": "A sponsor paying a student's fees for one academic year: the share is moved off the student's invoice (credit note) onto an invoice to the sponsor (educore.finance.sponsors).",
+ "fields": [
+  {
+   "fieldname": "sponsor",
+   "fieldtype": "Link",
+   "label": "Sponsor",
+   "options": "Sponsor",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "sponsor_name",
+   "fieldtype": "Data",
+   "label": "Sponsor Name",
+   "read_only": 1,
+   "fetch_from": "sponsor.sponsor_name"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "read_only": 1,
+   "fetch_from": "student.student_name"
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "sponsor_reference",
+   "fieldtype": "Data",
+   "label": "Sponsor's Reference",
+   "description": "The sponsor's own bursary, loan or award number."
+  },
+  {
+   "fieldname": "column_cover",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cover_type",
+   "fieldtype": "Select",
+   "label": "Cover",
+   "options": "Full fees\nPercent of fees\nAmount",
+   "reqd": 1,
+   "default": "Full fees"
+  },
+  {
+   "fieldname": "cover_value",
+   "fieldtype": "Float",
+   "label": "Percent or Amount",
+   "depends_on": "eval:doc.cover_type!='Full fees'"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Recorded\nInvoiced\nWithdrawn",
+   "default": "Recorded",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount Invoiced to the Sponsor",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sponsor_invoice",
+   "fieldtype": "Link",
+   "label": "Sponsor Invoice",
+   "options": "Sales Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "credit_note",
+   "fieldtype": "Link",
+   "label": "Credit Note to the Student",
+   "options": "Sales Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "recorded_by",
+   "fieldtype": "Link",
+   "label": "Recorded By",
+   "options": "User",
+   "read_only": 1
+  }
+ ],
+ "field_order": [
+  "sponsor",
+  "sponsor_name",
+  "student",
+  "student_name",
+  "academic_year",
+  "sponsor_reference",
+  "column_cover",
+  "cover_type",
+  "cover_value",
+  "status",
+  "amount",
+  "sponsor_invoice",
+  "credit_note",
+  "recorded_by"
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Bursar",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Finance Officer",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Student Fees Officer",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Financial Aid Officer",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  }
+ ]
+}

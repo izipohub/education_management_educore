@@ -5,7 +5,7 @@
  */
 
 export type Severity = "success" | "info" | "warn" | "danger" | "secondary" | "contrast";
-export type StatusKind = "application" | "offer" | "eligibility" | "registration" | "document" | "fee" | "standing" | "period" | "class" | "marks" | "result" | "completion" | "change" | "request";
+export type StatusKind = "application" | "offer" | "eligibility" | "registration" | "document" | "fee" | "standing" | "period" | "class" | "marks" | "result" | "completion" | "change" | "request" | "lecturer" | "sponsorship";
 
 type Entry = [label: string, severity: Severity];
 
@@ -45,6 +45,7 @@ const TAGS: Record<StatusKind, Record<string, Entry>> = {
     Unpaid: ["Unpaid", "warn"],
     Paid: ["Paid", "success"],
     Waived: ["Waived", "success"],
+    "Not required": ["Not required", "secondary"],
   },
   standing: {
     "Good standing": ["Good standing", "success"],
@@ -87,6 +88,16 @@ const TAGS: Record<StatusKind, Record<string, Entry>> = {
     "no-lecturer": ["No lecturer", "warn"],
     "to-update": ["List out of date", "warn"],
     "no-class": ["No class yet", "secondary"],
+  },
+  sponsorship: {
+    Recorded: ["Recorded", "info"],
+    Invoiced: ["Invoiced", "success"],
+    Withdrawn: ["Withdrawn", "secondary"],
+  },
+  lecturer: {
+    Ready: ["Ready", "success"],
+    Incomplete: ["Incomplete", "warn"],
+    Left: ["Left", "secondary"],
   },
   period: {
     upcoming: ["Opens soon", "secondary"],

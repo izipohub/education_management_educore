@@ -5,9 +5,11 @@ import {
   BookOpen,
   CalendarCog,
   ClipboardCheck,
+  Contact,
   FileCheck,
   FileText,
   GraduationCap,
+  HandCoins,
   House,
   Landmark,
   LibraryBig,
@@ -29,13 +31,15 @@ import { useRoute, useRouter } from "vue-router";
 import { useSession } from "@/core/auth/session";
 import { useBranding } from "@/core/branding";
 import { CURRICULUM_ROLES } from "@/modules/curriculum/api";
-import { FEE_SETTINGS_ROLES, FINANCE_ROLES } from "@/modules/finance/api";
+import { FEE_SETTINGS_ROLES, FINANCE_ROLES, PAYMENT_ROLES } from "@/modules/finance/api";
 import { EXAMINATION_ROLES } from "@/modules/examinations/api";
 import { GRADUATION_ROLES } from "@/modules/graduation/api";
 import { ICT_ROLES } from "@/modules/integrations/api";
 import { ALLOCATION_ROLES } from "@/modules/teaching/allocation";
 import { RECORD_ROLES } from "@/modules/records/api";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
+import { STAFF_ROLES } from "@/modules/staff/api";
+import { SPONSOR_ROLES } from "@/modules/finance/sponsors";
 
 const session = useSession();
 const router = useRouter();
@@ -85,9 +89,11 @@ const NAV: NavItem[] = [
   { label: "Students", icon: Users, to: "/students", roles: RECORD_ROLES },
   { label: "Curriculum", icon: LibraryBig, to: "/curriculum", roles: CURRICULUM_ROLES },
   { label: "Teaching", icon: Presentation, to: "/teaching", roles: ALLOCATION_ROLES },
+  { label: "Academic staff", icon: Contact, to: "/academic-staff", roles: STAFF_ROLES },
   { label: "Examinations", icon: FileCheck, to: "/examinations", roles: EXAMINATION_ROLES },
   { label: "Graduation", icon: Award, to: "/graduation", roles: GRADUATION_ROLES },
-  { label: "Student payments", icon: Landmark, to: "/student-payments", roles: FINANCE_ROLES },
+  { label: "Student payments", icon: Landmark, to: "/student-payments", roles: PAYMENT_ROLES },
+  { label: "Sponsors", icon: HandCoins, to: "/sponsors", roles: SPONSOR_ROLES },
   { label: "Application fees", icon: Banknote, to: "/application-fees", roles: FINANCE_ROLES },
   { label: "Fee settings", icon: SlidersHorizontal, to: "/fee-settings", roles: FEE_SETTINGS_ROLES },
   { label: "Admission setup", icon: Settings, to: "/admission-setup", roles: ["Registrar", "System Manager"] },

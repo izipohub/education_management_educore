@@ -44,6 +44,11 @@ students and `/registrations` for faculty officers).
 - **Registration setup** (Registrar): each academic year's period (opens, closes, late registration until, late
   fee, course changes until) and the rules (outstanding balance allowed, deposit, most credits per year, faculty approval).
 
+- **Sponsors** (Finance, Financial Aid): a sponsor pays a student's year in full, a percent or an amount; once the
+  year is invoiced its share moves off the student's invoice (credit note, "Sponsored by ...") onto an invoice to the
+  sponsor, on the same campus. The late fee stays the student's. The deposit is worked out on the student's own share;
+  a year a sponsor took over after the student paid becomes a credit towards the next deposit. Sponsors pay by EFT
+  with their number (SPN-00001) as the reference, matched hourly (`educore.finance.sponsors`).
 - **Student payments** (Finance): fees paid by EFT with the student number as the reference are matched hourly from
   the bank statement (educore.finance.student_payments): a Payment Entry against the oldest unpaid invoices, the bank
   line reconciled, any remainder kept as an advance, which counts towards the next year's deposit. Deposits without

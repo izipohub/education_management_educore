@@ -70,11 +70,11 @@ def _pay_deposit(student: str, offering: str):
 	"""An advance payment, not yet set against an invoice: the registration deposit"""
 	from educore.registration import rules
 
-	if rules.paid_in_advance(student) >= rules.deposit_required(offering, PERIOD["academic_year"]):
+	if rules.paid_in_advance(student) >= rules.deposit_required(offering, PERIOD["academic_year"], student):
 		return
 	company, bank = _bank()
 	customer = frappe.db.get_value("Student", student, "customer")
-	amount = rules.deposit_required(offering, PERIOD["academic_year"])
+	amount = rules.deposit_required(offering, PERIOD["academic_year"], student)
 	payment = frappe.get_doc(
 		{
 			"doctype": "Payment Entry",

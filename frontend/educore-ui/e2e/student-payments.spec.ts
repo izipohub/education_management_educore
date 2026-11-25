@@ -8,7 +8,7 @@ test("finance sees student payments and a deposit waiting to be assigned", async
   await page.getByRole("tab", { name: /^To assign/ }).click();
   const line = tableRow(page, "CASH DEP KEETMANSHOOP BRANCH A BEUKES");
   await expect(line).toBeVisible();
-  await line.getByRole("button", { name: "Assign to a student" }).click();
+  await line.getByRole("button", { name: "Assign" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("button", { name: "Record payment" })).toBeDisabled();
   await page.screenshot({ path: "e2e/results/student-payments.png" });

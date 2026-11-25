@@ -19,6 +19,8 @@ def after_migrate():
 	registration.ensure_defaults()
 	exam_results.ensure_defaults()
 	_fee_setup()
+	_lecturers()
+	_funding()
 
 
 def _fee_setup():
@@ -28,3 +30,18 @@ def _fee_setup():
 	company = frappe.db.get_value("Campus", {"is_main_campus": 1}, "company")
 	if company:
 		ensure_fee_setup(company)
+
+
+def _lecturers():
+	"""Every lecturer login has its Instructor record (logins made before this existed included)"""
+	from educore.academics.lecturers import sync_all
+
+	if frappe.db.has_column("Instructor", "educore_user"):
+		sync_all()
+
+
+def _funding():
+	"""The default funding routes, and the regional (SADC) countries for the application fee"""
+	from educore.admissions import funding
+
+	funding.ensure_defaults()

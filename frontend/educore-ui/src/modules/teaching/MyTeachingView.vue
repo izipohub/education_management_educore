@@ -52,8 +52,7 @@ const totalStudents = computed(() => new Set(data.value?.classes.flatMap((c) => 
     <div v-else-if="!data" class="loading"><ProgressSpinner style="width: 2.5rem; height: 2.5rem" aria-label="Loading" /></div>
 
     <Message v-else-if="!data.linked" severity="info" :closable="false">
-      Your login is not yet linked to your staff record. Ask HR to link your Employee record to this login, and the
-      faculty to add you to your courses.
+      You are not on record as a lecturer. Ask your head of department.
     </Message>
 
     <p v-else-if="!data.classes.length" class="empty">You are not assigned to any course in {{ academicYear }}.</p>

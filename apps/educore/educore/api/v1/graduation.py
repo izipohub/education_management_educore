@@ -13,7 +13,7 @@ from frappe.utils import getdate, nowdate
 from educore.academics import graduation
 
 CONFIRM_ROLES = ("Registrar", "System Manager")
-READ_ROLES = (*CONFIRM_ROLES, "Registry Officer", "Examinations Officer", "Faculty Officer", "Dean")
+READ_ROLES = (*CONFIRM_ROLES, "Registry Officer", "Examinations Officer", "Faculty Officer", "Dean", "Head of Department", "Campus Director", "Executive Management")
 
 
 def _has(roles) -> bool:

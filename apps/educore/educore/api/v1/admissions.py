@@ -450,7 +450,12 @@ def capture(data: dict | str) -> dict:
 	doc.educore_fee_amount = fees.fee_for(doc)
 	receipt = (data.get("receipt_number") or "").strip()
 	doc.educore_fee_status = "Paid" if receipt else "Unpaid"
-	if receipt:
+	from educore.admissions import funding
+
+	if funding.fee_exempt(doc):
+		doc.educore_fee_status = fees.NOT_REQUIRED
+		doc.educore_fee_note = _("Funded by {0}: no application fee").format(doc.educore_fee_payer)
+	elif receipt:
 		doc.educore_fee_paid_on = doc.application_date
 		doc.educore_fee_note = _("Paid at the campus cashier, receipt {0}").format(receipt)
 	apply._insert_draft(doc)

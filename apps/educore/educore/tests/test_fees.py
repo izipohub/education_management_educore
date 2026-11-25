@@ -83,10 +83,10 @@ class TestFeeAccess(IntegrationTestCase):
 		if not frappe.db.exists("User", "student-fees-officer.osh@educore.localhost"):
 			self.skipTest("run educore.access.test_users.create first")
 
-	def _visible(self, login):
+	def _visible(self, login, group="Student"):
 		frappe.set_user(f"{login}@educore.localhost")
 		try:
-			return set(frappe.get_list("Sales Invoice", filters={"docstatus": 1}, pluck="customer"))
+			return set(frappe.get_list("Sales Invoice", filters={"docstatus": 1, "customer_group": group}, pluck="customer"))
 		finally:
 			frappe.set_user("Administrator")
 
@@ -96,3 +96,7 @@ class TestFeeAccess(IntegrationTestCase):
 	def test_fees_staff_see_their_campus_and_the_bursar_all(self):
 		self.assertEqual(self._visible("student-fees-officer.osh"), {"Martha Shilongo", "Tangeni Iiyambo"})
 		self.assertEqual(len(self._visible("bursar")), 6)
+		# a sponsor's invoice for a student is on that student's campus (educore.finance.sponsors)
+		if frappe.db.exists("Sponsor", {"sponsor_name": "Namibia Students Financial Assistance Fund"}):
+			self.assertIn("Namibia Students Financial Assistance Fund", self._visible("student-fees-officer.osh", "Sponsor"))
+			self.assertNotIn("Namibia Students Financial Assistance Fund", self._visible("student-fees-officer.whk", "Sponsor"))

@@ -35,8 +35,20 @@ class TestTeachingAPI(IntegrationTestCase):
 		self.assertTrue(windhoek)
 		self.assertFalse(windhoek & oshakati)
 
-	def test_a_login_without_an_hr_record_is_told_so(self):
-		self.assertEqual(self._classes("lecturer"), {"linked": False, "academic_year": None, "academic_years": [], "classes": []})
+	def test_a_lecturer_without_an_hr_record_is_on_record_already(self):
+		# made from the Lecturer position (educore.academics.lecturers); no classes allocated yet
+		data = self._classes("lecturer")
+		self.assertTrue(data["linked"])
+		self.assertEqual(data["classes"], [])
+
+	def test_a_lecturer_marked_as_left_is_told_so(self):
+		frappe.db.savepoint("lecturer_left")
+		try:
+			frappe.db.set_value("Instructor", {"educore_user": "lecturer@educore.localhost"}, "status", "Left")
+			self.assertEqual(self._classes("lecturer"), {"linked": False, "academic_year": None, "academic_years": [], "classes": []})
+		finally:
+			frappe.set_user("Administrator")
+			frappe.db.rollback(save_point="lecturer_left")
 
 	def test_students_are_refused(self):
 		self.assertRaises(frappe.PermissionError, self._classes, "student1.kmp")

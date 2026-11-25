@@ -26,7 +26,7 @@ export interface Application {
   /** what this user may do now, from the admission workflow */
   actions: Action[];
   points: number | null;
-  fee_status: "Unpaid" | "Paid" | "Waived" | null;
+  fee_status: "Unpaid" | "Paid" | "Waived" | "Not required" | null;
   /** an online application (paper applications are checked in person) */
   online: boolean;
   documents_required: number;

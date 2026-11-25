@@ -71,7 +71,7 @@ class TestRegistryAPI(IntegrationTestCase):
 		name = self._approved(email="test.particulars@example.com")
 		frappe.db.set_value("Student Applicant", name, {
 			"educore_national_id": "07010100999",
-			"educore_fee_payer": "Sponsor or bursary",
+			"educore_fee_payer": "NSFAF",
 			"educore_fee_payer_name": "NSFAF",
 			"educore_kin_relationship": "Mother",
 			"educore_kin_name": "Test Mother",

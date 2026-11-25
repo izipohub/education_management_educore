@@ -34,11 +34,22 @@ def is_international(doc) -> bool:
 
 
 def fee_for(doc) -> float:
+	"""By nationality (home, regional, international) and how the application came in (online, or a paper form
+	handed in at a campus); none on a funding route that pays no application fee (educore.admissions.funding)"""
+	from educore.admissions import funding
+
+	if funding.fee_exempt(doc):
+		return 0.0
 	settings = rules.settings()
-	international = is_international(doc)
-	if not doc.get("educore_applicant_user"):  # a paper form handed in at a campus
-		return flt(settings.fee_paper_international if international else settings.fee_paper_local)
-	return flt(settings.fee_international if international else settings.fee_namibian)
+	paper = not doc.get("educore_applicant_user")
+	where = funding.region(doc)
+	if where == "home":
+		return flt(settings.fee_paper_local if paper else settings.fee_namibian)
+	international = flt(settings.fee_paper_international if paper else settings.fee_international)
+	if where == "regional":
+		regional = flt(settings.fee_paper_regional if paper else settings.fee_regional)
+		return regional or international
+	return international
 
 
 def bank_details() -> dict:
@@ -56,15 +67,30 @@ def bank_details() -> dict:
 	}
 
 
+NOT_REQUIRED = "Not required"
+
+
 def set_fee(doc):
-	"""An online application's fee, while unpaid (home or international, Admission Settings)"""
-	if doc.get("educore_applicant_user") and (doc.get("educore_fee_status") or "Unpaid") == "Unpaid":
-		doc.educore_fee_status = "Unpaid"
-		doc.educore_fee_amount = fee_for(doc)
+	"""An online application's fee, while not settled: by nationality, or not required on a funding route that pays
+	none (Admission Settings, Funding Route). Choosing such a route after all makes the fee due again."""
+	from educore.admissions import funding
+
+	if not doc.get("educore_applicant_user") or (doc.get("educore_fee_status") or "Unpaid") not in ("Unpaid", NOT_REQUIRED):
+		return
+	if funding.fee_exempt(doc):
+		route = funding.route_of(doc)
+		doc.educore_fee_status = NOT_REQUIRED
+		doc.educore_fee_amount = 0
+		doc.educore_fee_note = _("Funded by {0}: no application fee").format(route.name)
+		return
+	if doc.get("educore_fee_status") == NOT_REQUIRED:
+		doc.educore_fee_note = None
+	doc.educore_fee_status = "Unpaid"
+	doc.educore_fee_amount = fee_for(doc)
 
 
 def settled(doc) -> bool:
-	return doc.get("educore_fee_status") in ("Paid", "Waived")
+	return doc.get("educore_fee_status") in ("Paid", "Waived", NOT_REQUIRED)
 
 
 # --- matching the bank statement -----------------------------------------------------------------------

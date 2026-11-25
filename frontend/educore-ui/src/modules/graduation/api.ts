@@ -1,7 +1,17 @@
 import { get, post } from "@/core/api/client";
 
 /** who sees the Graduation screen (educore.api.v1.graduation.READ_ROLES); the Registrar confirms */
-export const GRADUATION_ROLES = ["Registrar", "Registry Officer", "Examinations Officer", "Faculty Officer", "Dean", "System Manager"];
+export const GRADUATION_ROLES = [
+  "Registrar",
+  "Registry Officer",
+  "Examinations Officer",
+  "Faculty Officer",
+  "Dean",
+  "Head of Department",
+  "Campus Director",
+  "Executive Management",
+  "System Manager",
+];
 
 const API = "educore.api.v1.graduation";
 

@@ -13,6 +13,9 @@ export const CURRICULUM_ROLES = [
   "Timetable Officer",
   "Examinations Officer",
   "Quality Assurance Officer",
+  "Registry Officer",
+  "Campus Director",
+  "Executive Management",
   "System Manager",
 ];
 

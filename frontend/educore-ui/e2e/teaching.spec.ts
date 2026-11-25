@@ -28,8 +28,8 @@ test("a head of department who lectures sees the colleague on the same course", 
   await expect(page.getByText("With Lecturer COMP Windhoek").first()).toBeVisible();
 });
 
-test("a lecturer login not yet linked to HR is told what to do", async ({ page }) => {
+test("a lecturer without an HR staff record is on record already, with no classes yet", async ({ page }) => {
   await signIn(page, "lecturer");
   await page.getByRole("link", { name: "My teaching" }).click();
-  await expect(page.getByText(/not yet linked to your staff record/)).toBeVisible();
+  await expect(page.getByText(/You are not assigned to any course/)).toBeVisible();
 });

@@ -53,6 +53,10 @@ def match_bank_transactions() -> int:
 	"""Scheduled hourly: record the payments of students whose number appears on an unallocated deposit"""
 	matched = 0
 	for deposit in unallocated_deposits():
+		from educore.finance.sponsors import sponsor_numbers_in
+
+		if sponsor_numbers_in(deposit.description, deposit.reference_number):
+			continue  # a sponsor's payment, though it may list its students (educore.finance.sponsors)
 		numbers = [n for n in student_numbers_in(deposit.description, deposit.reference_number) if frappe.db.exists("Student", n)]
 		# one student per deposit: a line naming two students is left for Finance to split
 		if len(numbers) == 1 and record_payment(numbers[0], deposit.name):
@@ -68,6 +72,16 @@ def record_payment(student: str, bank_transaction: str) -> str | None:
 
 
 def _record_payment(student: str, bank_transaction: str) -> str | None:
+	customer = frappe.db.get_value("Student", student, "customer")
+	if not customer:
+		return None
+	return book_receipt(customer, bank_transaction, _("Student fees, {0}").format(student))
+
+
+def book_receipt(customer: str, bank_transaction: str, what: str) -> str | None:
+	"""A deposit on the bank statement as a Payment Entry from this customer (a student or a sponsor), set against
+	their oldest unpaid invoices first, the bank line reconciled against it. Runs as the caller's user: callers
+	switch to the system first (student_fees._as_system)."""
 	from erpnext.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool import _reconcile_vouchers
 	from erpnext.accounts.party import get_party_account
 
@@ -75,8 +89,7 @@ def _record_payment(student: str, bank_transaction: str) -> str | None:
 
 	txn = frappe.get_doc("Bank Transaction", bank_transaction)
 	amount = flt(txn.unallocated_amount)
-	customer = frappe.db.get_value("Student", student, "customer")
-	if amount <= 0 or not customer:
+	if amount <= 0:
 		return None
 	bank_gl, company = frappe.db.get_value("Bank Account", txn.bank_account, ["account", "company"])
 	ensure_fiscal_year(txn.date, company)
@@ -98,7 +111,7 @@ def _record_payment(student: str, bank_transaction: str) -> str | None:
 			"target_exchange_rate": 1,
 			"reference_no": (txn.reference_number or txn.name)[:140],
 			"reference_date": getdate(txn.date),
-			"remarks": _("Student fees, {0}: from the bank statement ({1})").format(student, txn.name),
+			"remarks": _("{0}: from the bank statement ({1})").format(what, txn.name),
 		}
 	)
 	# the oldest unpaid invoices first; what is left stays as an advance (the deposit towards a new year)

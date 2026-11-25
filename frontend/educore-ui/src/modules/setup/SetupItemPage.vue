@@ -6,15 +6,16 @@ import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import EcSkeleton from "@/core/ui/EcSkeleton.vue";
 import DocumentEditor from "./DocumentEditor.vue";
+import FundingRouteEditor from "./FundingRouteEditor.vue";
 import PathwayEditor from "./PathwayEditor.vue";
 import ProgrammeEditor from "./ProgrammeEditor.vue";
-import { type DocumentType, type Pathway, type Setup, getSetup, saveDocumentType, savePathway, saveProgramme } from "./api";
+import { type DocumentType, type FundingRoute, type Pathway, type Setup, getSetup, saveDocumentType, saveFundingRoute, savePathway, saveProgramme } from "./api";
 
 /**
  * One entry pathway, document or programme of the admission setup, on its own page; Save or Cancel returns to
  * its list. `name` is "new" while adding a pathway or a document.
  */
-const props = defineProps<{ section: "pathways" | "documents" | "programmes"; name: string }>();
+const props = defineProps<{ section: "pathways" | "documents" | "funding" | "programmes"; name: string }>();
 const router = useRouter();
 const toast = useToast();
 const setup = ref<Setup | null>(null);
@@ -29,7 +30,7 @@ onMounted(async () => {
   }
 });
 
-const LABELS = { pathways: "Entry pathways", documents: "Documents", programmes: "Programmes" };
+const LABELS = { pathways: "Entry pathways", documents: "Documents", funding: "Funding routes", programmes: "Programmes" };
 const back = computed(() => ({ name: "admission-setup", query: { tab: props.section } }));
 const isNew = computed(() => props.name === "new");
 const pathway = computed<Pathway | "new" | null>(() => (isNew.value ? "new" : (setup.value?.pathways.find((p) => p.name === props.name) ?? null)));
@@ -37,7 +38,15 @@ const documentType = computed<DocumentType | "new" | null>(() =>
   isNew.value ? "new" : (setup.value?.documents.find((d) => d.name === props.name) ?? null),
 );
 const programme = computed(() => setup.value?.programmes.find((p) => p.name === props.name) ?? null);
-const missing = computed(() => setup.value && !isNew.value && !(props.section === "pathways" ? pathway.value : props.section === "documents" ? documentType.value : programme.value));
+const fundingRoute = computed<FundingRoute | "new" | null>(() =>
+  isNew.value ? "new" : (setup.value?.funding_routes.find((r) => r.name === props.name) ?? null),
+);
+const missing = computed(
+  () =>
+    setup.value &&
+    !isNew.value &&
+    !(props.section === "pathways" ? pathway.value : props.section === "documents" ? documentType.value : props.section === "funding" ? fundingRoute.value : programme.value),
+);
 
 async function run(call: () => Promise<Setup>, message: string) {
   saving.value = true;
@@ -77,6 +86,14 @@ const cancel = () => router.push(back.value);
         :setup="setup"
         :saving="saving"
         @save="(data, old) => run(() => saveDocumentType(data, old), 'Document saved')"
+        @cancel="cancel"
+      />
+      <FundingRouteEditor
+        v-else-if="section === 'funding' && fundingRoute"
+        :route="fundingRoute"
+        :setup="setup"
+        :saving="saving"
+        @save="(data, old) => run(() => saveFundingRoute(data, old), 'Funding route saved')"
         @cancel="cancel"
       />
       <ProgrammeEditor

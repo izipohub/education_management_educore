@@ -24,6 +24,8 @@ RECORD_ROLES = (
 	"Examinations Officer",
 	"Student Affairs Officer",
 	"Financial Aid Officer",
+	# contact details and support needs of students in residence
+	"Accommodation Officer",
 	"System Manager",
 )
 
@@ -46,7 +48,7 @@ def _latest_enrolment(student: str) -> dict | None:
 def _owing(student: str) -> float:
 	return flt(
 		frappe.db.sql(
-			"select sum(outstanding_amount) from `tabSales Invoice` where docstatus = 1 and student = %s", student
+			"select sum(outstanding_amount) from `tabSales Invoice` where docstatus = 1 and student = %s and outstanding_amount > 0", student
 		)[0][0]
 	)
 
@@ -125,6 +127,15 @@ def student(name: str) -> dict:
 			"credits": sum(c["credits"] for c in courses),
 		})
 
+	sponsored = [
+		{**s, "cover": _cover(s)}
+		for s in frappe.get_all(
+			"Sponsorship",
+			filters={"student": name, "status": ("!=", "Withdrawn")},
+			fields=["sponsor_name", "academic_year", "cover_type", "cover_value", "amount", "status", "sponsor_reference"],
+			order_by="academic_year desc",
+		)
+	]
 	invoices = frappe.get_all(
 		"Sales Invoice",
 		filters={"student": name, "docstatus": 1},
@@ -179,8 +190,16 @@ def student(name: str) -> dict:
 			if field.startswith("educore_")
 		},
 		"guardians": guardians,
+		"sponsors": sponsored,
 		"enrolments": enrolments,
 		"invoices": invoices,
-		"owing": flt(sum(flt(i.outstanding_amount) for i in invoices), 2),
+		# what is owed (a credit is not a negative debt: it counts towards the next deposit)
+		"owing": flt(sum(max(flt(i.outstanding_amount), 0) for i in invoices), 2),
 		"documents": documents,
 	}
+
+
+def _cover(row) -> str:
+	from educore.api.v1.sponsors import _cover_label
+
+	return _cover_label(row)

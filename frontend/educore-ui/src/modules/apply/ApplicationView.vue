@@ -141,7 +141,7 @@ async function startApplication() {
 /** how they are applying (step 1, above the particulars) */
 const personal = reactive({ pathway: "", international: false });
 /** the particulars (modules/apply/ApplicantDetails.vue) */
-const details = ref<DetailsForm>(emptyDetails("Namibian"));
+const details = ref<DetailsForm>(emptyDetails("Namibia"));
 /** choosing a route at another level drops the programmes already chosen: said before saving */
 const levelChange = computed(() => {
   const next = pathwayByName.value.get(personal.pathway);
@@ -165,7 +165,7 @@ const choices = ref<(string | null)[]>([null, null, null]);
 function resetForms() {
   const a = app.value;
   if (!a) return;
-  details.value = detailsFrom(a.personal, "Namibian");
+  details.value = detailsFrom(a.personal, options.value?.home_country ?? "Namibia");
   Object.assign(personal, { pathway: a.pathway ?? "", international: a.international });
   Object.assign(school, {
     selected: a.school,
@@ -473,7 +473,7 @@ async function submit() {
                 <SelectButton v-model="personal.international" :options="RESIDENCY" option-label="label" option-value="value" :allow-empty="false" aria-label="Residency" />
               </div>
             </div>
-            <ApplicantDetails v-model="details" :international="personal.international" :dial-codes="options?.dial_codes ?? []" :home-country="options?.home_country ?? 'Namibia'">
+            <ApplicantDetails v-model="details" :international="personal.international" :dial-codes="options?.dial_codes ?? []" :home-country="options?.home_country ?? 'Namibia'" :funding-routes="options?.funding_routes ?? []" :countries="options?.countries ?? []">
               <template #email>
                 <EcField label="Email" for="email" hint="Your sign-in; it becomes your student login">
                   <InputText id="email" :model-value="app?.personal.student_email_id ?? ''" type="email" fluid readonly />

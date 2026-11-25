@@ -242,6 +242,15 @@ def document_plan(doc) -> dict[str, bool]:
 			continue
 		if row.applies_to == "Everyone" or row.applies_to == ("International applicants" if international else "Home applicants"):
 			asked[row.document_type] = asked.get(row.document_type, False) or bool(row.required)
+	# the funding route's documents (educore.admissions.funding)
+	from educore.admissions import funding
+
+	route = funding.route_of(doc)
+	for row in route.documents if route else []:
+		if row.document_type not in is_active:
+			continue
+		if row.applies_to == "Everyone" or row.applies_to == ("International applicants" if international else "Home applicants"):
+			asked[row.document_type] = asked.get(row.document_type, False) or bool(row.required)
 	for d in active:
 		if d.required_for == "Optional":
 			asked.setdefault(d.name, False)
@@ -278,6 +287,11 @@ def missing(doc) -> list[str]:
 		gaps.append(_("Your next of kin: relationship, name and phone"))
 	if not doc.get("educore_fee_payer"):
 		gaps.append(_("Who pays your fees"))
+	else:
+		from educore.admissions import funding
+
+		if not funding.route_of(doc):
+			gaps.append(_("Who pays your fees: choose from the list"))
 	pathway = pathways.of(doc)
 	if not pathway:
 		gaps.append(_("Your pathway"))

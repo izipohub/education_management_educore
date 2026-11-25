@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import InputNumber from "primevue/inputnumber";
+import MultiSelect from "primevue/multiselect";
 import Message from "primevue/message";
 import Select from "primevue/select";
 import { useToast } from "primevue/usetoast";
@@ -23,9 +24,13 @@ const form = ref<FeeSettings | null>(null);
 const error = ref("");
 const saving = ref(false);
 
+/** the funding routes that pay no application fee (NSFAF, NTA), as the Bursar chooses them */
+const feeFree = ref<string[]>([]);
+const freeOf = (d: FeeSettings) => d.funding_routes.filter((r) => !r.pays_application_fee).map((r) => r.name);
 function take(data: FeeSettings) {
   saved.value = data;
   form.value = JSON.parse(JSON.stringify(data));
+  feeFree.value = freeOf(data);
 }
 onMounted(async () => {
   try {
@@ -38,8 +43,8 @@ onMounted(async () => {
 const editable = computed(() => Boolean(saved.value?.can_edit));
 const changed = computed(() => {
   if (!saved.value || !form.value) return false;
-  const pick = (d: FeeSettings) => JSON.stringify([d.application, d.registration, d.late_fees]);
-  return pick(saved.value) !== pick(form.value);
+  const pick = (d: FeeSettings) => JSON.stringify([d.application, d.registration, d.late_fees, d.regional_countries]);
+  return pick(saved.value) !== pick(form.value) || JSON.stringify([...feeFree.value].sort()) !== JSON.stringify(freeOf(saved.value).sort());
 });
 const bank = computed(() => form.value?.bank_accounts.find((b) => b.name === form.value?.application.fee_bank_account));
 const percent = computed(() => form.value?.registration.deposit_type === "Percent of the year's fees");
@@ -49,7 +54,15 @@ async function save() {
   if (!form.value) return;
   saving.value = true;
   try {
-    take(await saveFeeSettings({ application: form.value.application, registration: form.value.registration, late_fees: form.value.late_fees }));
+    take(
+      await saveFeeSettings({
+        application: form.value.application,
+        registration: form.value.registration,
+        late_fees: form.value.late_fees,
+        regional_countries: form.value.regional_countries,
+        fee_free_routes: feeFree.value,
+      }),
+    );
     toast.add({ severity: "success", summary: "Fee settings saved", life: 2500 });
   } catch (e) {
     toast.add({ severity: "error", summary: "Not saved", detail: e instanceof Error ? e.message : String(e), life: 8000 });
@@ -80,6 +93,11 @@ const undo = () => saved.value && take(saved.value);
               <td><InputNumber v-model="form.application.fee_paper_local" :min="0" :min-fraction-digits="2" :disabled="!editable" aria-label="Paper fee, local applicants" fluid /></td>
             </tr>
             <tr>
+              <th scope="row">Regional applicants</th>
+              <td><InputNumber v-model="form.application.fee_regional" :min="0" :min-fraction-digits="2" :disabled="!editable" placeholder="As international" aria-label="Online fee, regional applicants" fluid /></td>
+              <td><InputNumber v-model="form.application.fee_paper_regional" :min="0" :min-fraction-digits="2" :disabled="!editable" placeholder="As international" aria-label="Paper fee, regional applicants" fluid /></td>
+            </tr>
+            <tr>
               <th scope="row">International applicants</th>
               <td><InputNumber v-model="form.application.fee_international" :min="0" :min-fraction-digits="2" :disabled="!editable" aria-label="Online fee, international applicants" fluid /></td>
               <td><InputNumber v-model="form.application.fee_paper_international" :min="0" :min-fraction-digits="2" :disabled="!editable" aria-label="Paper fee, international applicants" fluid /></td>
@@ -87,6 +105,12 @@ const undo = () => saved.value && take(saved.value);
           </tbody>
         </table>
         <div class="rows">
+          <SettingRow label="Regional countries" :help="`Their citizens pay the regional fee (${form.regional_countries.length})`" for="regional">
+            <MultiSelect v-model="form.regional_countries" input-id="regional" :options="form.countries" filter display="comma" :max-selected-labels="3" :disabled="!editable" placeholder="None" fluid />
+          </SettingRow>
+          <SettingRow label="No application fee for" help="Funding routes whose applicants pay none" for="fee-free">
+            <MultiSelect v-model="feeFree" input-id="fee-free" :options="form.funding_routes.map((r) => r.name)" display="chip" :disabled="!editable" placeholder="Every route pays" fluid />
+          </SettingRow>
           <SettingRow label="Bank account" for="bank">
             <Select v-model="form.application.fee_bank_account" input-id="bank" :options="form.bank_accounts" option-label="label" option-value="name" placeholder="Choose an account" :disabled="!editable" show-clear fluid />
           </SettingRow>

@@ -51,7 +51,7 @@ onMounted(async () => {
     paperFees.value = c.fees;
     form.intake = c.intakes[0]?.name ?? "";
     form.pathway = o.pathways[0]?.name ?? "";
-    details.value.nationality = o.home_country === "Namibia" ? "Namibian" : "";
+    details.value.nationality = o.home_country;
   } catch (e) {
     loadError.value = e instanceof Error ? e.message : String(e);
   }
@@ -200,7 +200,7 @@ async function save() {
       </EcPanel>
 
       <EcPanel title="Applicant">
-        <ApplicantDetails v-model="details" staff :international="form.international" :dial-codes="options.dial_codes" :home-country="options.home_country">
+        <ApplicantDetails v-model="details" staff :international="form.international" :dial-codes="options.dial_codes" :home-country="options.home_country" :funding-routes="options.funding_routes" :countries="options.countries">
           <template #email>
             <EcField
               label="Email"

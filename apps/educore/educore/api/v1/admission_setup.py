@@ -77,6 +77,7 @@ def setup() -> dict:
 			fields=["name", "required_for", "must_be_certified", "description", "active"],
 			order_by="name asc",
 		),
+		"funding_routes": [_funding_route(name) for name in frappe.get_all("Funding Route", pluck="name", order_by="sort_order asc, name asc")],
 		"programmes": [_programme(name) for name in frappe.get_all(
 			"Program", filters={"educore_programme_code": ("is", "set")}, pluck="name", order_by="program_name asc"
 		)],
@@ -91,6 +92,8 @@ def setup() -> dict:
 			"evidence": _options("Admission Pathway", "evidence"),
 			"required_for": _options("Admission Document Type", "required_for"),
 			"applies_to": _options("Pathway Document", "applies_to"),
+			"funding_kinds": _options("Funding Route", "kind"),
+			"sponsors": frappe.get_all("Sponsor", filters={"disabled": 0}, fields=["name", "sponsor_name"], order_by="sponsor_name asc"),
 		},
 	}
 
@@ -309,6 +312,60 @@ def save_pathway(data: dict | str, name: str | None = None) -> dict:
 			elif field == "active":
 				value = 1 if value else 0
 			elif field == "description":
+				value = (value or "").strip() or None
+			doc.set(field, value)
+	if "documents" in data:
+		_set_documents(doc, data["documents"])
+	doc.save(ignore_permissions=True)
+	return setup()
+
+
+# --- funding routes ------------------------------------------------------------------------------------
+
+#: what the Registrar sets on a funding route; whether it pays the application fee is the Bursar's (fee_settings)
+FUNDING_FIELDS = ("kind", "sponsor", "description", "ask_who", "sort_order", "active")
+
+
+def _funding_route(name: str) -> dict:
+	doc = frappe.get_doc("Funding Route", name)
+	return {
+		"name": doc.name,
+		"route_name": doc.route_name,
+		**{f: doc.get(f) for f in FUNDING_FIELDS},
+		"sponsor_name": frappe.db.get_value("Sponsor", doc.sponsor, "sponsor_name") if doc.sponsor else None,
+		"pays_application_fee": bool(doc.pays_application_fee),
+		"documents": [{"document_type": d.document_type, "applies_to": d.applies_to, "required": bool(d.required)} for d in doc.documents],
+	}
+
+
+@frappe.whitelist(methods=["POST"])
+def save_funding_route(data: dict | str, name: str | None = None) -> dict:
+	"""Change a funding route, or add one (name empty: data.route_name is the new route's name)"""
+	_require_setup_role()
+	data = frappe.parse_json(data)
+	if name:
+		name = _rename("Funding Route", name, data.get("route_name"), "route_name")
+		doc = frappe.get_doc("Funding Route", name)
+	else:
+		new_name = (data.get("route_name") or "").strip()
+		if not new_name:
+			frappe.throw(_("Give the funding route a name"))
+		if frappe.db.exists("Funding Route", new_name):
+			frappe.throw(_("There is already a funding route called {0}").format(new_name))
+		doc = frappe.new_doc("Funding Route")
+		doc.route_name = new_name
+	if "kind" in data and data["kind"] not in _options("Funding Route", "kind"):
+		frappe.throw(_("Choose the kind of funding from the list"))
+	if data.get("sponsor") and not frappe.db.exists("Sponsor", data["sponsor"]):
+		frappe.throw(_("Unknown sponsor {0}").format(data["sponsor"]))
+	for field in FUNDING_FIELDS:
+		if field in data:
+			value = data[field]
+			if field in ("ask_who", "active"):
+				value = 1 if value else 0
+			elif field == "sort_order":
+				value = cint(value)
+			elif field in ("description", "sponsor"):
 				value = (value or "").strip() or None
 			doc.set(field, value)
 	if "documents" in data:

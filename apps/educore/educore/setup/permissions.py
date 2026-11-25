@@ -23,6 +23,13 @@ READ_ACCESS = (
 	("Program Enrollment", "Head of Department"),
 	("Program Enrollment", "Campus Director"),
 	("Program Enrollment", "Executive Management"),
+	# student support and sponsored students: the Students screen, read only (educore.api.v1.student_records)
+	("Student", "Student Affairs Officer"),
+	("Student", "Financial Aid Officer"),
+	("Student", "Accommodation Officer"),
+	("Program Enrollment", "Student Affairs Officer"),
+	("Program Enrollment", "Financial Aid Officer"),
+	("Program Enrollment", "Accommodation Officer"),
 )
 
 #: (DocType, role): upstream grants write, a university does not. Education lets Instructor (every

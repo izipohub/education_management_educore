@@ -1,13 +1,15 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useSession } from "@/core/auth/session";
 import { CURRICULUM_ROLES } from "@/modules/curriculum/api";
-import { FEE_SETTINGS_ROLES, FINANCE_ROLES } from "@/modules/finance/api";
+import { FEE_SETTINGS_ROLES, FINANCE_ROLES, PAYMENT_ROLES } from "@/modules/finance/api";
 import { EXAMINATION_ROLES } from "@/modules/examinations/api";
 import { GRADUATION_ROLES } from "@/modules/graduation/api";
 import { ICT_ROLES } from "@/modules/integrations/api";
 import { ALLOCATION_ROLES } from "@/modules/teaching/allocation";
 import { RECORD_ROLES } from "@/modules/records/api";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
+import { STAFF_ROLES } from "@/modules/staff/api";
+import { SPONSOR_ROLES } from "@/modules/finance/sponsors";
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -86,7 +88,7 @@ export const router = createRouter({
           meta: { title: "Admission setup", roles: ["Registrar", "System Manager"] },
         },
         {
-          path: "admission-setup/:section(pathways|documents|programmes)/:name",
+          path: "admission-setup/:section(pathways|documents|funding|programmes)/:name",
           name: "setup-item",
           component: () => import("@/modules/setup/SetupItemPage.vue"),
           props: true,
@@ -153,6 +155,19 @@ export const router = createRouter({
           meta: { title: "Class", roles: ALLOCATION_ROLES },
         },
         {
+          path: "academic-staff",
+          name: "academic-staff",
+          component: () => import("@/modules/staff/AcademicStaffView.vue"),
+          meta: { title: "Academic staff", roles: STAFF_ROLES },
+        },
+        {
+          path: "academic-staff/:name",
+          name: "lecturer",
+          component: () => import("@/modules/staff/LecturerPage.vue"),
+          props: true,
+          meta: { title: "Lecturer", roles: STAFF_ROLES },
+        },
+        {
           path: "examinations",
           name: "examinations",
           component: () => import("@/modules/examinations/ExaminationsView.vue"),
@@ -201,7 +216,20 @@ export const router = createRouter({
           path: "student-payments",
           name: "student-payments",
           component: () => import("@/modules/finance/StudentPaymentsView.vue"),
-          meta: { title: "Student payments", roles: FINANCE_ROLES },
+          meta: { title: "Student payments", roles: PAYMENT_ROLES },
+        },
+        {
+          path: "sponsors",
+          name: "sponsors",
+          component: () => import("@/modules/finance/SponsorsView.vue"),
+          meta: { title: "Sponsors", roles: SPONSOR_ROLES },
+        },
+        {
+          path: "sponsors/:name",
+          name: "sponsor",
+          component: () => import("@/modules/finance/SponsorPage.vue"),
+          props: true,
+          meta: { title: "Sponsor", roles: SPONSOR_ROLES },
         },
         {
           path: "fee-settings",

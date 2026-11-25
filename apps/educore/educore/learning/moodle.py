@@ -102,13 +102,17 @@ def _student_user(client: MoodleClient, student: str) -> int | None:
 
 def _lecturer_user(client: MoodleClient, instructor: str) -> int | None:
 	employee = frappe.db.get_value("Instructor", instructor, "employee")
-	if not employee:
+	if employee:
+		e = frappe.db.get_value("Employee", employee, ["first_name", "last_name", "user_id", "company_email", "personal_email"], as_dict=True)
+		email = e.user_id or e.company_email or e.personal_email
+		if email:
+			return _ensure_user(client, employee, e.first_name, e.last_name, email)
+	# no HR staff record yet: the lecturer's own login
+	user = frappe.db.get_value("Instructor", instructor, "educore_user")
+	if not user:
 		return None
-	e = frappe.db.get_value("Employee", employee, ["first_name", "last_name", "user_id", "company_email", "personal_email"], as_dict=True)
-	email = e.user_id or e.company_email or e.personal_email
-	if not email:
-		return None
-	return _ensure_user(client, employee, e.first_name, e.last_name, email)
+	u = frappe.db.get_value("User", user, ["first_name", "last_name", "email"], as_dict=True)
+	return _ensure_user(client, instructor, u.first_name, u.last_name or "", u.email or user)
 
 
 # --- courses ------------------------------------------------------------------------------------------

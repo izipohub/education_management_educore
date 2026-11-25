@@ -159,7 +159,15 @@ def options() -> dict:
 		"countries": frappe.get_all("Country", pluck="name", order_by="name asc"),
 		"dial_codes": _dial_codes(),
 		"pathways": pathways.active(),
+		# who pays: each route with what it asks and whether it pays the application fee
+		"funding_routes": _funding_routes(),
 	}
+
+
+def _funding_routes() -> list[dict]:
+	from educore.admissions import funding
+
+	return funding.active()
 
 
 def _dial_codes() -> list[dict]:

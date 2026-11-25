@@ -8,7 +8,8 @@ from frappe.utils import flt
 from educore.admissions.fees import references_in
 from educore.finance import student_payments
 
-FINANCE_ROLES = ("Bursar", "Finance Officer", "Student Fees Officer", "System Manager")
+#: the Cashier receipts payments: matching the bank statement and assigning deposits
+FINANCE_ROLES = ("Bursar", "Finance Officer", "Student Fees Officer", "Cashier", "System Manager")
 
 
 def _require_role():
@@ -63,23 +64,45 @@ def payments(view: str = "received", search: str | None = None) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-def assign(bank_transaction: str, student: str) -> dict:
-	"""A deposit without a usable student number, recorded as that student's payment"""
+def assign(bank_transaction: str, student: str | None = None, sponsor: str | None = None) -> dict:
+	"""A deposit without a usable student or sponsor number, recorded as that student's or sponsor's payment"""
+	from educore.finance import sponsors
+
 	_require_role()
-	if not frappe.db.exists("Student", student):
-		frappe.throw(_("Choose a student"))
 	if not flt(frappe.db.get_value("Bank Transaction", bank_transaction, "unallocated_amount")):
 		frappe.throw(_("{0} is already matched").format(bank_transaction))
+	if sponsor:
+		if not frappe.db.exists("Sponsor", sponsor):
+			frappe.throw(_("Choose a sponsor"))
+		return {"payment_entry": sponsors.record_payment(sponsor, bank_transaction)}
+	if not student or not frappe.db.exists("Student", student):
+		frappe.throw(_("Choose a student"))
 	entry = student_payments.record_payment(student, bank_transaction)
 	if not entry:
 		frappe.throw(_("{0} has no customer account to receive the payment").format(student))
 	return {"payment_entry": entry}
 
 
+@frappe.whitelist(methods=["GET"])
+def find_sponsors(search: str) -> list[dict]:
+	"""Sponsors by name or number, to assign a deposit to"""
+	_require_role()
+	like = f"%{(search or '').strip()}%"
+	return frappe.get_all(
+		"Sponsor",
+		or_filters=[["sponsor_name", "like", like], ["name", "like", like]],
+		fields=["name", "sponsor_name"],
+		order_by="sponsor_name asc",
+		limit=20,
+	)
+
+
 @frappe.whitelist(methods=["POST"])
 def match_now() -> dict:
+	from educore.finance import sponsors
+
 	_require_role()
-	return {"matched": student_payments.match_bank_transactions()}
+	return {"matched": student_payments.match_bank_transactions() + sponsors.match_bank_transactions()}
 
 
 @frappe.whitelist(methods=["GET"])

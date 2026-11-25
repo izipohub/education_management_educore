@@ -81,3 +81,70 @@ def invoice_and_pay() -> dict:
 		payment.submit()
 		paid += 1
 	return {"invoiced": invoiced, "paid": paid}
+
+
+#: demo sponsors: name, type, contact, students (login, cover, value, the sponsor's reference), paid by EFT; as the
+#: students' applications say who pays their fees
+SPONSORS = (
+	(
+		"Namibia Students Financial Assistance Fund", "Government fund", "Student Funding Office",
+		(("student1.osh", "Full fees", 0, "NSFAF-2026-11873"),), 15_000,
+	),
+)
+
+
+def create_sponsors() -> dict:
+	"""Sponsors paying demo students' 2026 fees, and a sponsor payment by EFT matched by its number"""
+	from frappe.utils import add_days, nowdate
+
+	from educore.finance import sponsors
+
+	made = paid = 0
+	for name, kind, contact, students, payment in SPONSORS:
+		sponsor = frappe.db.get_value("Sponsor", {"sponsor_name": name})
+		if not sponsor:
+			sponsor = frappe.get_doc(
+				{"doctype": "Sponsor", "sponsor_name": name, "sponsor_type": kind, "contact_person": contact, "payment_days": 60}
+			).insert(ignore_permissions=True).name
+			made += 1
+		# students who choose NSFAF on their application are named on its page (educore.admissions.funding)
+		if kind == "Government fund" and frappe.db.exists("Funding Route", "NSFAF") and not frappe.db.get_value("Funding Route", "NSFAF", "sponsor"):
+			route = frappe.get_doc("Funding Route", "NSFAF")
+			route.sponsor = sponsor
+			route.save(ignore_permissions=True)
+		for login, cover, value, reference in students:
+			student = frappe.db.get_value("Student", {"user": f"{login}@educore.localhost"})
+			if not student or frappe.db.exists("Sponsorship", {"sponsor": sponsor, "student": student, "academic_year": "2026"}):
+				continue
+			doc = frappe.get_doc(
+				{
+					"doctype": "Sponsorship",
+					"sponsor": sponsor,
+					"student": student,
+					"academic_year": "2026",
+					"cover_type": cover,
+					"cover_value": value,
+					"sponsor_reference": reference,
+				}
+			).insert(ignore_permissions=True)
+			sponsors.apply(doc.name)
+		bank_account = frappe.db.get_single_value("Admission Settings", "fee_bank_account")
+		customer = frappe.db.get_value("Sponsor", sponsor, "customer")
+		already = frappe.db.exists("Payment Entry", {"party": customer, "docstatus": 1}) if customer else True
+		if payment and bank_account and not already:
+			line = frappe.get_doc(
+				{
+					"doctype": "Bank Transaction",
+					"date": add_days(nowdate(), -3),
+					"bank_account": bank_account,
+					"company": frappe.db.get_value("Bank Account", bank_account, "company"),
+					"deposit": payment,
+					"currency": "NAD",
+					"description": f"NSFAF TUITION PAYMENT {sponsor} BATCH 2026/03",
+					"reference_number": "NSFAF-PMT-2026-03",
+				}
+			).insert(ignore_permissions=True)
+			line.submit()
+			if sponsors.record_payment(sponsor, line.name):
+				paid += 1
+	return {"sponsors": made, "sponsor_payments": paid}

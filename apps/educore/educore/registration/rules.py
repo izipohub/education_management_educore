@@ -189,17 +189,26 @@ def outstanding(student: str, academic_year: str | None = None) -> float:
 
 
 def paid_in_advance(student: str) -> float:
-	"""Payments received and not yet set against an invoice: the deposit towards the new year"""
+	"""Payments received and not yet set against an invoice, and credits not yet used (a year a sponsor took over
+	after the student had paid it, educore.finance.sponsors): the deposit towards the new year"""
 	party = customer(student)
 	if not party:
 		return 0.0
-	return flt(
+	payments = flt(
 		frappe.db.sql(
 			"""select sum(unallocated_amount) from `tabPayment Entry`
 			where docstatus = 1 and payment_type = 'Receive' and party_type = 'Customer' and party = %s""",
 			party,
 		)[0][0]
 	)
+	credits = -flt(
+		frappe.db.sql(
+			"""select sum(outstanding_amount) from `tabSales Invoice`
+			where docstatus = 1 and customer = %s and outstanding_amount < 0""",
+			party,
+		)[0][0]
+	)
+	return flt(payments + credits, 2)
 
 
 def year_fees(offering: str, academic_year: str) -> float:
@@ -209,12 +218,20 @@ def year_fees(offering: str, academic_year: str) -> float:
 	return flt(frappe.db.get_value("Fee Structure", structure, "total_amount")) if structure else 0.0
 
 
-def deposit_required(offering: str, academic_year: str) -> float:
+def deposit_required(offering: str, academic_year: str, student: str | None = None) -> float:
+	"""The deposit before registering; for a student with sponsors for the year, on their own share of the fees
+	(none when the sponsors pay it all; a set amount is never more than that share)"""
 	rules = settings()
+	fees = year_fees(offering, academic_year)
+	own = fees
+	if student:
+		from educore.finance.sponsors import sponsored_estimate
+
+		own = flt(fees - sponsored_estimate(student, academic_year, fees), 2)
 	if rules.deposit_type == "Amount":
-		return flt(rules.deposit_value, 2)
+		return flt(min(flt(rules.deposit_value), own) if student else rules.deposit_value, 2)
 	if rules.deposit_type == "Percent of the year's fees":
-		return flt(year_fees(offering, academic_year) * flt(rules.deposit_value) / 100, 2)
+		return flt(own * flt(rules.deposit_value) / 100, 2)
 	return 0.0
 
 
@@ -246,7 +263,7 @@ def blockers(student: str, offering: str, period) -> list[str]:
 	if owed > allowed:
 		found.append(_("Outstanding fees: {0}").format(_nad(owed)))
 
-	needed = deposit_required(offering, period.academic_year)
+	needed = deposit_required(offering, period.academic_year, student)
 	paid = paid_in_advance(student)
 	if needed and paid < needed:
 		found.append(

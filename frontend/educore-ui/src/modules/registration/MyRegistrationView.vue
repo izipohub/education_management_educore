@@ -191,6 +191,7 @@ const headerLine = computed(() => {
         <!-- the year's fees; when something blocks registration, the card above already says what is owed -->
         <article v-if="state.fees && !(blocked && editable)" class="card fees">
           <div><span class="sub">Fees {{ period.academic_year }}</span><strong>{{ formatMoney(state.fees.year) }}</strong></div>
+          <div v-if="state.fees.sponsored"><span class="sub">Paid by sponsors</span><strong>{{ formatMoney(state.fees.sponsored) }}</strong></div>
           <div v-if="state.fees.deposit_required">
             <span class="sub">Deposit</span>
             <strong v-if="state.fees.paid_in_advance >= state.fees.deposit_required">{{ formatMoney(state.fees.deposit_required) }} paid</strong>

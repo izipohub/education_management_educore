@@ -1,7 +1,7 @@
 """A lecturer's teaching: the course groups they teach and the students in them.
 
-Who the lecturer is comes only from the signed-in session: User → HR Employee (user_id) → Education
-Instructor (employee) → the Student Groups that list that instructor. No function takes a lecturer as a
+Who the lecturer is comes only from the signed-in session: User → Education Instructor (its login, or its HR
+Employee's) → the Student Groups that list that instructor. No function takes a lecturer as a
 parameter, so no request reaches another lecturer's classes.
 """
 
@@ -10,10 +10,9 @@ from frappe import _
 
 
 def _instructors() -> list[str]:
-	employees = frappe.get_all("Employee", filters={"user_id": frappe.session.user, "status": "Active"}, pluck="name")
-	if not employees:
-		return []
-	return frappe.get_all("Instructor", filters={"employee": ("in", employees), "status": ("!=", "Left")}, pluck="name")
+	from educore.academics.lecturers import instructors_of
+
+	return instructors_of(frappe.session.user)
 
 
 @frappe.whitelist(methods=["GET"])
@@ -22,7 +21,7 @@ def my_classes(academic_year: str | None = None) -> dict:
 		frappe.throw(_("This page is for lecturers."), frappe.PermissionError)
 	instructors = _instructors()
 	if not instructors:
-		# a lecturer login not yet linked to an HR Employee and Instructor record
+		# a lecturer login without an Instructor record (made automatically; Left when the position was removed)
 		return {"linked": False, "academic_year": academic_year, "academic_years": [], "classes": []}
 
 	group_names = frappe.get_all(

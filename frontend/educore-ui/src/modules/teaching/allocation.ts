@@ -2,7 +2,18 @@ import { get, post } from "@/core/api/client";
 import type { Semester } from "@/modules/curriculum/api";
 
 /** who allocates lecturers and updates class lists; who reads (educore.api.v1.teaching_allocation) */
-export const ALLOCATION_ROLES = ["Head of Department", "Dean", "System Manager", "Faculty Officer", "Timetable Officer", "Registrar", "Campus Director"];
+export const ALLOCATION_ROLES = [
+  "Head of Department",
+  "Dean",
+  "System Manager",
+  "Faculty Officer",
+  "Timetable Officer",
+  "Registrar",
+  "Campus Director",
+  "Examinations Officer",
+  "Quality Assurance Officer",
+  "Executive Management",
+];
 
 export type ClassState = "ready" | "no-lecturer" | "to-update" | "no-class";
 
