@@ -27,6 +27,8 @@ import {
   Gauge,
   Inbox,
   ListChecks,
+  ListTree,
+  MessagesSquare,
   NotebookPen,
   PenLine,
   ScrollText,
@@ -50,6 +52,7 @@ import { FEE_SETTINGS_ROLES, FINANCE_ROLES, PAYMENT_ROLES } from "@/modules/fina
 import { APPROVAL_ROLES, EXAMINATION_ROLES } from "@/modules/examinations/api";
 import { DECIDE_ROLES } from "@/modules/records/studiesRequests";
 import { ISSUE_ROLES } from "@/modules/records/transcripts";
+import { CATEGORY_ROLES, SERVICE_ROLES } from "@/modules/records/serviceRequests";
 import { GRADUATION_ROLES } from "@/modules/graduation/api";
 import { ICT_ROLES } from "@/modules/integrations/api";
 import { ALLOCATION_ROLES } from "@/modules/teaching/allocation";
@@ -125,6 +128,7 @@ const NAV: NavItem[] = [
   { label: "Students", icon: Users, to: "/students", roles: RECORD_ROLES, section: "Academic" },
   { label: "Studies requests", icon: Inbox, to: "/studies-requests", roles: DECIDE_ROLES, section: "Academic" },
   { label: "Transcripts", icon: ScrollText, to: "/transcripts", roles: ISSUE_ROLES, section: "Academic" },
+  { label: "Service requests", icon: MessagesSquare, to: "/service-requests", roles: SERVICE_ROLES, section: "Academic" },
   { label: "Curriculum", icon: LibraryBig, to: "/curriculum", roles: CURRICULUM_ROLES, section: "Academic" },
   { label: "Teaching", icon: Presentation, to: "/teaching", roles: ALLOCATION_ROLES, section: "Academic" },
   { label: "Timetable", icon: CalendarDays, to: "/timetable", roles: TIMETABLE_ROLES, section: "Academic" },
@@ -145,6 +149,7 @@ const NAV: NavItem[] = [
   { label: "Fee settings", icon: SlidersHorizontal, to: "/fee-settings", roles: FEE_SETTINGS_ROLES, section: "Setup" },
   { label: "Admission setup", icon: Settings, to: "/admission-setup", roles: ["Registrar", "System Manager"], section: "Setup" },
   { label: "Registration setup", icon: CalendarCog, to: "/registration-setup", roles: ["Registrar", "System Manager"], section: "Setup" },
+  { label: "Service request categories", icon: ListTree, to: "/service-request-categories", roles: CATEGORY_ROLES, section: "Setup" },
   { label: "Integrations", icon: Plug, to: "/integrations", roles: ICT_ROLES, section: "Setup" },
 ];
 

@@ -12,6 +12,7 @@ import StatusTag from "@/core/ui/StatusTag.vue";
 import { myResults } from "@/modules/examinations/api";
 import { type StudentOverview, getOverview } from "./api";
 import StudiesRequestCard from "./StudiesRequestCard.vue";
+import ServiceRequestsCard from "./ServiceRequestsCard.vue";
 import TranscriptCard from "./TranscriptCard.vue";
 import MyWeek from "@/modules/teaching/MyWeek.vue";
 import MyExams from "@/modules/examinations/MyExams.vue";
@@ -87,6 +88,7 @@ const feeStatus = computed(() => {
       </template>
 
       <template v-else-if="view === 'requests'">
+        <ServiceRequestsCard />
         <TranscriptCard />
         <StudiesRequestCard />
       </template>

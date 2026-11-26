@@ -1,0 +1,190 @@
+{
+ "name": "Service Request",
+ "doctype": "DocType",
+ "module": "Academics",
+ "engine": "InnoDB",
+ "creation": "2026-11-26 17:00:00.000000",
+ "modified": "2026-11-26 17:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "actions": [],
+ "links": [],
+ "states": [],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "fetch_from": "student.student_name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "fetch_from": "student.campus",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Link",
+   "label": "Category",
+   "options": "Service Request Category",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "office",
+   "fieldtype": "Data",
+   "label": "Handled By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Submitted\nIn progress\nResolved\nDeclined\nWithdrawn",
+   "default": "Submitted",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On"
+  },
+  {
+   "fieldname": "due_on",
+   "fieldtype": "Date",
+   "label": "Due"
+  },
+  {
+   "fieldname": "assigned_to",
+   "fieldtype": "Link",
+   "label": "Handled By (Person)",
+   "options": "User"
+  },
+  {
+   "fieldname": "details_section",
+   "fieldtype": "Section Break",
+   "label": "Request"
+  },
+  {
+   "fieldname": "details",
+   "fieldtype": "Small Text",
+   "label": "Details"
+  },
+  {
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Document"
+  },
+  {
+   "fieldname": "fee",
+   "fieldtype": "Currency",
+   "label": "Fee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fee_invoice",
+   "fieldtype": "Link",
+   "label": "Fee Invoice",
+   "options": "Sales Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "outcome_section",
+   "fieldtype": "Section Break",
+   "label": "Outcome"
+  },
+  {
+   "fieldname": "closed_by",
+   "fieldtype": "Link",
+   "label": "Closed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "closed_on",
+   "fieldtype": "Datetime",
+   "label": "Closed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "outcome_note",
+   "fieldtype": "Small Text",
+   "label": "Outcome"
+  },
+  {
+   "fieldname": "messages_section",
+   "fieldtype": "Section Break",
+   "label": "Messages"
+  },
+  {
+   "fieldname": "messages",
+   "fieldtype": "Table",
+   "label": "Messages",
+   "options": "Service Request Message"
+  }
+ ],
+ "field_order": [
+  "student",
+  "student_name",
+  "campus",
+  "category",
+  "office",
+  "column_status",
+  "status",
+  "submitted_on",
+  "due_on",
+  "assigned_to",
+  "details_section",
+  "details",
+  "attachment",
+  "fee",
+  "fee_invoice",
+  "outcome_section",
+  "closed_by",
+  "closed_on",
+  "outcome_note",
+  "messages_section",
+  "messages"
+ ],
+ "autoname": "format:SRQ-{YYYY}-{#####}",
+ "naming_rule": "Expression",
+ "track_changes": 1,
+ "title_field": "category",
+ "description": "A student's request for a service, handled by the office the category names.",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "print": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ]
+}

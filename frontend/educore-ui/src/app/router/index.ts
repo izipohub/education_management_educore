@@ -10,6 +10,7 @@ import { ALLOCATION_ROLES } from "@/modules/teaching/allocation";
 import { RECORD_ROLES } from "@/modules/records/api";
 import { DECIDE_ROLES } from "@/modules/records/studiesRequests";
 import { ISSUE_ROLES } from "@/modules/records/transcripts";
+import { CATEGORY_ROLES, SERVICE_ROLES } from "@/modules/records/serviceRequests";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
 import { STAFF_ROLES } from "@/modules/staff/api";
 import { SPONSOR_ROLES } from "@/modules/finance/sponsors";
@@ -103,6 +104,13 @@ export const router = createRouter({
           component: () => import("@/modules/student/MyStudiesView.vue"),
           props: { view: "requests" },
           meta: { title: "Requests", roles: ["Student"] },
+        },
+        {
+          path: "my-studies/requests/:name",
+          name: "my-service-request",
+          component: () => import("@/modules/student/MyServiceRequestPage.vue"),
+          props: true,
+          meta: { title: "Request", roles: ["Student"] },
         },
         {
           path: "my-modules",
@@ -206,6 +214,25 @@ export const router = createRouter({
           name: "transcripts",
           component: () => import("@/modules/records/TranscriptsView.vue"),
           meta: { title: "Transcripts", roles: ISSUE_ROLES },
+        },
+        {
+          path: "service-requests",
+          name: "service-requests",
+          component: () => import("@/modules/records/ServiceRequestsView.vue"),
+          meta: { title: "Service requests", roles: SERVICE_ROLES },
+        },
+        {
+          path: "service-requests/:name",
+          name: "service-request",
+          component: () => import("@/modules/records/ServiceRequestPage.vue"),
+          props: true,
+          meta: { title: "Service request", roles: SERVICE_ROLES },
+        },
+        {
+          path: "service-request-categories",
+          name: "service-request-categories",
+          component: () => import("@/modules/setup/ServiceCategoriesView.vue"),
+          meta: { title: "Service request categories", roles: CATEGORY_ROLES },
         },
         {
           path: "students/:name",

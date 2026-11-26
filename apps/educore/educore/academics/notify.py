@@ -96,6 +96,24 @@ TEMPLATES = {
 		"my-studies",
 		"Office of the Registrar",
 	),
+	"service_request_message": (
+		"Your request: {category}",
+		["Dear {first_name},", "The {office} office wrote about your request for {category}:", "{message}", "Reply on Requests in EduCore."],
+		"my-studies/requests",
+		"{office}",
+	),
+	"service_request_resolved": (
+		"Your request is resolved: {category}",
+		["Dear {first_name},", "Your request for {category} is resolved. {note}"],
+		"my-studies/requests",
+		"{office}",
+	),
+	"service_request_declined": (
+		"Your request is declined: {category}",
+		["Dear {first_name},", "Your request for {category} is declined: {note}"],
+		"my-studies/requests",
+		"{office}",
+	),
 	"results_published": (
 		"Results published",
 		["Dear {first_name},", "Your results for {courses} are published.", "They are on My studies."],
@@ -140,7 +158,8 @@ def render(event: str, first_name: str, **context) -> tuple[str, str]:
 	values = {k: escape_html(str(v)) if v is not None else "" for k, v in {"first_name": first_name, **context}.items()}
 	body = "".join(f"<p>{_(p).format(**values)}</p>" for p in paragraphs)
 	body += f'<p><a href="{app_url(page)}">{_("Open EduCore")}</a></p>'
-	body += f"<p>{_(office)}<br>{escape_html(university())}</p>"
+	# the office signing: fixed, or the one handling the request ("{office}")
+	body += f"<p>{_(office).format(**values)}<br>{escape_html(university())}</p>"
 	return _(subject).format(**{k: str(v) for k, v in context.items()}), body
 
 

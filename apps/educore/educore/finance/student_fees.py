@@ -29,6 +29,8 @@ FEE_CATEGORIES = (
 	("Technology Levy", "Other Student Fees", "Computer labs, network and learning platforms"),
 	("Late Registration Fee", "Other Student Fees", "Registering after the registration period closed"),
 	("Transcript Fee", "Other Student Fees", "An official academic transcript"),
+	("Service Fee", "Other Student Fees", "A student service asked for: a letter, a card replacement"),
+	("Disciplinary Fine", "Other Student Fees", "A fine decided in a disciplinary case"),
 )
 STUDENT_DEBTORS = "Student Debtors"
 CENTRAL_BANK = "Central Bank Account"

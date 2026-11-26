@@ -1,0 +1,106 @@
+{
+ "name": "Service Request Category",
+ "doctype": "DocType",
+ "module": "Academics",
+ "engine": "InnoDB",
+ "creation": "2026-11-26 17:00:00.000000",
+ "modified": "2026-11-26 17:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "actions": [],
+ "links": [],
+ "states": [],
+ "fields": [
+  {
+   "fieldname": "category_name",
+   "fieldtype": "Data",
+   "label": "Category",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "office",
+   "fieldtype": "Select",
+   "label": "Handled By",
+   "options": "Registry\nStudent Affairs\nFaculty\nExaminations\nStudent fees\nFinancial aid\nAccommodation\nICT",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "response_days",
+   "fieldtype": "Int",
+   "label": "Working Days to Respond",
+   "default": "3",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_fee",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "fee",
+   "fieldtype": "Currency",
+   "label": "Fee",
+   "default": "0",
+   "non_negative": 1,
+   "description": "Invoiced to the student when they ask. 0: free."
+  },
+  {
+   "fieldname": "needs_attachment",
+   "fieldtype": "Check",
+   "label": "A Document Is Required",
+   "default": "0"
+  },
+  {
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Not in Use",
+   "default": "0"
+  },
+  {
+   "fieldname": "guidance_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "guidance",
+   "fieldtype": "Small Text",
+   "label": "What to Include",
+   "description": "Shown to the student when they ask."
+  }
+ ],
+ "field_order": [
+  "category_name",
+  "office",
+  "response_days",
+  "column_fee",
+  "fee",
+  "needs_attachment",
+  "disabled",
+  "guidance_section",
+  "guidance"
+ ],
+ "autoname": "field:category_name",
+ "naming_rule": "By fieldname",
+ "track_changes": 1,
+ "description": "A service students may ask for, kept by the Registrar: who handles it, how soon, and any fee.",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "print": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "print": 1
+  }
+ ]
+}

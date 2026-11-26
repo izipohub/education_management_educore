@@ -242,6 +242,10 @@ def _work() -> list[dict]:
 		items += _safely(_finance_work)
 	if _has(("HR Manager", "HR User")):
 		items += _safely(_hr_work)
+	from educore.academics.service_requests import offices_of
+
+	if offices_of():
+		items += _safely(_service_work)
 	seen, out = set(), []
 	for i in items:
 		key = (i["label"], i["to"]["path"])
@@ -383,3 +387,13 @@ def _lessons_today() -> list[dict]:
 		for lesson in attendance.lessons(g.name, nowdate()):
 			out.append({**lesson, "group": g.name, "code": code or g.course, "course": frappe.db.get_value("Course", g.course, "course_name")})
 	return sorted(out, key=lambda l: l["start_time"])
+
+
+def _service_work() -> list:
+	from educore.api.v1 import service_requests
+
+	rows = [r for r in service_requests.queue()["rows"] if r["status"] in ("Submitted", "In progress")]
+	return [
+		_item(_("Service requests overdue"), sum(1 for r in rows if r["overdue"]), "/service-requests", {"tab": "overdue"}),
+		_item(_("Service requests to answer"), len(rows), "/service-requests"),
+	]
