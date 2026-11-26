@@ -191,3 +191,32 @@ def create_holds() -> int:
 		).insert(ignore_permissions=True)
 		made += 1
 	return made
+
+
+#: login: a fee waiver requested by the campus's Student Fees Officer, waiting for the Bursar (educore.finance.waivers)
+WAIVERS = {"student1.kmp": ("2026", "Percent of fees", 25, "Death of the parent who paid the fees; the family asks for help")}
+
+
+def create_waivers() -> int:
+	from frappe.utils import add_days, nowdate
+
+	made = 0
+	for login, (year, waive, value, reason) in WAIVERS.items():
+		student, campus = frappe.db.get_value("Student", {"user": f"{login}@educore.localhost"}, ["name", "campus"]) or (None, None)
+		if not student or frappe.db.exists("Fee Waiver", {"student": student}):
+			continue
+		officer = f"student-fees-officer.{login.split('.')[-1]}@educore.localhost"
+		frappe.get_doc(
+			{
+				"doctype": "Fee Waiver",
+				"student": student,
+				"academic_year": year,
+				"waive": waive,
+				"value": value,
+				"reason": reason,
+				"requested_by": officer if frappe.db.exists("User", officer) else "Administrator",
+				"requested_on": add_days(nowdate(), -3),
+			}
+		).insert(ignore_permissions=True)
+		made += 1
+	return made

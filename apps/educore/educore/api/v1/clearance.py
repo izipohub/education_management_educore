@@ -54,6 +54,8 @@ def student(name: str) -> dict:
 	"""One student's clearance: what they owe, their invoices, who sponsors them, every hold"""
 	_require()
 	_in_scope(name)
+	from educore.api.v1 import waivers as waivers_api
+
 	doc = frappe.db.get_value("Student", name, ["name", "student_name", "campus", "student_email_id"], as_dict=True)
 	return {
 		**doc,
@@ -76,6 +78,9 @@ def student(name: str) -> dict:
 				order_by="creation desc",
 			)
 		],
+		# fee waivers (educore.api.v1.waivers): requested here, decided by the Bursar
+		"waivers": waivers_api.of_student(name),
+		"waiver_years": waivers_api.years_of(name),
 		"sponsors": frappe.get_all(
 			"Sponsorship",
 			filters={"student": name, "status": ("!=", "Withdrawn")},

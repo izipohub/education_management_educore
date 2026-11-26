@@ -88,6 +88,7 @@ what each person sees.
 | Application fees (outstanding, paid, waived; waiving) | Bursar, Finance Officer, Student Fees Officer | |
 | Student payments (matched from the bank statement by student number; assigning deposits without one to a student or a sponsor) | Bursar, Finance Officer, Student Fees Officer, Cashier | |
 | Financial clearance (holds with a reason, placed and lifted; what each student owes; graduation and the award certificate need clearance, a setting) | Bursar, Finance Officer, Student Fees Officer (own campus) | Registry and the others who read Students see the hold on the record; the student sees it on My studies |
+| Fee waivers (part of a student's fees for a year not charged: requested with the reason, then approved or rejected; an approved one is taken off the year's invoice by credit note) | Bursar decides (never their own request); Bursar, Finance Officer, Student Fees Officer (own campus) request | The waiver shows on the student's clearance page |
 | Sponsors (bursaries, loan funds, employers: the students each pays for in a year, its invoices, payments by sponsor number, statement PDF) | Bursar, Finance Officer, Student Fees Officer, Financial Aid Officer | Student record shows who pays (Registry and the others who read Students) |
 
 ## Demo users (development only)

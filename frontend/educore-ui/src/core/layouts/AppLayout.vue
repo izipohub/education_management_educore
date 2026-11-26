@@ -20,6 +20,7 @@ import {
   Presentation,
   Settings,
   ShieldCheck,
+  BadgePercent,
   SlidersHorizontal,
   UserCheck,
   UserPlus,
@@ -42,6 +43,7 @@ import { REGISTRATION_ROLES } from "@/modules/registration/groups";
 import { STAFF_ROLES } from "@/modules/staff/api";
 import { SPONSOR_ROLES } from "@/modules/finance/sponsors";
 import { CLEARANCE_ROLES } from "@/modules/finance/clearance";
+import { WAIVER_ROLES } from "@/modules/finance/waivers";
 
 const session = useSession();
 const router = useRouter();
@@ -97,6 +99,7 @@ const NAV: NavItem[] = [
   { label: "Student payments", icon: Landmark, to: "/student-payments", roles: PAYMENT_ROLES },
   { label: "Sponsors", icon: HandCoins, to: "/sponsors", roles: SPONSOR_ROLES },
   { label: "Clearance", icon: ShieldCheck, to: "/clearance", roles: CLEARANCE_ROLES },
+  { label: "Fee waivers", icon: BadgePercent, to: "/waivers", roles: WAIVER_ROLES },
   { label: "Application fees", icon: Banknote, to: "/application-fees", roles: FINANCE_ROLES },
   { label: "Fee settings", icon: SlidersHorizontal, to: "/fee-settings", roles: FEE_SETTINGS_ROLES },
   { label: "Admission setup", icon: Settings, to: "/admission-setup", roles: ["Registrar", "System Manager"] },

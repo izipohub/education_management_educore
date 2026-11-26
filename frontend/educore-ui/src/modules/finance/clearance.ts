@@ -1,4 +1,5 @@
 import { get, post } from "@/core/api/client";
+import type { Waiver } from "./waivers";
 
 /** who places and lifts holds (educore.api.v1.clearance.CLEARANCE_ROLES) */
 export const CLEARANCE_ROLES = ["Bursar", "Finance Officer", "Student Fees Officer", "System Manager"];
@@ -35,6 +36,9 @@ export interface StudentClearance {
   invoices: { name: string; posting_date: string; due_date: string; grand_total: number; outstanding_amount: number; remarks: string | null; is_return: 0 | 1 }[];
   history: Hold[];
   sponsors: { sponsor_name: string; academic_year: string; amount: number; status: string }[];
+  /** fee waivers, newest first, and the years one can be requested for */
+  waivers: Waiver[];
+  waiver_years: string[];
 }
 
 const API = "educore.api.v1.clearance";

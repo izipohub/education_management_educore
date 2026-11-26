@@ -296,7 +296,76 @@ def _invoice_enrollment(enrollment, enrolled_by: str) -> str | None:
 	from educore.finance.sponsors import apply_for
 
 	apply_for(enrollment.student, enrollment.academic_year)
+	# and fee waivers the Bursar approved before (educore.finance.waivers)
+	from educore.finance import waivers
+
+	waivers.apply_for(enrollment.student, enrollment.academic_year)
 	return invoice.name
+
+
+# --- Taking part of an invoice off (sponsors, waivers) --------------------------------------------------
+
+
+def credited(invoice: str) -> dict[str, float]:
+	"""What credit notes have taken off each fee line of the invoice so far (by item)"""
+	rows = frappe.db.sql(
+		"""select item.item_code, -sum(item.amount) from `tabSales Invoice Item` item
+		join `tabSales Invoice` note on note.name = item.parent
+		where note.return_against = %s and note.is_return = 1 and note.docstatus = 1 group by item.item_code""",
+		invoice,
+	)
+	return {code: flt(amount, 2) for code, amount in rows}
+
+
+def split(lines: list, amount: float, base: float) -> list[tuple]:
+	"""The amount over the fee lines in proportion to base; the last line takes the rounding"""
+	shares, running = [], 0.0
+	for index, item in enumerate(lines):
+		part = flt(amount - running, 2) if index == len(lines) - 1 else flt(flt(item.amount) * amount / base, 2)
+		running += part
+		shares.append((item, part))
+	return shares
+
+
+def credit_note(invoice, shares: list[tuple], what: str, **fields) -> str:
+	"""A submitted credit note to the student against their invoice, line by line: what they owe on it goes down"""
+	posting_date = max(getdate(invoice.posting_date), getdate(frappe.utils.nowdate()))
+	ensure_fiscal_year(posting_date, invoice.company)
+	note = frappe.new_doc("Sales Invoice")
+	note.update(
+		{
+			"customer": invoice.customer,
+			"student": invoice.student,
+			"company": invoice.company,
+			"is_return": 1,
+			"return_against": invoice.name,
+			# set against the student's invoice: it is what they owe that goes down
+			"update_outstanding_for_self": 0,
+			"set_posting_time": 1,
+			"posting_date": posting_date,
+			"debit_to": invoice.debit_to,
+			"cost_center": invoice.cost_center,
+			"campus": invoice.get("campus"),
+			"remarks": what,
+			**fields,
+		}
+	)
+	for item, part in shares:
+		note.append(
+			"items",
+			{
+				"item_code": item.item_code,
+				"item_name": item.item_name,
+				"description": _("{0}, {1}").format(item.item_name, what),
+				"qty": -1,
+				"rate": part,
+				"cost_center": item.cost_center,
+				"income_account": item.income_account,
+			},
+		)
+	note.insert(ignore_permissions=True)
+	note.submit()
+	return note.name
 
 
 def _late_fee(enrollment) -> float:

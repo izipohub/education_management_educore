@@ -11,6 +11,7 @@ import { REGISTRATION_ROLES } from "@/modules/registration/groups";
 import { STAFF_ROLES } from "@/modules/staff/api";
 import { SPONSOR_ROLES } from "@/modules/finance/sponsors";
 import { CLEARANCE_ROLES } from "@/modules/finance/clearance";
+import { WAIVER_ROLES } from "@/modules/finance/waivers";
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -251,6 +252,12 @@ export const router = createRouter({
           component: () => import("@/modules/finance/ClearancePage.vue"),
           props: true,
           meta: { title: "Financial clearance", roles: CLEARANCE_ROLES },
+        },
+        {
+          path: "waivers",
+          name: "waivers",
+          component: () => import("@/modules/finance/WaiversView.vue"),
+          meta: { title: "Fee waivers", roles: WAIVER_ROLES },
         },
         {
           path: "fee-settings",

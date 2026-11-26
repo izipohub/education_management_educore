@@ -1,0 +1,200 @@
+{
+ "creation": "2026-11-26 12:00:00.000000",
+ "modified": "2026-11-26 12:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Finance",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "actions": [],
+ "links": [],
+ "states": [],
+ "name": "Fee Waiver",
+ "autoname": "format:FWV-{YYYY}-{#####}",
+ "track_changes": 1,
+ "title_field": "student_name",
+ "description": "Part of a student's fees for a year that the university does not charge: requested by Finance with the reason, approved or rejected by the Bursar; once approved, a credit note against the year's invoice (educore.finance.waivers).",
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "read_only": 1,
+   "fetch_from": "student.student_name"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "read_only": 1,
+   "fetch_from": "student.campus",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "waive",
+   "fieldtype": "Select",
+   "label": "Waive",
+   "options": "Percent of fees\nAmount\nLate registration fee",
+   "reqd": 1,
+   "default": "Percent of fees"
+  },
+  {
+   "fieldname": "value",
+   "fieldtype": "Float",
+   "label": "Percent or Amount",
+   "depends_on": "eval:doc.waive!='Late registration fee'"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Requested\nApproved\nRejected\nWithdrawn",
+   "default": "Requested",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount Waived",
+   "read_only": 1
+  },
+  {
+   "fieldname": "credit_note",
+   "fieldtype": "Link",
+   "label": "Credit Note",
+   "options": "Sales Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "label": "Requested By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "requested_on",
+   "fieldtype": "Date",
+   "label": "Requested On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "decided_by",
+   "fieldtype": "Link",
+   "label": "Decided By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "decided_on",
+   "fieldtype": "Date",
+   "label": "Decided On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "decision_note",
+   "fieldtype": "Small Text",
+   "label": "Decision Note",
+   "read_only": 1
+  }
+ ],
+ "field_order": [
+  "student",
+  "student_name",
+  "campus",
+  "academic_year",
+  "waive",
+  "value",
+  "reason",
+  "column_status",
+  "status",
+  "amount",
+  "credit_note",
+  "requested_by",
+  "requested_on",
+  "decided_by",
+  "decided_on",
+  "decision_note"
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "Bursar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "Finance Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "Student Fees Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 0,
+   "create": 0
+  }
+ ]
+}

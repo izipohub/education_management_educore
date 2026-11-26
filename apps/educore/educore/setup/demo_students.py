@@ -191,6 +191,9 @@ def create():
 	from educore.setup.demo_finance import create_holds
 
 	print(f"{create_holds()} financial holds placed")
+	from educore.setup.demo_finance import create_waivers
+
+	print(f"{create_waivers()} fee waivers requested")
 	groups = create_course_groups()
 	print(f"{groups} course groups created")
 	from educore.setup import demo_attendance

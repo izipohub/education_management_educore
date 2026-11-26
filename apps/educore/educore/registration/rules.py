@@ -221,15 +221,17 @@ def year_fees(offering: str, academic_year: str) -> float:
 
 
 def deposit_required(offering: str, academic_year: str, student: str | None = None) -> float:
-	"""The deposit before registering; for a student with sponsors for the year, on their own share of the fees
-	(none when the sponsors pay it all; a set amount is never more than that share)"""
+	"""The deposit before registering; for a student with sponsors or fee waivers for the year, on their own share
+	of the fees (none when the sponsors pay it all; a set amount is never more than that share)"""
 	rules = settings()
 	fees = year_fees(offering, academic_year)
 	own = fees
 	if student:
 		from educore.finance.sponsors import sponsored_estimate
 
-		own = flt(fees - sponsored_estimate(student, academic_year, fees), 2)
+		from educore.finance.waivers import estimate
+
+		own = flt(max(0.0, fees - sponsored_estimate(student, academic_year, fees) - estimate(student, academic_year, fees)), 2)
 	if rules.deposit_type == "Amount":
 		return flt(min(flt(rules.deposit_value), own) if student else rules.deposit_value, 2)
 	if rules.deposit_type == "Percent of the year's fees":

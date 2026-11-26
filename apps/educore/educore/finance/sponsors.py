@@ -162,7 +162,7 @@ def _sponsorable(invoice) -> list:
 
 
 def _apply(name: str) -> str | None:
-	from educore.finance.student_fees import ensure_fiscal_year
+	from educore.finance.student_fees import credit_note, credited, ensure_fiscal_year, split
 
 	doc = frappe.get_doc("Sponsorship", name)
 	if doc.status != RECORDED:
@@ -173,68 +173,20 @@ def _apply(name: str) -> str | None:
 	invoice = frappe.get_doc("Sales Invoice", invoice_name)
 	lines = _sponsorable(invoice)
 	base = flt(sum(flt(i.amount) for i in lines), 2)
-	taken = flt(
-		sum(
-			flt(a)
-			for a in frappe.get_all(
-				"Sponsorship",
-				filters={"student": doc.student, "academic_year": doc.academic_year, "status": INVOICED},
-				pluck="amount",
-			)
-		),
-		2,
-	)
+	# what earlier sponsors and fee waivers took off these lines already
+	off = credited(invoice.name)
+	taken = flt(sum(off.get(i.item_code, 0) for i in lines), 2)
 	amount = _share(doc.cover_type, doc.cover_value, base, base - taken)
 	if amount <= 0:
-		frappe.throw(_("{0}'s fees for {1} are sponsored in full already").format(doc.student_name, doc.academic_year))
+		frappe.throw(_("{0}'s fees for {1} are sponsored or waived in full already").format(doc.student_name, doc.academic_year))
 
-	# the share of each fee line, in proportion; the last line takes the rounding
-	shares, running = [], 0.0
-	for index, item in enumerate(lines):
-		part = flt(amount - running, 2) if index == len(lines) - 1 else flt(flt(item.amount) * amount / base, 2)
-		running += part
-		shares.append((item, part))
-
+	shares = split(lines, amount, base)
 	sponsor = frappe.get_doc("Sponsor", doc.sponsor)
 	customer = ensure_customer(sponsor)
 	posting_date = max(getdate(invoice.posting_date), getdate(nowdate()))
 	ensure_fiscal_year(posting_date, invoice.company)
 	what = _("Sponsored by {0}, {1}").format(sponsor.sponsor_name, doc.academic_year)
-
-	credit = frappe.new_doc("Sales Invoice")
-	credit.update(
-		{
-			"customer": invoice.customer,
-			"student": doc.student,
-			"company": invoice.company,
-			"is_return": 1,
-			"return_against": invoice.name,
-			# set against the student's invoice: it is what they owe that goes down
-			"update_outstanding_for_self": 0,
-			"set_posting_time": 1,
-			"posting_date": posting_date,
-			"debit_to": invoice.debit_to,
-			"cost_center": invoice.cost_center,
-			"campus": invoice.get("campus"),
-			"educore_sponsorship": doc.name,
-			"remarks": what,
-		}
-	)
-	for item, part in shares:
-		credit.append(
-			"items",
-			{
-				"item_code": item.item_code,
-				"item_name": item.item_name,
-				"description": _("{0}, {1}").format(item.item_name, what),
-				"qty": -1,
-				"rate": part,
-				"cost_center": item.cost_center,
-				"income_account": item.income_account,
-			},
-		)
-	credit.insert(ignore_permissions=True)
-	credit.submit()
+	credit = credit_note(invoice, shares, what, educore_sponsorship=doc.name)
 
 	student_label = f"{doc.student_name} ({doc.student})"
 	bill = frappe.new_doc("Sales Invoice")
@@ -272,7 +224,7 @@ def _apply(name: str) -> str | None:
 	bill.insert(ignore_permissions=True)
 	bill.submit()
 
-	doc.db_set({"status": INVOICED, "amount": amount, "sponsor_invoice": bill.name, "credit_note": credit.name})
+	doc.db_set({"status": INVOICED, "amount": amount, "sponsor_invoice": bill.name, "credit_note": credit})
 	return bill.name
 
 

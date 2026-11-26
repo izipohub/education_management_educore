@@ -822,6 +822,15 @@ CUSTOM_FIELDS = {
 			"insert_after": "educore_sponsorship",
 			"description": "On an invoice to a sponsor: the student whose fees it pays.",
 		},
+		# fee waivers (educore.finance.waivers): the credit note to the student
+		{
+			"fieldname": "educore_fee_waiver",
+			"label": "Fee Waiver",
+			"fieldtype": "Link",
+			"options": "Fee Waiver",
+			"read_only": 1,
+			"insert_after": "educore_sponsored_student",
+		},
 	],
 	"Payment Entry": [
 		{
