@@ -46,6 +46,13 @@
    "description": "Students below it are flagged to the lecturer and the department. 0: none."
   },
   {
+   "fieldname": "students_see_scores",
+   "fieldtype": "Check",
+   "label": "Students See Assessment Scores as Marked",
+   "default": "1",
+   "description": "Off: students see their scores once the results are published."
+  },
+  {
    "fieldname": "marks_column",
    "fieldtype": "Column Break"
   },
@@ -96,7 +103,7 @@
  "links": [],
  "states": [],
  "creation": "2026-11-24 09:00:00.000000",
- "modified": "2026-11-24 09:00:00.000000",
+ "modified": "2026-11-26 17:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "doctype": "DocType",
@@ -110,6 +117,7 @@
   "ca_weight",
   "exam_admission_ca",
   "min_attendance",
+  "students_see_scores",
   "marks_column",
   "pass_mark",
   "supplementary_from",

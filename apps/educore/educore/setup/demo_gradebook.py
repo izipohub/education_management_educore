@@ -11,10 +11,10 @@ from educore.academics import gradebook
 
 GROUP = "FIN2511 KMP 2026"
 PLAN = [
-	{"title": "Test 1", "kind": "Test", "out_of": 50, "weight": 25},
-	{"title": "Test 2", "kind": "Test", "out_of": 50, "weight": 25},
-	{"title": "Assignment 1", "kind": "Assignment", "out_of": 100, "weight": 25},
-	{"title": "Assignment 2", "kind": "Assignment", "out_of": 100, "weight": 25},
+	{"title": "Test 1", "kind": "Test", "out_of": 50, "weight": 25, "due_date": "2026-08-14"},
+	{"title": "Test 2", "kind": "Test", "out_of": 50, "weight": 25, "due_date": "2026-09-25"},
+	{"title": "Assignment 1", "kind": "Assignment", "out_of": 100, "weight": 25, "due_date": "2026-08-28"},
+	{"title": "Assignment 2", "kind": "Assignment", "out_of": 100, "weight": 25, "due_date": "2026-10-09"},
 ]
 #: student name: scores in the order of the plan (None: not marked yet)
 SCORES = {"Anna Beukes": (38, 41, 72, 80), "Petrus Kooper": (29, 33, 64, None)}
@@ -22,9 +22,9 @@ APPROVED_BY = "head-of-department.accf@educore.localhost"
 
 PROPOSED_GROUP = "CMP2521 OSH 2026"
 PROPOSED_PLAN = [
-	{"title": "Test 1", "kind": "Test", "out_of": 50, "weight": 30},
-	{"title": "Online quiz", "kind": "Online quiz", "out_of": 20, "weight": 20},
-	{"title": "Project", "kind": "Project", "out_of": 100, "weight": 50},
+	{"title": "Test 1", "kind": "Test", "out_of": 50, "weight": 30, "due_date": "2026-08-21"},
+	{"title": "Online quiz", "kind": "Online quiz", "out_of": 20, "weight": 20, "due_date": "2026-09-11"},
+	{"title": "Project", "kind": "Project", "out_of": 100, "weight": 50, "due_date": "2026-10-16"},
 ]
 
 

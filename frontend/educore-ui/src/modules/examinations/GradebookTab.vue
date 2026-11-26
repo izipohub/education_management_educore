@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ExternalLink, Search, Trash2 } from "@lucide/vue";
 import IconField from "primevue/iconfield";
+import DatePicker from "primevue/datepicker";
 import InputIcon from "primevue/inputicon";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
@@ -8,6 +9,7 @@ import Message from "primevue/message";
 import Select from "primevue/select";
 import { useToast } from "primevue/usetoast";
 import { computed, ref, watch } from "vue";
+import { fromIsoDate, toIsoDate } from "@/core/format";
 import EcButton from "@/core/ui/EcButton.vue";
 import EcField from "@/core/ui/EcField.vue";
 import EcModal from "@/core/ui/EcModal.vue";
@@ -284,12 +286,24 @@ async function fromMoodle(a: Assessment) {
   <EcModal :open="planning !== null" title="The module's assessments" description="What makes up the CA: each assessment's type, mark out of, and share of the CA" size="lg" @update:open="(v: boolean) => !v && (planning = null)">
     <table v-if="planning" class="plan">
       <thead>
-        <tr><th>Assessment</th><th>Type</th><th class="num">Out of</th><th class="num">Share of CA</th><th></th></tr>
+        <tr><th>Assessment</th><th>Type</th><th>Due</th><th class="num">Out of</th><th class="num">Share of CA</th><th></th></tr>
       </thead>
       <tbody>
         <tr v-for="(a, i) in planning" :key="i">
           <td><InputText v-model="a.title" size="small" :aria-label="`Assessment ${i + 1}`" fluid /></td>
           <td><Select v-model="a.kind" :options="typeOptions" option-label="label" option-value="value" size="small" :aria-label="`Type ${i + 1}`" fluid /></td>
+          <td>
+            <DatePicker
+              :model-value="a.due_date ? fromIsoDate(a.due_date) : null"
+              date-format="dd-mm-yy"
+              size="small"
+              :input-id="`due-${i}`"
+              :aria-label="`Due ${i + 1}`"
+              placeholder="Optional"
+              fluid
+              @update:model-value="(d) => (a.due_date = d instanceof Date ? toIsoDate(d) : null)"
+            />
+          </td>
           <td><InputNumber v-model="a.out_of" :min="1" size="small" :aria-label="`Out of ${i + 1}`" fluid /></td>
           <td><InputNumber v-model="a.weight" :min="0" :max="100" suffix="%" :max-fraction-digits="2" size="small" :aria-label="`Share ${i + 1}`" fluid /></td>
           <td><button type="button" class="remove" :aria-label="`Remove ${a.title}`" @click="planning.splice(i, 1)"><Trash2 :size="15" /></button></td>
@@ -447,9 +461,13 @@ async function fromMoodle(a: Assessment) {
   padding: 0.25rem 0.4rem;
 }
 
-.plan td:nth-child(3),
-.plan td:nth-child(4) {
-  width: 8rem;
+.plan td:nth-child(3) {
+  width: 9.5rem;
+}
+
+.plan td:nth-child(4),
+.plan td:nth-child(5) {
+  width: 7rem;
 }
 
 .remove {

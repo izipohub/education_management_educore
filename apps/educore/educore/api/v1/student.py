@@ -162,6 +162,15 @@ def overview() -> dict:
 	}
 
 
+@frappe.whitelist(methods=["GET"])
+def assessments() -> dict:
+	"""The student's modules this year: each one's assessments once its plan is approved, and their scores (as marked,
+	or once published, as the university decides) (educore.academics.gradebook)"""
+	from educore.academics import gradebook
+
+	return gradebook.of_student(_current_student().name)
+
+
 def _attendance(student: str) -> list[dict]:
 	from educore.academics import attendance
 

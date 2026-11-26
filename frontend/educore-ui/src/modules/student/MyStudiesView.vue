@@ -17,16 +17,18 @@ import StudiesRequestCard from "./StudiesRequestCard.vue";
 import TranscriptCard from "./TranscriptCard.vue";
 import MyWeek from "@/modules/teaching/MyWeek.vue";
 import MyExams from "@/modules/examinations/MyExams.vue";
+import MyAssessments from "./MyAssessments.vue";
 
 const data = ref<StudentOverview | null>(null);
-// the timetable on its own tab, kept in the address
-type Tab = "studies" | "timetable";
+// the timetable and the assessments on their own tabs, kept in the address
+type Tab = "studies" | "assessments" | "timetable";
 const route = useRoute();
 const router = useRouter();
-const tab = ref<Tab>(route.query.tab === "timetable" ? "timetable" : "studies");
-watch(tab, (t) => void router.replace({ query: t === "timetable" ? { tab: t } : {} }));
+const tab = ref<Tab>(route.query.tab === "timetable" || route.query.tab === "assessments" ? (route.query.tab as Tab) : "studies");
+watch(tab, (t) => void router.replace({ query: t === "studies" ? {} : { tab: t } }));
 const tabs = [
   { value: "studies" as Tab, label: "My studies" },
+  { value: "assessments" as Tab, label: "Assessments" },
   { value: "timetable" as Tab, label: "Timetable" },
 ];
 const error = ref("");
@@ -68,7 +70,9 @@ const feeStatus = computed(() => {
         <EcTabs v-model="tab" :tabs="tabs" label="My studies" class="tabs" />
       </PageHeader>
 
-      <template v-if="tab === 'timetable'">
+      <div v-if="tab === 'assessments'" class="assessments"><MyAssessments /></div>
+
+      <template v-else-if="tab === 'timetable'">
         <MyWeek />
         <MyExams />
       </template>
@@ -202,6 +206,11 @@ const feeStatus = computed(() => {
 </template>
 
 <style scoped>
+.assessments {
+  display: grid;
+  gap: 1rem;
+}
+
 .loading {
   display: flex;
   justify-content: center;

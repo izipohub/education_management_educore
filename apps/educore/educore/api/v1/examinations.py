@@ -23,7 +23,10 @@ EXAM_ROLES = ("Examinations Officer", "System Manager")
 RULES_ROLES = ("Registrar", "System Manager")
 #: Campus Director, Quality Assurance and Executive Management follow results; they decide nothing here
 READ_ROLES = (*MODERATE_ROLES, *EXAM_ROLES, "Registrar", "Faculty Officer", "Campus Director", "Quality Assurance Officer", "Executive Management")
-RULE_FIELDS = ("ca_weight", "exam_admission_ca", "min_attendance", "pass_mark", "supplementary_from", "supplementary_cap", "probation_share", "grading_scale")
+RULE_FIELDS = (
+	"ca_weight", "exam_admission_ca", "min_attendance", "pass_mark", "supplementary_from", "supplementary_cap", "probation_share", "grading_scale",
+	"students_see_scores",
+)
 
 
 def _has(roles) -> bool:

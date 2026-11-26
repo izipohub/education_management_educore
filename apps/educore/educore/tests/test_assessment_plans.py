@@ -191,3 +191,48 @@ class TestAssessmentTypes(IntegrationTestCase):
 		page = types_api.types()
 		self.assertFalse(page["can_edit"])
 		self.assertRaises(frappe.PermissionError, types_api.save, page["faculties"][0]["faculty"], page["faculties"][0]["types"])
+
+
+class TestStudentAssessments(IntegrationTestCase):
+	"""The student's own assessments and scores (educore.api.v1.student.assessments)"""
+
+	def setUp(self):
+		if not frappe.db.exists("User", "student1.kmp@educore.localhost") or not frappe.db.get_value("Mark Sheet", {"student_group": "FIN2511 KMP 2026"}, "plan_status"):
+			self.skipTest("run the demo setup first")
+		frappe.db.savepoint("student_assessments_test")
+
+	def tearDown(self):
+		frappe.set_user("Administrator")
+		frappe.db.rollback(save_point="student_assessments_test")
+		frappe.clear_document_cache("Examination Settings", "Examination Settings")
+
+	def _module(self, user: str, group: str) -> dict:
+		from educore.api.v1 import student
+
+		frappe.set_user(user)
+		return next(m for m in student.assessments()["modules"] if m["group"] == group)
+
+	def test_the_student_sees_the_approved_assessments_and_their_own_scores(self):
+		fin = self._module("student1.kmp@educore.localhost", "FIN2511 KMP 2026")
+		self.assertEqual([a["title"] for a in fin["assessments"]], ["Test 1", "Test 2", "Assignment 1", "Assignment 2"])
+		self.assertEqual(fin["assessments"][0]["score"], 38)
+		self.assertEqual(fin["assessments"][0]["due_date"], "2026-08-14")
+		self.assertEqual(fin["ca"], 77.5)  # demo scores: 38/50, 41/50, 72/100 and 80/100, a quarter each
+		# a student outside the module does not see it
+		from educore.api.v1 import student
+
+		frappe.set_user("student2.kmp@educore.localhost")
+		self.assertNotIn("FIN2511 KMP 2026", [m["group"] for m in student.assessments()["modules"]])
+
+	def test_scores_wait_for_publication_when_the_university_says_so(self):
+		frappe.db.set_single_value("Examination Settings", "students_see_scores", 0)
+		fin = self._module("student1.kmp@educore.localhost", "FIN2511 KMP 2026")
+		self.assertEqual(len(fin["assessments"]), 4)  # the assessments are still shown
+		self.assertFalse(fin["scores_shown"])
+		self.assertEqual({a["score"] for a in fin["assessments"]}, {None})
+		self.assertIsNone(fin["ca"])
+
+	def test_a_plan_not_yet_approved_is_not_shown(self):
+		if frappe.db.get_value("Mark Sheet", {"student_group": "CMP2521 OSH 2026"}, "plan_status") != "Proposed":
+			self.skipTest("the demo plan is no longer waiting for approval")
+		self.assertEqual(self._module("student1.osh@educore.localhost", "CMP2521 OSH 2026")["assessments"], [])

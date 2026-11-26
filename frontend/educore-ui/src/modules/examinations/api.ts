@@ -26,6 +26,8 @@ export interface Rules {
   supplementary_cap: number;
   probation_share: number;
   grading_scale: string | null;
+  /** 1: students see their assessment scores as marked; 0: once the results are published */
+  students_see_scores: 0 | 1;
   bands: { grade: string; from: number }[];
 }
 

@@ -56,3 +56,20 @@ test("the Dean keeps the faculty's assessment types; the head of department read
   await expect(read).toContainText("Set by the Dean");
   await expect(read.getByRole("row").filter({ hasText: "Online assignment" })).toContainText("Yes");
 });
+
+test("a student sees each module's assessments, their due dates and their own scores", async ({ page }) => {
+  await signIn(page, "student1.kmp");
+  await page.goto("/my-studies?tab=assessments");
+  const fin = page.locator("section").filter({ has: page.getByRole("heading", { name: "FIN2511 Corporate Finance" }) }).last();
+  await expect(fin).toContainText("CA 77.5 · provisional until the results are published");
+  await expect(fin.getByRole("row").filter({ hasText: "Test 1" })).toContainText("14-08-2026");
+  await expect(fin.getByRole("row").filter({ hasText: "Test 1" })).toContainText("38 / 50");
+  await expect(page.getByText(/No assessments set yet: .*ACC1511/)).toBeVisible();
+  await page.screenshot({ path: "e2e/results/student-assessments.png", fullPage: true });
+});
+
+test("the Registrar decides when students see their scores", async ({ page }) => {
+  await signIn(page, "registrar");
+  await page.goto("/examinations?tab=rules");
+  await expect(page.getByLabel("Students see their assessment scores as marked")).toBeChecked();
+});

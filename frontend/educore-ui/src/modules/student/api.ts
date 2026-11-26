@@ -85,3 +85,35 @@ export interface StudentOverview {
 export function getOverview() {
   return get<StudentOverview>("educore.api.v1.student.overview");
 }
+
+export interface MyAssessment {
+  title: string;
+  kind: string;
+  out_of: number;
+  /** its share of the CA, in % */
+  weight: number;
+  due_date: string | null;
+  moodle_activity: string | null;
+  moodle_url: string | null;
+  /** null: not marked yet, or not shown yet */
+  score: number | null;
+}
+
+export interface MyModuleAssessments {
+  group: string;
+  code: string | null;
+  course: string;
+  lecturers: string[];
+  /** empty until the module's assessment plan is approved */
+  assessments: MyAssessment[];
+  /** scores are shown as marked, or once the results are published, as the university decides */
+  scores_shown: boolean;
+  marked: number;
+  /** the CA from the scores, once every assessment is marked */
+  ca: number | null;
+}
+
+/** The signed-in student's modules this year, their assessments and scores */
+export function getAssessments() {
+  return get<{ academic_year: string | null; modules: MyModuleAssessments[] }>("educore.api.v1.student.assessments");
+}

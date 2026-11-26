@@ -198,3 +198,57 @@ def out(doc) -> dict:
 		],
 		"moodle": moodle_grades.status(doc.student_group),
 	}
+
+
+# --- the student --------------------------------------------------------------------------------------
+
+
+def of_student(student: str) -> dict:
+	"""The student's modules of their latest year with each one's approved assessments (type, out of, share, due
+	date, Moodle activity) and, when the university shows them as marked or once published, their scores and CA"""
+	groups = frappe.db.sql(
+		"""select g.name, g.course, g.academic_year, c.course_name, c.educore_course_code as code
+		from `tabStudent Group Student` s join `tabStudent Group` g on g.name = s.parent
+		left join `tabCourse` c on c.name = g.course
+		where s.student = %s and s.active = 1 and g.disabled = 0 and g.group_based_on = 'Course'""",
+		student,
+		as_dict=True,
+	)
+	year = max((g.academic_year for g in groups), default=None)
+	groups = sorted((g for g in groups if g.academic_year == year), key=lambda g: g.code or g.course)
+	as_marked = bool(frappe.db.get_single_value("Examination Settings", "students_see_scores"))
+	sheets = {
+		s.student_group: s.name
+		for s in frappe.get_all("Mark Sheet", filters={"student_group": ("in", [g.name for g in groups] or [""])}, fields=["name", "student_group"])
+	}
+	modules = []
+	for g in groups:
+		doc = frappe.get_doc("Mark Sheet", sheets[g.name]) if g.name in sheets else None
+		approved = bool(doc and doc.get("plan_status") == APPROVED and doc.assessments)
+		shown = approved and (as_marked or doc.status == "Published")
+		mine = scores_of(doc).get(student, {}) if shown else {}
+		modules.append(
+			{
+				"group": g.name,
+				"code": g.code,
+				"course": g.course_name or g.course,
+				"lecturers": frappe.get_all("Student Group Instructor", filters={"parent": g.name}, pluck="instructor_name"),
+				"assessments": [
+					{
+						"title": a.title,
+						"kind": a.kind,
+						"out_of": a.out_of,
+						"weight": a.weight,
+						"due_date": str(a.due_date) if a.due_date else None,
+						"moodle_activity": a.moodle_activity,
+						"moodle_url": a.moodle_url,
+						"score": mine.get(a.assessment_key),
+					}
+					for a in (doc.assessments if approved else [])
+				],
+				"scores_shown": shown,
+				"marked": sum(1 for a in (doc.assessments if shown else []) if mine.get(a.assessment_key) is not None),
+				"ca": ca_of(doc, student) if shown else None,
+			}
+		)
+	return {"academic_year": year, "modules": modules}

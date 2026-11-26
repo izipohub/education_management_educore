@@ -6,6 +6,7 @@ import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import Select from "primevue/select";
+import ToggleSwitch from "primevue/toggleswitch";
 import { useToast } from "primevue/usetoast";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -125,7 +126,7 @@ async function publishAll() {
 
 // the rules (Registrar)
 const rules = ref<(Rules & { grading_scales: string[]; can_edit: boolean }) | null>(null);
-const form = reactive({ ca_weight: 50, exam_admission_ca: 40, min_attendance: 0, pass_mark: 50, supplementary_from: 45, supplementary_cap: 50, probation_share: 50, grading_scale: "" as string | null });
+const form = reactive({ ca_weight: 50, exam_admission_ca: 40, min_attendance: 0, pass_mark: 50, supplementary_from: 45, supplementary_cap: 50, probation_share: 50, grading_scale: "" as string | null, students_see_scores: 1 as 0 | 1 });
 watch(
   tab,
   async (t) => {
@@ -185,6 +186,14 @@ async function saveTheRules() {
           </SettingRow>
           <SettingRow label="Highest mark after a supplementary" for="supp-cap">
             <InputNumber v-model="form.supplementary_cap" input-id="supp-cap" :min="0" :max="100" suffix=" %" show-buttons :disabled="!rules.can_edit" fluid />
+          </SettingRow>
+          <SettingRow label="Students see their assessment scores as marked" help="Off: once the results are published" for="see-scores">
+            <ToggleSwitch
+              :model-value="Boolean(form.students_see_scores)"
+              input-id="see-scores"
+              :disabled="!rules.can_edit"
+              @update:model-value="(v: boolean) => (form.students_see_scores = v ? 1 : 0)"
+            />
           </SettingRow>
         </EcPanel>
         <EcPanel title="Grades and standing">
