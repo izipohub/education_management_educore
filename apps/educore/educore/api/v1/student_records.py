@@ -8,6 +8,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from educore.academics import history
 from educore.api.v1.apply import PERSONAL_FIELDS
 from educore.registration import rules as registration_rules
 
@@ -193,6 +194,8 @@ def student(name: str) -> dict:
 		"sponsors": sponsored,
 		# Finance's holds, read only here (educore.finance.clearance)
 		"holds": _holds(name),
+		# what happened to their studies and when (educore.academics.history)
+		"history": history.of_student(name),
 		"enrolments": enrolments,
 		"invoices": invoices,
 		# what is owed (a credit is not a negative debt: it counts towards the next deposit)

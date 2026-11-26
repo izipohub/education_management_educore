@@ -39,10 +39,13 @@ def active_holds(student: str) -> list[dict]:
 	)
 
 
-def status(student: str) -> dict:
-	"""Cleared or not, and why not, in plain words"""
+def status(student: str, leave_out: str | None = None) -> dict:
+	"""Cleared or not, and why not, in plain words; leave_out: an invoice not counted (a transcript's own fee, which
+	stops the transcript by itself)"""
 	settings = frappe.get_cached_doc("Registration Settings")
 	owed = owing(student)
+	if leave_out:
+		owed = flt(owed - max(0.0, flt(frappe.db.get_value("Sales Invoice", leave_out, "outstanding_amount"))), 2)
 	holds = active_holds(student)
 	reasons = [_("Hold: {0}").format(h.reason) for h in holds]
 	if owed > flt(settings.clearance_max_owing):

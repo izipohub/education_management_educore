@@ -12,6 +12,8 @@ import StatusTag from "@/core/ui/StatusTag.vue";
 import { myResults } from "@/modules/examinations/api";
 import { type StudentOverview, getOverview } from "./api";
 import StudiesRequestCard from "./StudiesRequestCard.vue";
+import TranscriptCard from "./TranscriptCard.vue";
+import MyWeek from "@/modules/teaching/MyWeek.vue";
 
 const data = ref<StudentOverview | null>(null);
 const error = ref("");
@@ -109,6 +111,8 @@ const feeStatus = computed(() => {
         </table>
       </section>
 
+      <MyWeek />
+
       <section v-if="current" class="block">
         <h2>Courses this year <span class="sub">({{ current.courses.length }} courses, {{ totalCredits }} credits)</span></h2>
         <DataTable :value="current.courses" data-key="course" class="table" size="small">
@@ -171,6 +175,7 @@ const feeStatus = computed(() => {
         </DataTable>
       </section>
 
+      <TranscriptCard />
       <StudiesRequestCard />
     </template>
   </section>

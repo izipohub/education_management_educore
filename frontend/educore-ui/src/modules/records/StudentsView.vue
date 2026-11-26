@@ -16,16 +16,22 @@ import { useSession } from "@/core/auth/session";
 import { type StudentRow, type StudentsPage, listStudents } from "./api";
 import StudiesRequestsQueue from "./StudiesRequestsQueue.vue";
 import { DECIDE_ROLES, requestQueue } from "./studiesRequests";
+import TranscriptsQueue from "./TranscriptsQueue.vue";
+import { ISSUE_ROLES, transcriptQueue } from "./transcripts";
 
 /** The students the user may see (their campus and faculty), with filters; a row opens the student's record */
-type Status = "Active" | "Left" | "requests";
+type Status = "Active" | "Left" | "requests" | "transcripts";
 const route = useRoute();
 const router = useRouter();
 const q = route.query;
 const session = useSession();
 const decides = session.hasRole(...DECIDE_ROLES);
-const status = ref<Status>(q.status === "Left" ? "Left" : q.status === "requests" && decides ? "requests" : "Active");
+const issues = session.hasRole(...ISSUE_ROLES);
+const status = ref<Status>(
+  q.status === "Left" ? "Left" : q.status === "requests" && decides ? "requests" : q.status === "transcripts" && issues ? "transcripts" : "Active",
+);
 const toDecide = ref(0);
+const toIssue = ref(0);
 const campus = ref<string | null>((q.campus as string) || null);
 const program = ref<string | null>((q.program as string) || null);
 const standing = ref<string | null>((q.standing as string) || null);
@@ -35,7 +41,7 @@ const loading = ref(false);
 const loadError = ref("");
 
 async function load() {
-  if (status.value === "requests") return;
+  if (status.value === "requests" || status.value === "transcripts") return;
   loading.value = true;
   loadError.value = "";
   try {
@@ -55,6 +61,7 @@ async function load() {
 onMounted(() => {
   void load();
   if (decides) void requestQueue("Submitted").then((r) => (toDecide.value = r.counts.Submitted)).catch(() => undefined);
+  if (issues) void transcriptQueue("Requested").then((r) => (toIssue.value = r.counts.Requested)).catch(() => undefined);
 });
 let timer: ReturnType<typeof setTimeout> | undefined;
 watch(search, () => {
@@ -76,6 +83,7 @@ const tabs = computed(() => [
   { label: "Active", value: "Active" as Status },
   { label: "Left", value: "Left" as Status },
   ...(decides ? [{ label: "Requests", value: "requests" as Status, count: toDecide.value }] : []),
+  ...(issues ? [{ label: "Transcripts", value: "transcripts" as Status, count: toIssue.value }] : []),
 ]);
 const rows = computed(() => (page.value?.rows ?? []) as unknown as Record<string, unknown>[]);
 const row = (r: Record<string, unknown>) => r as unknown as StudentRow;
@@ -98,6 +106,7 @@ const columns: Column[] = [
     <Message v-if="loadError" severity="error" :closable="false">{{ loadError }}</Message>
 
     <StudiesRequestsQueue v-if="status === 'requests'" @counts="(c) => (toDecide = c.Submitted)" />
+    <TranscriptsQueue v-else-if="status === 'transcripts'" @counts="(c) => (toIssue = c.Requested)" />
 
     <DataTable
       v-else

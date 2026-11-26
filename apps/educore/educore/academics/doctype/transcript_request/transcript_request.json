@@ -1,0 +1,207 @@
+{
+ "creation": "2026-11-26 14:00:00.000000",
+ "modified": "2026-11-26 14:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Academics",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "actions": [],
+ "links": [],
+ "states": [],
+ "name": "Transcript Request",
+ "autoname": "format:TRQ-{YYYY}-{#####}",
+ "track_changes": 1,
+ "title_field": "student_name",
+ "description": "A student's request for an official transcript (their academic record): copies, and collected, emailed or posted; the fee invoiced when the university charges one; issued by the Registry (educore.academics.transcripts).",
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "read_only": 1,
+   "fetch_from": "student.student_name"
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "read_only": 1,
+   "fetch_from": "student.campus",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "copies",
+   "fieldtype": "Int",
+   "label": "Copies",
+   "default": "1",
+   "reqd": 1
+  },
+  {
+   "fieldname": "delivery",
+   "fieldtype": "Select",
+   "label": "Delivery",
+   "options": "Collect at the campus\nEmail\nPost",
+   "reqd": 1,
+   "default": "Collect at the campus",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "recipient",
+   "fieldtype": "Data",
+   "label": "Sent To",
+   "description": "The institution, employer or person it is for"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "depends_on": "eval:doc.delivery=='Email'"
+  },
+  {
+   "fieldname": "postal_address",
+   "fieldtype": "Small Text",
+   "label": "Postal Address",
+   "depends_on": "eval:doc.delivery=='Post'"
+  },
+  {
+   "fieldname": "column_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Requested\nIssued\nDeclined",
+   "default": "Requested",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "fee",
+   "fieldtype": "Currency",
+   "label": "Fee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fee_invoice",
+   "fieldtype": "Link",
+   "label": "Fee Invoice",
+   "options": "Sales Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "label": "Requested By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "requested_on",
+   "fieldtype": "Date",
+   "label": "Requested On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issued_by",
+   "fieldtype": "Link",
+   "label": "Issued or Declined By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issued_on",
+   "fieldtype": "Date",
+   "label": "Issued or Declined On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "review_note",
+   "fieldtype": "Small Text",
+   "label": "Note",
+   "read_only": 1
+  }
+ ],
+ "field_order": [
+  "student",
+  "student_name",
+  "campus",
+  "copies",
+  "delivery",
+  "recipient",
+  "email",
+  "postal_address",
+  "column_status",
+  "status",
+  "fee",
+  "fee_invoice",
+  "requested_by",
+  "requested_on",
+  "issued_by",
+  "issued_on",
+  "review_note"
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "Registry Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "Bursar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 0,
+   "create": 0
+  },
+  {
+   "role": "Student Fees Officer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "write": 0,
+   "create": 0
+  }
+ ]
+}

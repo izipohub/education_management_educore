@@ -43,7 +43,7 @@ export interface FeeSettings {
     fee_bank_account: string | null;
     fee_income_account: string | null;
   };
-  registration: { max_outstanding: number; deposit_type: string; deposit_value: number; clearance_max_owing: number; graduation_needs_clearance: 0 | 1 };
+  registration: { max_outstanding: number; deposit_type: string; deposit_value: number; clearance_max_owing: number; graduation_needs_clearance: 0 | 1; transcript_fee: number; transcript_needs_clearance: 0 | 1 };
   late_fees: { name: string; academic_year: string; late_until: string | null; late_fee: number }[];
   bank_accounts: { name: string; label: string; bank: string | null; account_number: string | null; branch_code: string | null; holder: string | null }[];
   income_accounts: string[];

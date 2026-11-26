@@ -10,6 +10,7 @@ import { RECORD_ROLES } from "@/modules/records/api";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
 import { STAFF_ROLES } from "@/modules/staff/api";
 import { SPONSOR_ROLES } from "@/modules/finance/sponsors";
+import { TIMETABLE_ROLES } from "@/modules/teaching/timetable";
 import { CLEARANCE_ROLES } from "@/modules/finance/clearance";
 import { WAIVER_ROLES } from "@/modules/finance/waivers";
 
@@ -226,6 +227,12 @@ export const router = createRouter({
           name: "student-payments",
           component: () => import("@/modules/finance/StudentPaymentsView.vue"),
           meta: { title: "Student payments", roles: PAYMENT_ROLES },
+        },
+        {
+          path: "timetable",
+          name: "timetable",
+          component: () => import("@/modules/teaching/TimetableView.vue"),
+          meta: { title: "Timetable", roles: TIMETABLE_ROLES },
         },
         {
           path: "sponsors",

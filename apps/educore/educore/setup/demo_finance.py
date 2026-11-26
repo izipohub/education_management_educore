@@ -220,3 +220,26 @@ def create_waivers() -> int:
 		).insert(ignore_permissions=True)
 		made += 1
 	return made
+
+
+#: the transcript fee per copy (NAD), and login: a transcript request (educore.academics.transcripts)
+TRANSCRIPT_FEE = 150
+TRANSCRIPTS = {"student1.kmp": dict(copies=1, delivery="Post", recipient="Human Resources, Demo Mining Ltd", postal_address="PO Box 1000\nKeetmanshoop")}
+
+
+def create_transcript_requests() -> int:
+	from educore.academics import transcripts
+
+	# the demo request is made before the fee is set, so the demo students' fee statements stay as they are; it waits
+	# for the student's fees owing all the same
+	made = 0
+	for login, ask in TRANSCRIPTS.items():
+		student = frappe.db.get_value("Student", {"user": f"{login}@educore.localhost"})
+		if not student or frappe.db.exists("Transcript Request", {"student": student}):
+			continue
+		transcripts.request(student, **ask)
+		made += 1
+	if not frappe.db.get_single_value("Registration Settings", "transcript_fee"):
+		frappe.db.set_single_value("Registration Settings", "transcript_fee", TRANSCRIPT_FEE)
+		frappe.clear_document_cache("Registration Settings", "Registration Settings")
+	return made

@@ -48,7 +48,9 @@ def _state(student: str) -> dict:
 		return result
 	registration = _registration(student, period.academic_year)
 	year = rules.year_of_study(student, period.academic_year)
-	offering = latest.educore_programme_offering
+	# the latest, or where an approved campus transfer moves the student from this year
+	offering = rules.offering_for(student, period.academic_year)
+	result["offering"] = offering
 	result.update(
 		{
 			"period": {
@@ -125,7 +127,7 @@ def _draft(student: str):
 			{
 				"student": student,
 				"program": latest.program,
-				"educore_programme_offering": latest.educore_programme_offering,
+				"educore_programme_offering": rules.offering_for(student, period.academic_year),
 				"academic_year": period.academic_year,
 				"academic_term": frappe.db.get_value(
 					"Academic Term", {"academic_year": period.academic_year}, "name", order_by="term_start_date asc"

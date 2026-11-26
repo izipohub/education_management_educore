@@ -145,6 +145,19 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
         <p v-else class="none ec-muted">No invoices</p>
       </EcPanel>
 
+      <EcPanel title="History" :flush="record.history.length > 0">
+        <ol v-if="record.history.length" class="history">
+          <li v-for="(h, n) in record.history" :key="n" :class="`h-${h.kind}`">
+            <span class="when ec-nowrap">{{ formatDate(h.date) }}</span>
+            <span>
+              {{ h.event }}
+              <span v-if="h.detail" class="ec-muted detail">{{ h.detail }}</span>
+            </span>
+          </li>
+        </ol>
+        <p v-else class="none ec-muted">Nothing yet</p>
+      </EcPanel>
+
       <EcPanel v-if="record.documents.length" title="Documents" flush>
         <table class="ec-table">
           <tbody>
@@ -262,5 +275,38 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
   color: var(--ec-accent);
   font-weight: 600;
   text-decoration: none;
+}
+
+.history {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history li {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-top: 1px solid var(--ec-border);
+  font-size: 0.875rem;
+}
+
+.history li:first-child {
+  border-top: 0;
+}
+
+.history .when {
+  color: var(--ec-muted);
+}
+
+.history .detail {
+  display: block;
+  font-size: 0.8rem;
+}
+
+.h-hold,
+.h-end {
+  font-weight: 500;
 }
 </style>

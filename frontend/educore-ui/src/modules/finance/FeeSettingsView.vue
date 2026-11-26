@@ -102,6 +102,10 @@ const needsClearance = computed({
   get: () => Boolean(form.value?.registration.graduation_needs_clearance),
   set: (on: boolean) => form.value && (form.value.registration.graduation_needs_clearance = on ? 1 : 0),
 });
+const transcriptNeedsClearance = computed({
+  get: () => Boolean(form.value?.registration.transcript_needs_clearance),
+  set: (on: boolean) => form.value && (form.value.registration.transcript_needs_clearance = on ? 1 : 0),
+});
 </script>
 
 <template>
@@ -193,6 +197,12 @@ const needsClearance = computed({
         </SettingRow>
         <SettingRow label="Graduation needs clearance" help="Completion and the award certificate only for cleared students" for="clear-grad">
           <ToggleSwitch v-model="needsClearance" input-id="clear-grad" :disabled="!editable" />
+        </SettingRow>
+        <SettingRow label="Transcripts need clearance" help="An official transcript only for cleared students" for="clear-transcript">
+          <ToggleSwitch v-model="transcriptNeedsClearance" input-id="clear-transcript" :disabled="!editable" />
+        </SettingRow>
+        <SettingRow label="Transcript fee" help="Per copy, invoiced when a student asks; 0 for free" for="transcript-fee">
+          <InputNumber v-model="form.registration.transcript_fee" input-id="transcript-fee" :min="0" :min-fraction-digits="2" prefix="N$ " :disabled="!editable" fluid />
         </SettingRow>
       </EcPanel>
 

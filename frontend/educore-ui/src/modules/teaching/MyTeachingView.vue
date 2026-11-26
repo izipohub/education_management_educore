@@ -8,6 +8,7 @@ import Select from "primevue/select";
 import Tag from "primevue/tag";
 import { computed, onMounted, ref, watch } from "vue";
 import { type MyClasses, getMyClasses } from "./api";
+import MyWeek from "./MyWeek.vue";
 
 const data = ref<MyClasses | null>(null);
 const error = ref("");
@@ -42,7 +43,7 @@ const totalStudents = computed(() => new Set(data.value?.classes.flatMap((c) => 
 
 <template>
   <section class="teaching">
-    <PageHeader title="My teaching" :subtitle="data?.linked ? `${data.classes.length} classes · ${totalStudents} students` : undefined">
+    <PageHeader title="My teaching" :subtitle="data?.linked ? `${data.classes.length} ${data.classes.length === 1 ? 'class' : 'classes'} · ${totalStudents} ${totalStudents === 1 ? 'student' : 'students'}` : undefined">
       <template v-if="data?.linked && data.academic_years.length" #actions>
         <Select v-model="academicYear" :options="data.academic_years" aria-label="Academic year" class="year" />
       </template>
@@ -56,6 +57,8 @@ const totalStudents = computed(() => new Set(data.value?.classes.flatMap((c) => 
     </Message>
 
     <p v-else-if="!data.classes.length" class="empty">You are not assigned to any course in {{ academicYear }}.</p>
+
+    <MyWeek v-if="data?.linked" card :lecturers="false" />
 
     <article v-for="cls in data?.classes ?? []" :key="cls.name" class="class">
       <header class="class-head">

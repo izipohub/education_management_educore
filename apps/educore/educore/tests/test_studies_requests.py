@@ -97,3 +97,30 @@ class TestStudiesRequests(IntegrationTestCase):
 	def test_the_faculty_does_not_decide(self):
 		frappe.set_user(FACULTY)
 		self.assertRaises(frappe.PermissionError, api.queue)
+
+	def test_a_campus_transfer_moves_the_student_and_their_next_registration(self):
+		state = api.mine()
+		if not state["transfer_offerings"]:
+			self.skipTest("the programme is not offered at another campus")
+		to = state["transfer_offerings"][0]
+		self.assertNotEqual(to["campus"], state["campus"])
+		self.assertIn("2027", state["transfer_years"])
+		self.assertNotIn("2026", state["transfer_years"])  # registered for 2026 already
+		self.assertRaises(frappe.ValidationError, api.request, "Campus transfer", None, "Moving", None, "BCS-WHK-FT", "2027")
+		self.assertRaises(frappe.ValidationError, api.request, "Campus transfer", None, "Moving", None, to["name"], "2026")
+		api.request("Campus transfer", None, "My family moved", None, to["name"], "2027")
+		api.approve(self._decide())
+
+		frappe.set_user("Administrator")
+		self.assertEqual(frappe.db.get_value("Student", self.student, "campus"), to["campus"])
+		self.assertEqual(rules.offering_for(self.student, "2027"), to["name"])
+		self.assertEqual(rules.offering_for(self.student, "2026"), "BCS-WHK-FT")
+		frappe.set_user(NDAPEWA)
+		self.assertEqual(registration.status()["offering"], to["name"])
+
+		from educore.academics import history
+
+		events = history.of_student(self.student)
+		self.assertEqual(events[0]["event"], f"Moved to {to['campus']}")
+		self.assertTrue(any(e["event"].startswith("Registered for 2026") for e in events))
+		self.assertTrue(any(e["event"] == "Admitted" for e in events))

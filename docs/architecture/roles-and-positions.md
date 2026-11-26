@@ -65,7 +65,8 @@ what each person sees.
 | Registration: first-year students | Registry Officer | Registrar |
 | Registration: senior students (approve) | Faculty Officer | Registrar (exceptions) |
 | Course changes after approval (add or drop, until the course change date) | Student asks; Faculty Officer approves or declines | Registrar |
-| Interrupting or cancelling studies | Student asks; Registry Officer, Registrar decide (Students → Requests) | |
+| Interrupting or cancelling studies, or moving to another campus | Student asks; Registry Officer (of the student's campus), Registrar decide (Students → Requests) | After a move, the new campus's Registry and Finance look after the student |
+| A student's status history (admission, registrations, interruptions, moves, holds, completion) | | Everyone who reads Students sees it on the student's record |
 | Students (records, proof of registration) | Registry Officer, Registrar | Faculty Officer, Dean, Head of Department, Campus Director, Executive Management, Examinations Officer, Student Affairs Officer, Financial Aid Officer, Accommodation Officer |
 | Teaching (classes from approved registrations, lecturers allocated) | Head of Department, Dean (own department or faculty) | Faculty Officer, Timetable Officer, Registrar, Campus Director, Examinations Officer, Quality Assurance Officer, Executive Management (own campus where limited to one); lecturers see their own classes in My teaching |
 | Academic staff (lecturers: department, campuses, left or active; each lecturer's classes). A login given the Lecturer position gets its lecturer record automatically, department and campuses from its User Permissions | Head of Department, Dean (own department or faculty); HR Manager, HR User link the HR staff record | Faculty Officer, Registrar, Campus Director, Timetable Officer, Quality Assurance Officer, Executive Management |
@@ -79,12 +80,15 @@ what each person sees.
 | Results; academic record (PDF, interim until completion) | Student (own, once published) | Registry Officer, Registrar and the others who read Students download any student's record |
 | Graduation: progress towards each programme's requirements (required courses passed, credits) | Examinations Officer, Faculty Officer, Dean (own campus or faculty) prepare the list for the Senate | Registry Officer, Head of Department, Campus Director, Executive Management |
 | Graduation: record the completions the Senate approved (the academic record then reads final) | Registrar | |
+| Official transcripts (students' requests: copies, collected, emailed or posted; issued once the fee is paid and the student is cleared, or declined with the reason) | Registrar, Registry Officer (own campus) | The student asks and follows it on My studies; the transcript fee and whether clearance is needed are the Bursar's (Fee settings) |
 | Award certificates and the graduation list (PDF; the original certificate is handed over once) | Registrar, Registry Officer | |
+| Timetable (each class's weekly times and rooms per semester) | Timetable Officer (own campus) | Head of Department, Dean, Faculty Officer, Registrar, Registry Officer, Facilities Manager, Campus Director, Examinations Officer, Executive Management; lecturers and students see their own week |
+| Rooms (name, type, seats, in use) | Timetable Officer, Facilities Manager (own campus) | Everyone who reads the timetable |
 | Curriculum (courses by year and semester) | Faculty Officer, Head of Department, Dean (own faculty) | Registrar (publishes it), Timetable Officer, Examinations Officer, Quality Assurance Officer, Registry Officer, Campus Director, Executive Management |
 | Admission setup (rules, pathways, documents, funding routes and their documents, entry requirements, points) | Registrar | |
 | Registration setup (periods' dates, credit limit, faculty approval) | Registrar | |
 | Integrations (Moodle: address, token, sync) | ICT Administrator (System Manager) | The class page shows its Moodle course to the faculty |
-| Fee settings (instalments: each year's due dates and shares; application fees by nationality: home, regional, international; the funding routes that pay no application fee; ERPNext accounts, deposit, balance allowed, late fee) | Bursar | Finance Officer, Student Fees Officer; shown read only on the Registrar's setup screens |
+| Fee settings (instalments: each year's due dates and shares; the transcript fee and whether transcripts need clearance; application fees by nationality: home, regional, international; the funding routes that pay no application fee; ERPNext accounts, deposit, balance allowed, late fee) | Bursar | Finance Officer, Student Fees Officer; shown read only on the Registrar's setup screens |
 | Application fees (outstanding, paid, waived; waiving) | Bursar, Finance Officer, Student Fees Officer | |
 | Student payments (matched from the bank statement by student number; assigning deposits without one to a student or a sponsor) | Bursar, Finance Officer, Student Fees Officer, Cashier | |
 | Financial clearance (holds with a reason, placed and lifted; what each student owes; graduation and the award certificate need clearance, a setting) | Bursar, Finance Officer, Student Fees Officer (own campus) | Registry and the others who read Students see the hold on the record; the student sees it on My studies |

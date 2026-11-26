@@ -21,7 +21,10 @@ APPLICATION_FIELDS = (
 	"fee_namibian", "fee_international", "fee_regional", "fee_paper_local", "fee_paper_international", "fee_paper_regional",
 	"fee_bank_account", "fee_income_account",
 )
-REGISTRATION_FIELDS = ("max_outstanding", "deposit_type", "deposit_value", "clearance_max_owing", "graduation_needs_clearance")
+REGISTRATION_FIELDS = (
+	"max_outstanding", "deposit_type", "deposit_value", "clearance_max_owing", "graduation_needs_clearance", "transcript_fee",
+	"transcript_needs_clearance",
+)
 
 
 def can_edit() -> bool:
@@ -126,6 +129,12 @@ def save(data: dict | str) -> dict:
 				frappe.throw(_("The amount owing allowed at clearance cannot be negative"))
 		if "graduation_needs_clearance" in registration:
 			doc.graduation_needs_clearance = 1 if registration["graduation_needs_clearance"] else 0
+		if "transcript_needs_clearance" in registration:
+			doc.transcript_needs_clearance = 1 if registration["transcript_needs_clearance"] else 0
+		if "transcript_fee" in registration:
+			doc.transcript_fee = flt(registration["transcript_fee"], 2)
+			if doc.transcript_fee < 0:
+				frappe.throw(_("The transcript fee cannot be negative"))
 		if doc.deposit_value < 0 or (doc.deposit_type == "Percent of the year's fees" and doc.deposit_value > 100):
 			frappe.throw(_("The deposit must be between 0 and 100 percent of the year's fees"))
 		doc.save(ignore_permissions=True)

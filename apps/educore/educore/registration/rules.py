@@ -84,6 +84,26 @@ def enrolments(student: str) -> list:
 	)
 
 
+def offering_for(student: str, academic_year: str | None) -> str | None:
+	"""The programme offering the student registers for in the year: their latest, or the one an approved campus
+	transfer moves them to from that year (educore.api.v1.studies_requests)"""
+	history = enrolments(student)
+	latest = history[0] if history else None
+	if academic_year:
+		moves = [
+			t
+			for t in frappe.get_all(
+				"Studies Request",
+				filters={"student": student, "request_type": "Campus transfer", "status": "Approved"},
+				fields=["to_offering", "from_year"],
+			)
+			if t.from_year and str(t.from_year) <= str(academic_year) and (not latest or str(t.from_year) > str(latest.academic_year))
+		]
+		if moves:
+			return max(moves, key=lambda t: str(t.from_year)).to_offering
+	return latest.educore_programme_offering if latest else None
+
+
 def year_of_study(student: str, academic_year: str) -> int:
 	earlier = {e.academic_year for e in enrolments(student) if e.academic_year != academic_year}
 	return len(earlier) + 1

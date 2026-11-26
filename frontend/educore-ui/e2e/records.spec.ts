@@ -51,14 +51,16 @@ test("admissions downloads the offer letter as a PDF", async ({ page }) => {
   expect(pdf.headers()["content-type"]).toContain("application/pdf");
 });
 
-test("the registry decides requests to interrupt or cancel studies; the faculty does not", async ({ page }) => {
+test("the registry decides requests to interrupt or cancel studies; the faculty does not", async ({ page, browser }) => {
   await signIn(page, "registry-officer.osh");
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Students" }).click();
   await page.getByRole("tab", { name: /^Requests/ }).click();
   await expect(page.getByText("No requests here")).toBeVisible();
 
-  await page.context().clearCookies();
-  await signIn(page, "faculty-officer.fst.osh");
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Students" }).click();
-  await expect(page.getByRole("tab", { name: /^Requests/ })).toHaveCount(0);
+  // the faculty officer in a separate browser session
+  const faculty = await (await browser.newContext()).newPage();
+  await signIn(faculty, "faculty-officer.fst.osh");
+  await faculty.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Students" }).click();
+  await expect(faculty.getByRole("heading", { name: "Students", exact: true })).toBeVisible();
+  await expect(faculty.getByRole("tab", { name: /^Requests/ })).toHaveCount(0);
 });

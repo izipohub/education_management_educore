@@ -68,9 +68,31 @@ TEMPLATES = {
 		"my-studies",
 		"Office of the Registrar",
 	),
+	"transfer_approved": (
+		"Campus transfer approved",
+		[
+			"Dear {first_name},",
+			"Your move to {to_campus} is approved. You register there from {from_year}, and its Registry and Finance "
+			"Office now look after your studies.",
+		],
+		"my-studies",
+		"Office of the Registrar",
+	),
 	"studies_request_declined": (
 		"Request about your studies declined",
 		["Dear {first_name},", "Your request to {what} is declined: {note}"],
+		"my-studies",
+		"Office of the Registrar",
+	),
+	"transcript_issued": (
+		"Official transcript issued",
+		["Dear {first_name},", "Your official transcript is issued. {how}"],
+		"my-studies",
+		"Office of the Registrar",
+	),
+	"transcript_declined": (
+		"Official transcript not issued",
+		["Dear {first_name},", "Your request for an official transcript is declined: {note}"],
 		"my-studies",
 		"Office of the Registrar",
 	),

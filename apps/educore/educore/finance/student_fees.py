@@ -28,6 +28,7 @@ FEE_CATEGORIES = (
 	("Examination Fee", "Other Student Fees", "Examinations for the academic year"),
 	("Technology Levy", "Other Student Fees", "Computer labs, network and learning platforms"),
 	("Late Registration Fee", "Other Student Fees", "Registering after the registration period closed"),
+	("Transcript Fee", "Other Student Fees", "An official academic transcript"),
 )
 STUDENT_DEBTORS = "Student Debtors"
 CENTRAL_BANK = "Central Bank Account"

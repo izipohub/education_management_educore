@@ -8,9 +8,9 @@ import EcButton from "@/core/ui/EcButton.vue";
 import EcField from "@/core/ui/EcField.vue";
 import EcModal from "@/core/ui/EcModal.vue";
 import EcSegmented from "@/core/ui/EcSegmented.vue";
-import { type RequestQueue, type RequestStatus, type StudiesRequest, approveRequest, declineRequest, requestQueue } from "./studiesRequests";
+import { type RequestQueue, type RequestStatus, type StudiesRequest, approveRequest, declineRequest, describeRequest, requestQueue } from "./studiesRequests";
 
-/** Requests to interrupt or cancel studies, for the Registry to decide */
+/** Requests to interrupt or cancel studies, or to move campus, for the Registry to decide */
 const emit = defineEmits<{ counts: [Record<RequestStatus, number>] }>();
 const toast = useToast();
 const status = ref<RequestStatus>("Submitted");
@@ -69,7 +69,13 @@ const statusOptions = [
   { value: "Approved" as RequestStatus, label: "Approved" },
   { value: "Declined" as RequestStatus, label: "Declined" },
 ];
-const what = (r: StudiesRequest) => (r.request_type === "Interruption" ? `Interrupt, returning in ${r.return_year}` : "Cancel studies");
+const what = describeRequest;
+const approveNote = (r: StudiesRequest) =>
+  r.request_type === "Cancellation"
+    ? "The student leaves and comes off this year's class lists; returning means applying again."
+    : r.request_type === "Campus transfer"
+      ? `The student belongs to ${r.to_campus} from now (its Registry and Finance), and registers there from ${r.from_year}.`
+      : `The student comes off this year's class lists and registers again for ${r.return_year}.`;
 </script>
 
 <template>
@@ -91,7 +97,7 @@ const what = (r: StudiesRequest) => (r.request_type === "Interruption" ? `Interr
             <div class="ec-muted">{{ r.reason }}</div>
             <div v-if="r.review_note" class="ec-muted">Declined: {{ r.review_note }}</div>
           </td>
-          <td class="ec-nowrap">{{ formatDate(r.last_day) }}</td>
+          <td class="ec-nowrap">{{ r.last_day ? formatDate(r.last_day) : "" }}</td>
           <td class="acts">
             <template v-if="r.status === 'Submitted'">
               <EcButton label="Decline" variant="ghost" size="sm" :disabled="Boolean(busy)" @click="(declining = r), (note = '')" />
@@ -108,7 +114,7 @@ const what = (r: StudiesRequest) => (r.request_type === "Interruption" ? `Interr
   <EcModal
     :open="approving !== null"
     :title="approving ? `${approving.request_type}: ${approving.student_name}` : ''"
-    :description="approving?.request_type === 'Cancellation' ? 'The student leaves and comes off this year\'s class lists; returning means applying again.' : `The student comes off this year's class lists and registers again for ${approving?.return_year ?? ''}.`"
+    :description="approving ? approveNote(approving) : ''"
     @update:open="(v: boolean) => !v && (approving = null)"
   >
     <template #footer>

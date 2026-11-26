@@ -891,6 +891,23 @@ CUSTOM_FIELDS = {
 			"in_list_view": 1,
 			"in_standard_filter": 1,
 		},
+		# timetables (educore.academics.timetable)
+		{
+			"fieldname": "educore_room_type",
+			"label": "Room Type",
+			"fieldtype": "Select",
+			"options": "Lecture room\nLaboratory\nComputer laboratory\nHall",
+			"default": "Lecture room",
+			"insert_after": "campus",
+			"in_list_view": 1,
+		},
+		{
+			"fieldname": "educore_disabled",
+			"label": "Not in Use",
+			"fieldtype": "Check",
+			"insert_after": "seating_capacity",
+			"description": "Not offered for new timetable slots.",
+		},
 	],
 }
 

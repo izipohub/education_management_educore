@@ -55,6 +55,8 @@ export interface StudentRecord {
   /** sponsors paying the student's fees, by year (educore.finance.sponsors) */
   /** Finance's active holds */
   holds: { reason: string; placed_on: string }[];
+  /** what happened to their studies and when, newest first (educore.academics.history) */
+  history: { date: string | null; event: string; detail: string | null; kind: string }[];
   sponsors: { sponsor_name: string; academic_year: string; cover: string; amount: number; status: string; sponsor_reference: string | null }[];
   enrolments: Enrolment[];
   invoices: { name: string; posting_date: string; grand_total: number; outstanding_amount: number; status: string }[];

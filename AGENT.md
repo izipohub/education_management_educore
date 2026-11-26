@@ -1123,10 +1123,10 @@ application fees by nationality (home, regional, international) matched
 by EFT reference, offers and letters); student records;
 curriculum by year and semester with prerequisites; registration with
 faculty approval, deposit and fee rules, late fees, proof of
-registration; course changes; interruption and cancellation of studies;
-teaching allocation and class lists; class attendance (the lecturer's register, the university's minimum flagged to lecturer, department and student); lecturers set up from the Lecturer position, with an Academic staff screen; marks, moderation, board approval,
+registration; course changes; interruption and cancellation of studies; campus transfers (the same programme at another campus from a year not yet registered for; the student then belongs to that campus and registers there); each student's status history (admission, registrations, interruptions, transfers, holds, completion, read from the records themselves);
+teaching allocation and class lists; timetables (each class's weekly times per semester in a room on its campus, refused when a room, lecturer or student would be in two places at once; rooms with type and seats; each lecturer's and student's week); class attendance (the lecturer's register, the university's minimum flagged to lecturer, department and student); lecturers set up from the Lecturer position, with an Academic staff screen; marks, moderation, board approval,
 publication, supplementary and special examinations, academic standing;
-graduation list, academic record, award certificate, QR verification;
+graduation list, academic record, award certificate, QR verification; official transcript requests (the student asks for copies collected, emailed or posted; the fee per copy invoiced; the Registry issues once paid and, where required, financially cleared, emailing the academic record PDF itself);
 student fees with EFT matching by student number; instalment plans (each year's due dates and shares on every invoice of the year); fee waivers (requested by Finance with the reason, approved or rejected by the Bursar, never their own; a percent of the year's fees, an amount or the late registration fee, taken off the year's invoice by credit note, after sponsors; the registration deposit on what is left); financial holds and clearance (Finance's holds block registration; graduation and the award certificate need clearance); sponsor accounts (sponsors invoiced for their share of a student's year by credit note and sponsor invoice, paid by EFT with the sponsor number, statement PDF; the registration deposit on the student's own share); Moodle course and
 enrolment sync; registrar dashboard; email to applicants and students.
 
@@ -1136,10 +1136,9 @@ enrolment sync; registrar dashboard; email to applicants and students.
 |---|---|---|
 | Institution | Institutional calendar and policies UI, approval matrix, committees and policy register | M1, M7 |
 | Programmes | Curriculum versions (changes apply to new intakes), programme accreditation records, NQF levels on qualifications | M2 |
-| Student records | Status history, campus transfers, disciplinary cases, service requests | M2 |
-| Teaching | Timetables with venues and laboratories, lecturer workload | M2, M3 |
+| Student records | Disciplinary cases, service requests | M2 |
+| Teaching | Lecturer workload | M2, M3 |
 | Examinations | Examination sessions, venues and invigilation | M7 |
-| Graduation | Transcript requests | M7 |
 | HR | Vue staff self-service (leave, payslips, details); lecturer qualifications and appointments; payroll validated for Namibian statutory rules | M6 |
 | Procurement and assets | Purchase requests with budget-holder approval, stores per campus, asset custody per campus | M6 |
 | Campus facilities | Rooms and laboratories, booking, maintenance requests | M6 |

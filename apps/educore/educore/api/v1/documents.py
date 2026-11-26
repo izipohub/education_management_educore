@@ -422,7 +422,6 @@ def proof_of_registration(enrollment: str):
 def academic_record(student: str):
 	"""Every published result, year by year, for the student or the registry; interim until the programme is
 	completed"""
-	from educore.academics import results as exam_results
 	from educore.api.v1.student_records import RECORD_ROLES
 
 	doc = frappe.get_doc("Student", student)
@@ -430,7 +429,22 @@ def academic_record(student: str):
 		if not set(frappe.get_roles()) & set(RECORD_ROLES):
 			frappe.throw(_("Not permitted"), frappe.PermissionError)
 		doc.check_permission("read")
+	_send(f"Academic record {doc.name}.pdf", academic_record_html(student))
 
+
+def academic_record_pdf(student: str) -> bytes:
+	"""The academic record as PDF bytes, to attach to an email (an issued transcript)"""
+	return get_pdf(
+		academic_record_html(student),
+		{"margin-top": "14mm", "margin-bottom": "14mm", "margin-left": "16mm", "margin-right": "16mm", "page-size": "A4"},
+	)
+
+
+def academic_record_html(student: str) -> str:
+	"""The academic record page (no permission check: callers check)"""
+	from educore.academics import results as exam_results
+
+	doc = frappe.get_doc("Student", student)
 	brand = _brand()
 	date = lambda d: formatdate(d, "dd MMMM yyyy") if d else None  # noqa: E731
 	latest = frappe.db.get_value(
@@ -530,7 +544,7 @@ def academic_record(student: str):
 		f"{'Final record.' if completed else 'Interim record: the student has not completed the programme.'} Issued electronically by {_e(brand['name'])}.</td>"
 		"</tr></table>"
 	)
-	_send(f"Academic record {doc.name}.pdf", _page("Office of the Registrar", body))
+	return _page("Office of the Registrar", body)
 
 
 # --- completing a programme -----------------------------------------------------------------------------------

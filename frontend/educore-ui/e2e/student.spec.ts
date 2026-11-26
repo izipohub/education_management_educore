@@ -38,7 +38,7 @@ test("staff have no student page", async ({ page }) => {
 
 test("a student asks the Registry to interrupt their studies", async ({ page }) => {
   await signIn(page, "student1.whk");
-  await expect(page.getByRole("heading", { name: "Interrupting or cancelling studies" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Interrupting, cancelling or moving campus" })).toBeVisible();
   await page.getByRole("button", { name: "Ask the Registry" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("button", { name: "Send" })).toBeDisabled();

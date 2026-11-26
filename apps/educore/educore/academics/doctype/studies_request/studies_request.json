@@ -1,6 +1,6 @@
 {
  "creation": "2026-11-25 12:00:00.000000",
- "modified": "2026-11-25 12:00:00.000000",
+ "modified": "2026-11-26 16:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "doctype": "DocType",
@@ -16,13 +16,13 @@
  "autoname": "format:STR-{YYYY}-{#####}",
  "track_changes": 1,
  "title_field": "student_name",
- "description": "A student's request to interrupt (pause, returning in a later year) or cancel their studies; decided by the Registry (educore.api.v1.studies_requests).",
+ "description": "A student's request to interrupt (pause, returning in a later year) or cancel their studies, or to move to the same programme at another campus; decided by the Registry (educore.api.v1.studies_requests).",
  "fields": [
   {
    "fieldname": "request_type",
    "fieldtype": "Select",
    "label": "Request",
-   "options": "Interruption\nCancellation",
+   "options": "Interruption\nCancellation\nCampus transfer",
    "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1
@@ -67,7 +67,7 @@
    "fieldname": "last_day",
    "fieldtype": "Date",
    "label": "Last Day Attending",
-   "reqd": 1
+   "depends_on": "eval:doc.request_type!='Campus transfer'"
   },
   {
    "fieldname": "return_year",
@@ -122,6 +122,31 @@
    "fieldname": "review_note",
    "fieldtype": "Small Text",
    "label": "Registry Note"
+  },
+  {
+   "fieldname": "to_offering",
+   "fieldtype": "Link",
+   "label": "Transfer To",
+   "options": "Programme Offering",
+   "depends_on": "eval:doc.request_type=='Campus transfer'",
+   "description": "The same programme at the other campus"
+  },
+  {
+   "fieldname": "to_campus",
+   "fieldtype": "Link",
+   "label": "New Campus",
+   "options": "Campus",
+   "read_only": 1,
+   "fetch_from": "to_offering.campus",
+   "depends_on": "eval:doc.request_type=='Campus transfer'"
+  },
+  {
+   "fieldname": "from_year",
+   "fieldtype": "Link",
+   "label": "From Academic Year",
+   "options": "Academic Year",
+   "depends_on": "eval:doc.request_type=='Campus transfer'",
+   "description": "The first year registered at the new campus"
   }
  ],
  "field_order": [
@@ -133,6 +158,9 @@
   "academic_year",
   "last_day",
   "return_year",
+  "to_offering",
+  "to_campus",
+  "from_year",
   "column_status",
   "status",
   "submitted_on",

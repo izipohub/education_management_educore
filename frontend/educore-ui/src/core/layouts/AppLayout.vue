@@ -20,6 +20,7 @@ import {
   Presentation,
   Settings,
   ShieldCheck,
+  CalendarDays,
   BadgePercent,
   SlidersHorizontal,
   UserCheck,
@@ -44,6 +45,7 @@ import { STAFF_ROLES } from "@/modules/staff/api";
 import { SPONSOR_ROLES } from "@/modules/finance/sponsors";
 import { CLEARANCE_ROLES } from "@/modules/finance/clearance";
 import { WAIVER_ROLES } from "@/modules/finance/waivers";
+import { TIMETABLE_ROLES } from "@/modules/teaching/timetable";
 
 const session = useSession();
 const router = useRouter();
@@ -93,6 +95,7 @@ const NAV: NavItem[] = [
   { label: "Students", icon: Users, to: "/students", roles: RECORD_ROLES },
   { label: "Curriculum", icon: LibraryBig, to: "/curriculum", roles: CURRICULUM_ROLES },
   { label: "Teaching", icon: Presentation, to: "/teaching", roles: ALLOCATION_ROLES },
+  { label: "Timetable", icon: CalendarDays, to: "/timetable", roles: TIMETABLE_ROLES },
   { label: "Academic staff", icon: Contact, to: "/academic-staff", roles: STAFF_ROLES },
   { label: "Examinations", icon: FileCheck, to: "/examinations", roles: EXAMINATION_ROLES },
   { label: "Graduation", icon: Award, to: "/graduation", roles: GRADUATION_ROLES },
