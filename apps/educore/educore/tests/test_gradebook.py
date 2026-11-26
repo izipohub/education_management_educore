@@ -29,6 +29,10 @@ class TestGradebook(IntegrationTestCase):
 		frappe.set_user("Administrator")
 		frappe.db.rollback(save_point="gradebook_test")
 
+	def _approve(self):
+		"""The department approves the plan (educore.api.v1.examinations.approve_plan; tested in test_assessment_plans)"""
+		frappe.db.set_value("Mark Sheet", {"student_group": GROUP}, "plan_status", "Approved")
+
 	def _keys(self, page) -> dict:
 		return {a["title"]: a["assessment_key"] for a in page["assessments"]}
 
@@ -36,6 +40,7 @@ class TestGradebook(IntegrationTestCase):
 		page = api.save_gradebook(GROUP, PLAN, {})
 		self.assertTrue(page["ca_from_gradebook"])
 		keys = self._keys(page)
+		self._approve()
 		# partly scored: no CA yet
 		page = api.save_gradebook(GROUP, page["assessments"], {self.student: {keys["Test 1"]: 40}})
 		self.assertIsNone(page["entries"][0]["ca_mark"])
@@ -52,12 +57,16 @@ class TestGradebook(IntegrationTestCase):
 		twice = [dict(PLAN[0]), dict(PLAN[0], weight=75)]
 		self.assertRaises(frappe.ValidationError, api.save_gradebook, GROUP, twice, {})
 		page = api.save_gradebook(GROUP, PLAN, {})
+		self._approve()
 		self.assertRaises(frappe.ValidationError, api.save_gradebook, GROUP, page["assessments"], {self.student: {self._keys(page)["Test 1"]: 51}})
 
 	def test_an_assessment_removed_takes_its_scores_with_it(self):
 		page = api.save_gradebook(GROUP, PLAN, {})
 		keys = self._keys(page)
+		self._approve()
 		page = api.save_gradebook(GROUP, page["assessments"], {self.student: {keys["Test 1"]: 40, keys["Test 2"]: 30, keys["Assignment"]: 70}})
+		# a change to an approved plan: returned to the lecturer first, the scores of the assessments kept
+		frappe.db.set_value("Mark Sheet", {"student_group": GROUP}, "plan_status", None)
 		kept = [dict(a, weight=50) for a in page["assessments"] if a["title"] != "Assignment"]
 		page = api.save_gradebook(GROUP, kept, {})
 		self.assertNotIn(keys["Assignment"], page["scores"].get(self.student, {}))

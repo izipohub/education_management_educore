@@ -1,0 +1,88 @@
+{
+ "name": "Assessment Type",
+ "autoname": "hash",
+ "track_changes": 1,
+ "description": "A kind of continuous assessment a faculty's lecturers may plan (a test, an online quiz...), kept by the Dean.",
+ "title_field": "type_name",
+ "show_title_field_in_link": 1,
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "print": 1
+  },
+  {
+   "role": "Dean",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "print": 1
+  }
+ ],
+ "fields": [
+  {
+   "fieldname": "type_name",
+   "fieldtype": "Data",
+   "label": "Assessment Type",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "faculty",
+   "fieldtype": "Link",
+   "label": "Faculty",
+   "options": "Department",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_rules",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "online",
+   "fieldtype": "Check",
+   "label": "Taken Online in Moodle",
+   "default": "0",
+   "description": "Its scores can be brought in from the Moodle activity it is linked to."
+  },
+  {
+   "fieldname": "max_share",
+   "fieldtype": "Percent",
+   "label": "Highest Share of the CA",
+   "default": "0",
+   "description": "The most that assessments of this type may count for together. 0: no limit."
+  },
+  {
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Not in Use",
+   "default": "0"
+  }
+ ],
+ "actions": [],
+ "links": [],
+ "states": [],
+ "creation": "2026-11-26 16:00:00.000000",
+ "modified": "2026-11-26 16:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Academics",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "field_order": [
+  "type_name",
+  "faculty",
+  "column_rules",
+  "online",
+  "max_share",
+  "disabled"
+ ]
+}

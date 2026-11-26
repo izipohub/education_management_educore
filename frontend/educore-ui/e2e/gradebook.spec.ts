@@ -16,18 +16,9 @@ test("a lecturer keeps a gradebook: their assessments, the scores, the CA worked
   await expect(anna.locator("td.ca")).toHaveText("83.5");
   await page.screenshot({ path: "e2e/results/gradebook.png", fullPage: true });
 
-  // the lecturer's own mix: the shares must add up to 100%
-  await page.getByRole("button", { name: "Change assessments" }).click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText("Total 100%")).toBeVisible();
-  await dialog.getByRole("button", { name: "Add an assessment" }).click();
-  await dialog.getByRole("spinbutton", { name: "Share 5" }).fill("10");
-  await dialog.getByRole("spinbutton", { name: "Share 5" }).blur();
-  await expect(dialog.getByText("Total 110% (must be 100%)")).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "Save assessments" })).toBeDisabled();
-  await page.screenshot({ path: "e2e/results/gradebook-assessments.png", fullPage: true });
-  await dialog.getByRole("button", { name: "Cancel" }).click();
-  // not saved: the demo gradebook stays as it is
+  // the plan was approved by the Head of Department: it is changed only once the department returns it
+  await expect(page.getByText("Approved", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Change assessments" })).toHaveCount(0);
 
   await page.getByRole("tab", { name: "Marks" }).click();
   await expect(page.getByText("CA from the gradebook")).toBeVisible();

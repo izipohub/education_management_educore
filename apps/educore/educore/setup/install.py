@@ -3,7 +3,7 @@
 import frappe
 
 from educore.academics import results as exam_results
-from educore.academics import workload
+from educore.academics import assessment_types, workload
 from educore.access import desk, roles
 from educore.admissions import pathways
 from educore.registration import rules as registration
@@ -20,6 +20,7 @@ def after_migrate():
 	registration.ensure_defaults()
 	exam_results.ensure_defaults()
 	workload.ensure_defaults()
+	assessment_types.ensure_defaults()
 	_fee_setup()
 	_lecturers()
 	_funding()

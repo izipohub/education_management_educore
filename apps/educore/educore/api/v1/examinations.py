@@ -119,7 +119,11 @@ def _out(doc, group: str) -> dict:
 			"submitted_by", "submitted_on", "moderated_by", "moderated_on", "approved_by", "approved_on", "board_reference", "published_on")},
 		"rules": _rules(),
 		# the lecturer's assessments and scores, from which the CA is worked out (educore.academics.gradebook)
-		**(gradebook.out(doc) if doc else {"assessments": [], "scores": {}, "ca_from_gradebook": False}),
+		**(
+			gradebook.out(doc)
+			if doc
+			else {"assessments": [], "scores": {}, "ca_from_gradebook": False, "plan": {"status": None, "note": None, "approved_by": None, "approved_on": None}}
+		),
 	}
 
 
@@ -176,6 +180,48 @@ def save_gradebook(group: str, assessments: list | str, scores: dict | str | Non
 	return {**_out(doc, group), "can_edit": True}
 
 
+def _lecturer_draft(group: str):
+	if not _teaches(group):
+		frappe.throw(_("You do not teach this class"), frappe.PermissionError)
+	doc = _sheet(group, create=True)
+	if doc.status != "Draft":
+		frappe.throw(_("The marks are submitted; the department returns them if they need changing"))
+	return doc
+
+
+@frappe.whitelist(methods=["POST"])
+def propose_plan(group: str) -> dict:
+	"""The lecturer's assessment plan to the Head of Department for approval"""
+	doc = _lecturer_draft(group)
+	gradebook.propose(doc)
+	doc.save(ignore_permissions=True)
+	doc.add_comment("Workflow", _("Assessment plan submitted for approval"))
+	return {**_out(doc, group), "can_edit": True}
+
+
+@frappe.whitelist(methods=["GET"])
+def moodle_activities(group: str) -> list[dict]:
+	"""The graded activities of the class's Moodle course, to link an online assessment to"""
+	from educore.learning import moodle_grades
+
+	_lecturer_draft(group)
+	return moodle_grades.activities(group)
+
+
+@frappe.whitelist(methods=["GET"])
+def moodle_scores(group: str, assessment_key: str) -> dict:
+	"""The grades of an online assessment's Moodle activity, scaled to it, for the lecturer to check and save"""
+	from educore.learning import moodle_grades
+
+	doc = _lecturer_draft(group)
+	if doc.plan_status != gradebook.APPROVED:
+		frappe.throw(_("Scores are entered once the Head of Department approves the assessment plan"))
+	a = next((a for a in doc.assessments if a.assessment_key == assessment_key), None)
+	if not a or not a.moodle_cmid:
+		frappe.throw(_("The assessment is not linked to a Moodle activity"))
+	return moodle_grades.grades(group, a.moodle_cmid, a.out_of)
+
+
 @frappe.whitelist(methods=["POST"])
 def submit(group: str) -> dict:
 	if not _teaches(group):
@@ -183,6 +229,8 @@ def submit(group: str) -> dict:
 	doc = _sheet(group)
 	if not doc or doc.status != "Draft":
 		frappe.throw(_("Nothing to submit"))
+	if gradebook.uses_gradebook(doc) and doc.plan_status != gradebook.APPROVED:
+		frappe.throw(_("The assessment plan is not approved yet"))
 	results.work_out_sheet(doc)
 	missing = [e.student_name or e.student for e in doc.entries if not e.result]
 	if missing:
@@ -324,6 +372,7 @@ def sheets(academic_year: str | None = None) -> dict:
 			"lecturers": frappe.get_all("Student Group Instructor", filters={"parent": g.name}, pluck="instructor_name"),
 			"students": frappe.db.count("Student Group Student", {"parent": g.name, "active": 1}),
 			"status": sheet.status if sheet else "Not started",
+			"plan_status": frappe.db.get_value("Mark Sheet", sheet.name, "plan_status") or None if sheet else None,
 			"pass_rate": summary["pass_rate"] if summary else None,
 			"supp_status": frappe.db.get_value("Mark Sheet", sheet.name, "supp_status") if sheet else None,
 		})
@@ -346,6 +395,9 @@ def sheet(group: str) -> dict:
 	return {
 		**_out(doc, group),
 		"can_moderate": _has(MODERATE_ROLES) and status == "Submitted",
+		# the assessment plan: approved or returned by the department while the marks are with the lecturer
+		"can_approve_plan": _has(MODERATE_ROLES) and status == "Draft" and doc.plan_status == gradebook.PROPOSED and not _teaches(group),
+		"can_return_plan": _has(MODERATE_ROLES) and status == "Draft" and bool(doc.plan_status),
 		"can_approve": _has(EXAM_ROLES) and status == "Moderated",
 		"can_publish": _has(EXAM_ROLES) and status == "Approved",
 		"can_publish_supp": _has(EXAM_ROLES) and status == "Published" and bool(doc and doc.supp_status == "Submitted"),
@@ -364,6 +416,38 @@ def _staff_sheet(group: str, roles, status: str):
 	if not doc or doc.status != status:
 		frappe.throw(_("The marks are not waiting for this step"))
 	return doc
+
+
+def _plan_sheet(group: str):
+	_require(MODERATE_ROLES)
+	if not _in_scope(group):
+		frappe.throw(_("This class is not in your department, faculty or campus"), frappe.PermissionError)
+	doc = _sheet(group)
+	if not doc or doc.status != "Draft":
+		frappe.throw(_("The marks are no longer with the lecturer"))
+	return doc
+
+
+@frappe.whitelist(methods=["POST"])
+def approve_plan(group: str) -> dict:
+	"""The department approves the lecturer's assessment plan; scores can then be entered"""
+	doc = _plan_sheet(group)
+	if _teaches(group):
+		frappe.throw(_("A module's plan is approved by someone who does not teach it"))
+	gradebook.approve(doc)
+	doc.save(ignore_permissions=True)
+	doc.add_comment("Workflow", _("Assessment plan approved"))
+	return sheet(group)
+
+
+@frappe.whitelist(methods=["POST"])
+def return_plan(group: str, note: str) -> dict:
+	"""The plan back to the lecturer with the reason, to change it (an approved one too; its scores are kept)"""
+	doc = _plan_sheet(group)
+	gradebook.return_plan(doc, note)
+	doc.save(ignore_permissions=True)
+	doc.add_comment("Workflow", _("Assessment plan returned: {0}").format(note.strip()))
+	return sheet(group)
 
 
 @frappe.whitelist(methods=["POST"])

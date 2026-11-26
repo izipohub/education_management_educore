@@ -1,6 +1,6 @@
 {
  "creation": "2026-11-27 12:00:00.000000",
- "modified": "2026-11-27 12:00:00.000000",
+ "modified": "2026-11-26 16:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "doctype": "DocType",
@@ -26,9 +26,8 @@
   },
   {
    "fieldname": "kind",
-   "fieldtype": "Select",
-   "label": "Kind",
-   "options": "Test\nAssignment\nQuiz\nProject\nPractical\nPresentation\nOther",
+   "fieldtype": "Data",
+   "label": "Assessment Type",
    "default": "Test",
    "in_list_view": 1
   },
@@ -49,6 +48,22 @@
    "fieldname": "due_date",
    "fieldtype": "Date",
    "label": "Date"
+  },
+  {
+   "fieldname": "moodle_cmid",
+   "fieldtype": "Int",
+   "label": "Moodle Activity ID"
+  },
+  {
+   "fieldname": "moodle_activity",
+   "fieldtype": "Data",
+   "label": "Moodle Activity"
+  },
+  {
+   "fieldname": "moodle_url",
+   "fieldtype": "Data",
+   "label": "Moodle Link",
+   "options": "URL"
   }
  ],
  "field_order": [
@@ -57,7 +72,10 @@
   "kind",
   "out_of",
   "weight",
-  "due_date"
+  "due_date",
+  "moodle_cmid",
+  "moodle_activity",
+  "moodle_url"
  ],
  "permissions": [],
  "actions": [],

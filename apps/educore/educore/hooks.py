@@ -54,7 +54,9 @@ doc_events = {
 	"User Permission": {"after_insert": "educore.academics.lecturers.on_user_permission_change"},
 	"Employee": {"on_update": "educore.academics.lecturers.on_employee_update"},
 	# Faculties, schools and departments live in ERPNext's Department tree
-	"Department": {"validate": "educore.institution.department.validate"},
+	"Department": {"validate": "educore.institution.department.validate", "on_update": "educore.academics.assessment_types.on_department_update"},
+	# A faculty's assessment types: one of each name per faculty
+	"Assessment Type": {"validate": "educore.academics.assessment_types.validate"},
 	# Programmes and courses belong to academic units, with codes, credits and NQF levels
 	"Program": {"validate": "educore.academics.catalogue.validate_program"},
 	"Course": {"validate": "educore.academics.catalogue.validate_course"},

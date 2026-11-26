@@ -77,13 +77,22 @@ export interface Sheet {
   can_moderate?: boolean;
   can_approve?: boolean;
   can_publish?: boolean;
+  /** the assessment plan: approved or returned by the department while the marks are with the lecturer */
+  can_approve_plan?: boolean;
+  can_return_plan?: boolean;
   /** the lecturer's assessments and each student's scores (student: assessment key: score); the CA comes from them */
   assessments: Assessment[];
   scores: Record<string, Record<string, number | null>>;
   ca_from_gradebook: boolean;
+  /** null: with the lecturer (with the reason if it was returned); Proposed: with the department; Approved: scores go in */
+  plan: { status: PlanStatus | null; note: string | null; approved_by: string | null; approved_on: string | null };
+  /** the faculty's assessment types the lecturer chooses from */
+  assessment_types?: { type_name: string; online: 0 | 1; max_share: number }[];
+  /** Moodle connected, and the class's course made in it */
+  moodle?: { connected: boolean; in_moodle: boolean };
 }
 
-export const ASSESSMENT_KINDS = ["Test", "Assignment", "Quiz", "Project", "Practical", "Presentation", "Other"] as const;
+export type PlanStatus = "Proposed" | "Approved";
 
 export interface Assessment {
   assessment_key?: string;
@@ -92,6 +101,34 @@ export interface Assessment {
   out_of: number;
   weight: number;
   due_date?: string | null;
+  /** an online assessment's Moodle activity */
+  moodle_cmid?: number | null;
+  moodle_activity?: string | null;
+  moodle_url?: string | null;
+}
+
+export interface MoodleActivity {
+  cmid: number;
+  name: string;
+  kind: string;
+  section: string | null;
+  url: string | null;
+}
+
+export interface AssessmentType {
+  name?: string;
+  type_name: string;
+  online: 0 | 1;
+  max_share: number;
+  disabled: 0 | 1;
+  /** used in assessment plans: its name is kept */
+  used?: boolean;
+}
+
+export interface FacultyTypes {
+  faculty: string;
+  label: string;
+  types: AssessmentType[];
 }
 
 /** a student's CA from the gradebook: the weighted sum of their scores, once every assessment is scored */
@@ -114,6 +151,7 @@ export interface SheetRow {
   lecturers: string[];
   students: number;
   status: SheetStatus;
+  plan_status: PlanStatus | null;
   pass_rate: number | null;
   supp_status: "Open" | "Submitted" | "Published" | null;
 }
@@ -184,3 +222,14 @@ export function workOut(e: Pick<Entry, "ca_mark" | "exam_mark" | "absent">, rule
   const result: Result = final >= rules.pass_mark ? "Pass" : final >= rules.supplementary_from ? "Supplementary" : "Fail";
   return { final_mark: final, grade, result };
 }
+export const proposePlan = (group: string) => post<Sheet>(`${API}.propose_plan`, { group });
+export const approvePlan = (group: string) => post<Sheet>(`${API}.approve_plan`, { group });
+export const returnPlan = (group: string, note: string) => post<Sheet>(`${API}.return_plan`, { group, note });
+export const moodleActivities = (group: string) => get<MoodleActivity[]>(`${API}.moodle_activities`, { group });
+export const moodleScores = (group: string, assessmentKey: string) =>
+  get<{ scores: Record<string, number>; not_graded: number }>(`${API}.moodle_scores`, { group, assessment_key: assessmentKey });
+
+const TYPES_API = "educore.api.v1.assessment_types";
+export const getAssessmentTypes = () => get<{ faculties: FacultyTypes[]; can_edit: boolean }>(`${TYPES_API}.types`);
+export const saveAssessmentTypes = (faculty: string, rows: AssessmentType[]) =>
+  post<{ faculties: FacultyTypes[]; can_edit: boolean }>(`${TYPES_API}.save`, { faculty, rows });

@@ -5,7 +5,7 @@
  */
 
 export type Severity = "success" | "info" | "warn" | "danger" | "secondary" | "contrast";
-export type StatusKind = "application" | "offer" | "eligibility" | "registration" | "document" | "fee" | "standing" | "period" | "class" | "marks" | "result" | "completion" | "change" | "request" | "lecturer" | "sponsorship" | "waiver" | "transcript" | "exam" | "workload";
+export type StatusKind = "application" | "offer" | "eligibility" | "registration" | "document" | "fee" | "standing" | "period" | "class" | "marks" | "result" | "completion" | "change" | "request" | "lecturer" | "sponsorship" | "waiver" | "transcript" | "exam" | "workload" | "plan";
 
 type Entry = [label: string, severity: Severity];
 
@@ -109,6 +109,10 @@ const TAGS: Record<StatusKind, Record<string, Entry>> = {
     Invoiced: ["Invoiced", "success"],
     Withdrawn: ["Withdrawn", "secondary"],
   },
+  plan: {
+    Proposed: ["To approve", "warn"],
+    Approved: ["Approved", "success"],
+  },
   workload: {
     Over: ["Over", "warn"],
     Within: ["Within", "success"],
@@ -128,7 +132,7 @@ const TAGS: Record<StatusKind, Record<string, Entry>> = {
   },
 };
 
-const EMPTY: Partial<Record<StatusKind, Entry>> = { eligibility: ["Not assessed", "secondary"] };
+const EMPTY: Partial<Record<StatusKind, Entry>> = { eligibility: ["Not assessed", "secondary"], plan: ["Draft", "secondary"] };
 
 export function statusTag(kind: StatusKind, value: string | null | undefined): { label: string; severity: Severity } {
   const entry = (value && TAGS[kind][value]) || (!value && EMPTY[kind]) || [value ?? "", "secondary"];

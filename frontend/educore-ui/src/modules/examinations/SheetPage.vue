@@ -12,7 +12,7 @@ import EcModal from "@/core/ui/EcModal.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
-import { type Entry, type Sheet, approve, getSheet, moderate, publish, grantSpecial, publishSupplementary, returnSheet, workOut } from "./api";
+import { type Entry, type Sheet, approve, approvePlan, getSheet, returnPlan, moderate, publish, grantSpecial, publishSupplementary, returnSheet, workOut } from "./api";
 
 /**
  * A class's marks for the department and the examinations office: the results and how the class did, who did
@@ -99,6 +99,20 @@ async function confirmGrant() {
   if (await run(() => grantSpecial(props.group, e.student, specialReason.value.trim()), `Special examination granted to ${e.student_name}`)) granting.value = null;
 }
 
+// the assessment plan (the department, while the marks are with the lecturer)
+const returningPlan = ref(false);
+const planNote = ref("");
+async function confirmReturnPlan() {
+  if (await run(() => returnPlan(props.group, planNote.value.trim()), "Plan returned to the lecturer")) returningPlan.value = false;
+}
+const planNoteText = computed(() => {
+  const p = sheet.value?.plan;
+  if (!p) return undefined;
+  if (p.status === "Approved" && p.approved_by) return `Approved by ${p.approved_by}${p.approved_on ? `, ${formatDate(p.approved_on)}` : ""}`;
+  if (p.status === "Proposed") return "Submitted by the lecturer";
+  return "With the lecturer";
+});
+
 const subtitle = computed(() => {
   const s = sheet.value;
   return s ? [s.course, s.campus?.replace(" Campus", ""), s.academic_year, s.lecturers.join(", ")].filter(Boolean).join(" · ") : "";
@@ -121,6 +135,35 @@ const counts = computed(() => sheet.value?.summary?.counts);
       <EcButton v-else-if="sheet.can_publish" label="Publish results" variant="primary" :loading="busy" @click="run(() => publish([group]), 'Results published')" />
       <EcButton v-else-if="sheet.can_publish_supp" label="Publish supplementary results" variant="primary" :disabled="busy" @click="(publishingSupp = true), (suppBoard = '')" />
     </template>
+
+    <EcPanel v-if="sheet && sheet.assessments.length" title="Assessment plan" flush>
+      <template #note>
+        <span class="plan-head"><span class="ec-muted">{{ planNoteText }}</span><StatusTag kind="plan" :value="sheet.plan.status" /></span>
+      </template>
+      <table class="ec-table">
+        <thead>
+          <tr><th>Assessment</th><th>Type</th><th class="num">Out of</th><th class="num">Share of CA</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="a in sheet.assessments" :key="a.assessment_key">
+            <td>
+              {{ a.title }}
+              <div v-if="a.moodle_activity" class="ec-muted">
+                Moodle: <a v-if="a.moodle_url" :href="a.moodle_url" target="_blank" rel="noopener" class="link">{{ a.moodle_activity }}</a><template v-else>{{ a.moodle_activity }}</template>
+              </div>
+            </td>
+            <td>{{ a.kind }}</td>
+            <td class="num">{{ a.out_of }}</td>
+            <td class="num">{{ a.weight }}%</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-if="!sheet.plan.status && sheet.plan.note" class="plan-note ec-muted">Returned: {{ sheet.plan.note }}</p>
+      <template v-if="sheet.can_approve_plan || sheet.can_return_plan" #footer>
+        <EcButton v-if="sheet.can_return_plan" :label="sheet.plan.status === 'Approved' ? 'Return for a change' : 'Return to lecturer'" variant="ghost" size="sm" :disabled="busy" @click="(returningPlan = true), (planNote = '')" />
+        <EcButton v-if="sheet.can_approve_plan" label="Approve plan" variant="primary" size="sm" :loading="busy" @click="run(() => approvePlan(group), 'Plan approved')" />
+      </template>
+    </EcPanel>
 
     <EcPanel v-if="sheet" title="Results" :note="sheet.status === 'Not started' ? 'No marks yet' : undefined" flush>
       <table v-if="rows.length" class="ec-table marks">
@@ -217,6 +260,21 @@ const counts = computed(() => sheet.value?.summary?.counts);
     </template>
   </EcModal>
 
+  <EcModal
+    :open="returningPlan"
+    title="Return the assessment plan"
+    :description="sheet?.plan.status === 'Approved' ? 'The lecturer changes it and submits it again; the scores of the assessments kept stay' : undefined"
+    @update:open="(v: boolean) => (returningPlan = v)"
+  >
+    <EcField label="What needs changing" for="plan-note">
+      <Textarea id="plan-note" v-model="planNote" rows="3" auto-resize fluid />
+    </EcField>
+    <template #footer>
+      <EcButton label="Cancel" variant="ghost" @click="returningPlan = false" />
+      <EcButton label="Return" variant="primary" :loading="busy" :disabled="!planNote.trim()" @click="confirmReturnPlan" />
+    </template>
+  </EcModal>
+
   <EcModal :open="returning" title="Return the marks" @update:open="(v: boolean) => (returning = v)">
     <EcField label="What needs changing" for="note">
       <Textarea id="note" v-model="note" rows="3" auto-resize fluid />
@@ -259,6 +317,24 @@ const counts = computed(() => sheet.value?.summary?.counts);
 </template>
 
 <style scoped>
+.plan-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.link {
+  color: var(--ec-accent);
+  text-decoration: none;
+}
+
+.plan-note {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--ec-border-soft);
+  font-size: 0.85rem;
+}
+
 .marks {
   table-layout: fixed;
 }

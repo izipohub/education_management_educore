@@ -13,6 +13,7 @@ import DataTable, { type Column } from "@/core/ui/DataTable.vue";
 import EcButton from "@/core/ui/EcButton.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import EcTabs from "@/core/ui/EcTabs.vue";
+import AssessmentTypesPanel from "./AssessmentTypesPanel.vue";
 import ExamTimetableTab from "./ExamTimetableTab.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
 import SettingRow from "@/core/ui/SettingRow.vue";
@@ -24,7 +25,7 @@ import { type Rules, type SheetRow, type SheetStatus, type SheetsPage, getRules,
  * approved, published); a row opens the class's marks. The examinations officer publishes approved results; the
  * Registrar sets the rules.
  */
-type Tab = "all" | "Draft" | "Submitted" | "Moderated" | "Approved" | "Published" | "supplementary" | "timetable" | "rules";
+type Tab = "all" | "plans" | "Draft" | "Submitted" | "Moderated" | "Approved" | "Published" | "supplementary" | "timetable" | "rules";
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
@@ -68,6 +69,7 @@ const matching = computed(() => {
 const count = (s: SheetStatus | "Draft") => matching.value.filter((r) => (s === "Draft" ? r.status === "Draft" || r.status === "Not started" : r.status === s)).length;
 const tabs = computed(() => [
   { label: "All", value: "all" as Tab, count: matching.value.length },
+  { label: "Plans to approve", value: "plans" as Tab, count: matching.value.filter(planToApprove).length },
   { label: "With lecturer", value: "Draft" as Tab, count: count("Draft") },
   { label: "To moderate", value: "Submitted" as Tab, count: count("Submitted") },
   { label: "To approve", value: "Moderated" as Tab, count: count("Moderated") },
@@ -82,7 +84,9 @@ const rows = computed(
     matching.value.filter((r) =>
       tab.value === "all"
         ? true
-        : tab.value === "supplementary"
+        : tab.value === "plans"
+          ? planToApprove(r)
+          : tab.value === "supplementary"
           ? r.supp_status === "Open" || r.supp_status === "Submitted"
           : tab.value === "Draft"
             ? r.status === "Draft" || r.status === "Not started"
@@ -90,6 +94,10 @@ const rows = computed(
     ) as unknown as Record<string, unknown>[],
 );
 const row = (r: Record<string, unknown>) => r as unknown as SheetRow;
+/** a lecturer's assessment plan waiting for the department */
+function planToApprove(r: SheetRow) {
+  return r.status === "Draft" && r.plan_status === "Proposed";
+}
 const columns: Column[] = [
   { key: "course", label: "Course" },
   { key: "campus", label: "Campus", wide: true },
@@ -196,6 +204,7 @@ async function saveTheRules() {
           <EcButton label="Save" variant="primary" :loading="savingRules" @click="saveTheRules" />
         </div>
       </template>
+      <AssessmentTypesPanel />
     </div>
 
     <DataTable
@@ -223,6 +232,7 @@ async function saveTheRules() {
       <template #cell-pass_rate="{ row: r }">{{ row(r).pass_rate !== null ? `${row(r).pass_rate}%` : "" }}</template>
       <template #cell-status="{ row: r }">
         <StatusTag kind="marks" :value="row(r).status" />
+        <span v-if="planToApprove(row(r))" class="sub">Assessment plan to approve</span>
         <span v-if="row(r).supp_status === 'Submitted'" class="sub">Supplementary to publish</span>
         <span v-else-if="row(r).supp_status === 'Open'" class="sub">Supplementary with lecturer</span>
       </template>

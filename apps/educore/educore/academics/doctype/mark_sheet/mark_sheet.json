@@ -181,6 +181,40 @@
    "collapsible": 1
   },
   {
+   "fieldname": "plan_approved_on",
+   "fieldtype": "Datetime",
+   "label": "Plan Approved On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "plan_approved_by",
+   "fieldtype": "Link",
+   "label": "Plan Approved By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "plan_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "plan_note",
+   "fieldtype": "Small Text",
+   "label": "Plan Returned Because"
+  },
+  {
+   "fieldname": "plan_status",
+   "fieldtype": "Select",
+   "label": "Plan Status",
+   "options": "\nProposed\nApproved",
+   "description": "Empty: with the lecturer. Proposed: with the Head of Department. Scores are entered once it is approved."
+  },
+  {
+   "fieldname": "plan_section",
+   "fieldtype": "Section Break",
+   "label": "Assessment Plan"
+  },
+  {
    "fieldname": "assessments",
    "fieldtype": "Table",
    "label": "Assessments",
@@ -197,7 +231,7 @@
  "links": [],
  "states": [],
  "creation": "2026-11-24 09:00:00.000000",
- "modified": "2026-11-27 12:00:00.000000",
+ "modified": "2026-11-26 16:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "doctype": "DocType",
@@ -232,6 +266,12 @@
   "supp_board_reference",
   "supp_published_on",
   "gradebook_section",
+  "plan_section",
+  "plan_status",
+  "plan_note",
+  "plan_column",
+  "plan_approved_by",
+  "plan_approved_on",
   "assessments",
   "scores"
  ]
