@@ -4,7 +4,7 @@ import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import DataTable, { type Column } from "@/core/ui/DataTable.vue";
 import EcTabs from "@/core/ui/EcTabs.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
@@ -35,10 +35,15 @@ onMounted(async () => {
   }
 });
 
+/** Back: to the list the module was opened from (My modules, or the menu's Attendance, Gradebook or Marks) */
+const route = useRoute();
+const FROM: Record<string, string> = { "my-attendance": "Attendance", "my-gradebook": "Gradebook", "my-marks": "Marks" };
+const from = computed(() => (typeof route.query.from === "string" && FROM[route.query.from] ? route.query.from : null));
+const back = computed(() => (from.value ? { to: { name: from.value }, label: FROM[from.value]! } : { to: { name: "my-teaching" }, label: "My modules" }));
 const ROUTES: Record<Tab, string> = { students: "my-class", attendance: "class-attendance", gradebook: "class-gradebook", marks: "class-marks" };
 const current = computed({
   get: () => props.tab,
-  set: (t: Tab) => void router.replace({ name: ROUTES[t], params: { group: props.group } }),
+  set: (t: Tab) => void router.replace({ name: ROUTES[t], params: { group: props.group }, query: route.query }),
 });
 const tabs = computed(() => [
   { value: "students" as Tab, label: "Students", count: cls.value?.students.length },
@@ -69,7 +74,7 @@ const columns: Column[] = [
 </script>
 
 <template>
-  <RecordPage :back="{ to: { name: 'my-teaching' }, label: 'My modules' }" :title="title" :subtitle="subtitle" :error="error" :loading="!cls && !error">
+  <RecordPage :back="back" :title="title" :subtitle="subtitle" :error="error" :loading="!cls && !error">
     <div class="module">
       <EcTabs v-model="current" :tabs="tabs" label="Module" />
 

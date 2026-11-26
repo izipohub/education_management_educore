@@ -15,6 +15,10 @@ export const EXAMINATION_ROLES = [
   "Executive Management",
   "System Manager",
 ];
+/** who approves assessment plans and moderates marks (educore.api.v1.examinations MODERATE_ROLES) */
+export const APPROVAL_ROLES = ["Head of Department", "Dean", "System Manager"];
+/** who reads the faculty's assessment types (educore.api.v1.assessment_types); the Dean keeps them */
+export const ASSESSMENT_TYPE_ROLES = ["Dean", "Head of Department", "Faculty Officer", "Registrar", "Examinations Officer", "Quality Assurance Officer", "Executive Management", "System Manager"];
 
 export interface Rules {
   ca_weight: number;

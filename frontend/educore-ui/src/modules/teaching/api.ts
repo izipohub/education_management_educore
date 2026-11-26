@@ -20,6 +20,10 @@ export interface CourseClass {
   students: ClassStudent[];
   /** other lecturers on the same course group */
   co_lecturers: string[];
+  /** where the module's marks stand: Not started, Draft (with the lecturer), Submitted... */
+  marks_status: string;
+  /** the assessment plan: null (none yet), Draft (with the lecturer), Proposed, Approved */
+  plan_status: "Draft" | "Proposed" | "Approved" | null;
 }
 
 export interface MyClasses {

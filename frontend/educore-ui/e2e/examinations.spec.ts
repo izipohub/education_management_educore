@@ -35,7 +35,7 @@ test("the registrar reads the results and sets the rules", async ({ page }) => {
   await page.getByRole("link", { name: "Examinations" }).click();
   await page.getByRole("tab", { name: /^Published/ }).click();
   await expect(tableRow(page, "Programming Fundamentals").first()).toBeVisible();
-  await page.getByRole("tab", { name: "Rules" }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Examination rules", exact: true }).click();
   await expect(page.getByLabel("Pass mark")).toBeEnabled();
   await page.screenshot({ path: "e2e/results/exam-rules.png", fullPage: true });
 });

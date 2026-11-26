@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ChevronRight } from "@lucide/vue";
 import Message from "primevue/message";
 import Select from "primevue/select";
 import { computed, onMounted, ref, watch } from "vue";
@@ -15,6 +16,7 @@ import PageHeader from "@/core/ui/PageHeader.vue";
 import StatTile from "@/core/ui/StatTile.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
 import { type Application, listApplications } from "@/modules/admissions/api";
+import { RECORD_ROLES } from "@/modules/records/api";
 import { type QueueRow, getQueue } from "@/modules/registration/api";
 import { type DashboardStats, getStats } from "./api";
 
@@ -26,6 +28,10 @@ const session = useSession();
 const route = useRoute();
 const router = useRouter();
 const me = computed(() => session.me);
+const lecturer = computed(() => session.hasRole("Lecturer"));
+/** the registrations list is read for those who approve them */
+const seesStudents = computed(() => session.hasRole(...RECORD_ROLES));
+const approvesRegistrations = computed(() => session.hasRole("Faculty Officer", "Registrar"));
 
 /** "All campuses" in the picker; no campus in the address */
 const ALL = "all";
@@ -111,15 +117,46 @@ const showCampusDonut = computed(() => Boolean(s.value.students && !chosen.value
     </template>
 
     <div v-else class="board" :class="{ busy: loading }" :aria-busy="loading">
+      <!-- what is waiting for you, and (lecturers) today's lessons -->
+      <div class="row" :class="{ two: lecturer }">
+        <EcPanel title="Waiting for you" :flush="stats.work.length > 0">
+          <ul v-if="stats.work.length" class="work">
+            <li v-for="w in stats.work" :key="w.label">
+              <RouterLink :to="w.to" class="work-item">
+                <span class="work-count">{{ w.count }}</span>
+                <span class="work-label">{{ w.label }}</span>
+                <ChevronRight :size="16" aria-hidden="true" class="work-go" />
+              </RouterLink>
+            </li>
+          </ul>
+          <p v-else class="none ec-muted">Nothing is waiting for you.</p>
+        </EcPanel>
+        <EcPanel v-if="lecturer" title="Today" :note="formatDate(stats.today)" :flush="stats.lessons.length > 0">
+          <table v-if="stats.lessons.length" class="ec-table">
+            <tbody>
+              <tr v-for="l in stats.lessons" :key="`${l.group}-${l.start_time}`">
+                <td class="ec-nowrap">{{ l.start_time }} to {{ l.end_time }}</td>
+                <td>
+                  <RouterLink :to="{ name: 'class-attendance', params: { group: l.group }, query: { from: 'my-attendance' } }" class="record">{{ l.code }}</RouterLink>
+                  <div class="ec-muted">{{ l.course }} · {{ l.kind }} · {{ l.room_name }}</div>
+                </td>
+                <td class="num"><span :class="l.taken ? 'ec-muted' : ''">{{ l.taken ? "Register taken" : "Register to take" }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-else class="none ec-muted">No lessons today.</p>
+        </EcPanel>
+      </div>
+
       <!-- the headline figures, each with where to act on it -->
       <div class="tiles">
         <StatTile
           v-if="s.students"
           label="Students"
           :value="s.students.total"
-          :hint="chosen || `${s.students.by_campus.length} campuses`"
-          :to="{ path: '/students', query: chosen ? { campus: chosen } : {} }"
-          action="View students"
+          :hint="chosen || (s.students.by_campus.length === 1 ? s.students.by_campus[0]!.label : `${s.students.by_campus.length} campuses`)"
+          :to="seesStudents ? { path: '/students', query: chosen ? { campus: chosen } : {} } : undefined"
+          :action="seesStudents ? 'View students' : undefined"
         />
         <StatTile
           v-if="s.admissions"
@@ -210,7 +247,7 @@ const showCampusDonut = computed(() => Boolean(s.value.students && !chosen.value
       </div>
 
       <!-- the work waiting -->
-      <div v-if="s.admissions || s.registration?.academic_year" class="row two">
+      <div v-if="s.admissions || (s.registration?.academic_year && approvesRegistrations)" class="row two">
         <EcPanel v-if="s.admissions" title="Awaiting a decision" flush>
           <template #note><RouterLink :to="{ path: '/admissions', query: { status: 'Applied' } }" class="more">View all</RouterLink></template>
           <table v-if="toDecide.length" class="ec-table">
@@ -229,7 +266,7 @@ const showCampusDonut = computed(() => Boolean(s.value.students && !chosen.value
           <p v-else class="none ec-muted">No applications waiting.</p>
         </EcPanel>
 
-        <EcPanel v-if="s.registration?.academic_year" title="Registrations to approve" flush>
+        <EcPanel v-if="s.registration?.academic_year && approvesRegistrations" title="Registrations to approve" flush>
           <template #note><RouterLink :to="{ path: '/registrations', query: { group: 'senior' } }" class="more">View all</RouterLink></template>
           <table v-if="toApprove.length" class="ec-table">
             <thead>
@@ -295,6 +332,46 @@ const showCampusDonut = computed(() => Boolean(s.value.students && !chosen.value
 
 .campus {
   min-width: 12rem;
+}
+
+.work {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.work li + li {
+  border-top: 1px solid var(--ec-border-soft);
+}
+
+.work-item {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.7rem 1rem;
+  color: var(--ec-text);
+  text-decoration: none;
+}
+
+.work-item:hover {
+  background: var(--ec-surface-muted);
+}
+
+/* the number is information, set quietly; the label says what it is */
+.work-count {
+  min-width: 2ch;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.work-label {
+  flex: 1;
+}
+
+.work-go {
+  color: var(--ec-muted);
 }
 
 .tiles {

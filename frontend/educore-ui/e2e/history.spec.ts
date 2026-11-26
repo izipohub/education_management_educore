@@ -14,7 +14,7 @@ test("the registry sees what happened to a student's studies", async ({ page }) 
 
 test("a student asks to move to another campus", async ({ page }) => {
   await signIn(page, "student1.whk");
-  await page.getByRole("link", { name: "My studies", exact: true }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Requests", exact: true }).click();
   await page.getByRole("button", { name: "Ask the Registry" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByText("Move campus", { exact: true }).click();

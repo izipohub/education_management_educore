@@ -3,8 +3,7 @@ import { signIn } from "./support";
 
 test("the registry sees transcript requests and what stops issuing them", async ({ page }) => {
   await signIn(page, "registry-officer.kmp");
-  await page.getByRole("link", { name: "Students", exact: true }).click();
-  await page.getByRole("tab", { name: /^Transcripts/ }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Transcripts", exact: true }).click();
   const row = page.getByRole("row").filter({ hasText: "Anna Beukes" });
   await expect(row).toContainText("Posted to Human Resources, Demo Mining Ltd");
   await expect(row).toContainText("Fees owing");
@@ -15,7 +14,7 @@ test("the registry sees transcript requests and what stops issuing them", async 
 
 test("a student asks for an official transcript", async ({ page }) => {
   await signIn(page, "student1.whk");
-  await page.getByRole("link", { name: "My studies", exact: true }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Requests", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Official transcripts" })).toBeVisible();
   await page.getByRole("button", { name: "Ask for a transcript" }).click();
   const dialog = page.getByRole("dialog");

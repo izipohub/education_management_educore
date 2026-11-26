@@ -11,17 +11,18 @@ import EcButton from "@/core/ui/EcButton.vue";
 import EcField from "@/core/ui/EcField.vue";
 import EcModal from "@/core/ui/EcModal.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
-import EcTabs from "@/core/ui/EcTabs.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
 import WeekGrid from "./WeekGrid.vue";
 import { type Room, type Slot, type SlotInput, type TimetableClass, type TimetablePage, deleteSlot, saveRoom, saveSlot, timetablePage } from "./timetable";
 
-/** A campus's week in a semester: the classes' times and rooms; the classes still to place; the campus's rooms */
+/** A campus's week in a semester: the classes' times and rooms; the classes still to place. The campus's rooms are
+ * their own page from the menu (view "rooms"). */
 type Tab = "week" | "rooms";
+const props = withDefaults(defineProps<{ view?: Tab }>(), { view: "week" });
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-const tab = ref<Tab>(route.query.tab === "rooms" ? "rooms" : "week");
+const tab = computed<Tab>(() => props.view);
 const page = ref<TimetablePage | null>(null);
 const error = ref("");
 const busy = ref(false);
@@ -45,15 +46,11 @@ async function load() {
 onMounted(load);
 watch([campus, year, semester], ([c, y, s], [pc, py, ps]) => {
   if (c === pc && y === py && s === ps) return;
-  void router.replace({ query: { ...(tab.value === "rooms" ? { tab: "rooms" } : {}), ...(c ? { campus: c } : {}), ...(y ? { year: y } : {}), ...(s ? { semester: s } : {}) } });
+  void router.replace({ query: { ...(c ? { campus: c } : {}), ...(y ? { year: y } : {}), ...(s ? { semester: s } : {}) } });
   focus.value = null;
   void load();
 });
 
-const tabs = computed(() => [
-  { label: "Week", value: "week" as Tab },
-  { label: "Rooms", value: "rooms" as Tab, count: page.value?.rooms.length },
-]);
 const focusOptions = computed(() => {
   const p = page.value;
   if (!p) return [];
@@ -145,13 +142,12 @@ async function keepRoom() {
 
 <template>
   <section class="timetable">
-    <PageHeader title="Timetable" subtitle="Each class's weekly times and rooms; no room, lecturer or student in two places at once">
-      <EcTabs v-model="tab" :tabs="tabs" label="Timetable" class="tabs" />
-    </PageHeader>
+    <PageHeader v-if="view === 'rooms'" title="Rooms" subtitle="Each campus's lecture rooms, laboratories and halls, with their seats" />
+    <PageHeader v-else title="Timetable" subtitle="Each class's weekly times and rooms; no room, lecturer or student in two places at once" />
 
     <div class="filters">
       <Select v-if="(page?.campuses.length ?? 0) > 1" v-model="campus" :options="page?.campuses ?? []" size="small" aria-label="Campus" />
-      <Select v-model="year" :options="page?.academic_years ?? []" size="small" aria-label="Academic year" />
+      <Select v-if="tab === 'week'" v-model="year" :options="page?.academic_years ?? []" size="small" aria-label="Academic year" />
       <Select v-if="tab === 'week'" v-model="semester" :options="page?.semesters ?? []" size="small" aria-label="Semester" />
       <Select v-if="tab === 'week'" v-model="focus" :options="focusOptions" option-label="label" option-value="value" placeholder="All classes" show-clear filter size="small" aria-label="Show" class="focus" />
       <span class="spacer" />
@@ -264,9 +260,6 @@ async function keepRoom() {
   gap: 1rem;
 }
 
-.tabs {
-  flex: 1;
-}
 
 .filters {
   display: flex;

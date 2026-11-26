@@ -38,8 +38,20 @@ def my_classes(academic_year: str | None = None) -> dict:
 		order_by="name asc",
 	)
 
+	# where each module's marks and assessment plan stand (educore.academics.gradebook), for the Gradebook and Marks lists
+	sheets = {
+		s.student_group: s
+		for s in frappe.get_all(
+			"Mark Sheet", filters={"student_group": ("in", [g.name for g in groups] or [""])}, fields=["name", "student_group", "status", "plan_status"]
+		)
+	}
+	assessed = set(
+		frappe.get_all("Mark Sheet Assessment", filters={"parenttype": "Mark Sheet", "parent": ("in", [s.name for s in sheets.values()] or [""])}, pluck="parent", distinct=True)
+	)
+
 	classes = []
 	for group in groups:
+		sheet = sheets.get(group.name)
 		code, credits, nqf = frappe.db.get_value(
 			"Course", group.course, ["educore_course_code", "educore_credits", "educore_nqf_level"]
 		) or (None, None, None)
@@ -72,6 +84,9 @@ def my_classes(academic_year: str | None = None) -> dict:
 				"nqf_level": nqf,
 				"students": students,
 				"co_lecturers": co_lecturers,
+				"marks_status": sheet.status if sheet else "Not started",
+				# None: no assessments yet; Draft: with the lecturer; Proposed; Approved
+				"plan_status": (sheet.plan_status or "Draft") if sheet and sheet.name in assessed else None,
 			}
 		)
 	return {"linked": True, "academic_year": academic_year, "academic_years": years, "classes": classes}

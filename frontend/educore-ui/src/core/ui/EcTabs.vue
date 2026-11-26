@@ -71,19 +71,12 @@ function move(step: number, event: KeyboardEvent) {
   border-bottom-color: var(--ec-loud);
 }
 
+/* a count is information, not an alert: a quiet number beside the label */
 .count {
-  min-width: 1.25rem;
-  padding: 0.05rem 0.4rem;
-  border-radius: 999px;
-  background: var(--ec-border-soft);
   color: var(--ec-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
 
-.tab[aria-selected="true"] .count {
-  background: var(--ec-ink);
-  color: #fff;
-}
 </style>

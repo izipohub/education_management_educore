@@ -5,8 +5,8 @@ test("the department returns an assessment plan with the reason; the lecturer su
   // the Dean: the plan waiting for approval, with its online quiz
   const dean = await (await browser.newContext()).newPage();
   await signIn(dean, "dean.fst");
-  await dean.goto("/examinations?tab=plans");
-  await expect(tableRow(dean, "CMP2521")).toContainText("Assessment plan to approve");
+  await dean.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Approvals", exact: true }).click();
+  await expect(tableRow(dean, "CMP2521")).toContainText("Approve the assessment plan");
   await tableRow(dean, "CMP2521").getByRole("link").first().click();
   const plan = record(dean).locator("section").filter({ has: dean.getByRole("heading", { name: "Assessment plan" }) }).last();
   await expect(plan).toContainText("To approve");
@@ -41,7 +41,7 @@ test("the department returns an assessment plan with the reason; the lecturer su
 
 test("the Dean keeps the faculty's assessment types; the head of department reads them", async ({ page }) => {
   await signIn(page, "dean.fst");
-  await page.goto("/examinations?tab=rules");
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Assessment types", exact: true }).click();
   const types = page.locator("section").filter({ has: page.getByRole("heading", { name: "Assessment types" }) }).last();
   await expect(types.getByLabel("Online quiz online in Moodle")).toBeChecked();
   await types.getByRole("button", { name: "Add a type" }).click();
@@ -51,7 +51,7 @@ test("the Dean keeps the faculty's assessment types; the head of department read
 
   const hod = await (await page.context().browser()!.newContext()).newPage();
   await signIn(hod, "head-of-department.accf");
-  await hod.goto("/examinations?tab=rules");
+  await hod.goto("/assessment-types");
   const read = hod.locator("section").filter({ has: hod.getByRole("heading", { name: "Assessment types" }) }).last();
   await expect(read).toContainText("Set by the Dean");
   await expect(read.getByRole("row").filter({ hasText: "Online assignment" })).toContainText("Yes");
@@ -59,7 +59,7 @@ test("the Dean keeps the faculty's assessment types; the head of department read
 
 test("a student sees each module's assessments, their due dates and their own scores", async ({ page }) => {
   await signIn(page, "student1.kmp");
-  await page.goto("/my-studies?tab=assessments");
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Assessments", exact: true }).click();
   const fin = page.locator("section").filter({ has: page.getByRole("heading", { name: "FIN2511 Corporate Finance" }) }).last();
   await expect(fin).toContainText("CA 77.5 · provisional until the results are published");
   await expect(fin.getByRole("row").filter({ hasText: "Test 1" })).toContainText("14-08-2026");
@@ -70,6 +70,6 @@ test("a student sees each module's assessments, their due dates and their own sc
 
 test("the Registrar decides when students see their scores", async ({ page }) => {
   await signIn(page, "registrar");
-  await page.goto("/examinations?tab=rules");
+  await page.goto("/examination-rules");
   await expect(page.getByLabel("Students see their assessment scores as marked")).toBeChecked();
 });

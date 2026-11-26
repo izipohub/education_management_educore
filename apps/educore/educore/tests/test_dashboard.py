@@ -62,3 +62,49 @@ class TestDashboard(IntegrationTestCase):
 			self.assertRaises(frappe.PermissionError, dashboard.stats, campus="Windhoek Campus")
 		finally:
 			frappe.set_user("Administrator")
+
+
+class TestWaitingForYou(IntegrationTestCase):
+	"""What is waiting for each person on their home (educore.api.v1.dashboard._work), from the queues themselves"""
+
+	def setUp(self):
+		if not frappe.db.exists("User", "dean.fst@educore.localhost"):
+			self.skipTest("run the demo setup first")
+
+	def tearDown(self):
+		frappe.set_user("Administrator")
+
+	def _work(self, user: str) -> dict[str, dict]:
+		frappe.set_user(user)
+		return {w["label"]: w for w in dashboard.stats()["work"]}
+
+	def test_the_department_sees_its_approvals_and_another_faculty_does_not(self):
+		from educore.api.v1 import examinations
+
+		frappe.set_user("dean.fst@educore.localhost")
+		plans = sum(1 for r in examinations.sheets()["rows"] if r["status"] == "Draft" and r["plan_status"] == "Proposed")
+		work = self._work("dean.fst@educore.localhost")
+		if plans:
+			self.assertEqual(work["Assessment plans to approve"]["count"], plans)
+			self.assertEqual(work["Assessment plans to approve"]["to"]["path"], "/approvals")
+		self.assertNotIn("Assessment plans to approve", self._work("head-of-department.accf@educore.localhost"))
+
+	def test_each_position_sees_its_own_queues_only(self):
+		hr = self._work("hr-manager@educore.localhost")
+		self.assertIn("Lecturers without an HR staff record", hr)
+		self.assertNotIn("Transcripts to issue", hr)
+		for item in self._work("registrar@educore.localhost").values():
+			self.assertGreater(item["count"], 0)  # nothing waiting is not listed
+
+	def test_a_lecturer_sees_their_lessons_and_registers(self):
+		frappe.set_user("lecturer.accf.kmp@educore.localhost")
+		page = dashboard.stats()
+		self.assertIsInstance(page["lessons"], list)
+		for item in page["work"]:
+			self.assertIn(item["to"]["path"], ("/attendance", "/gradebook", "/marks", "/my-timetable"))
+
+	def test_a_student_sees_what_is_coming_up(self):
+		from educore.api.v1 import student
+
+		frappe.set_user("student1.kmp@educore.localhost")
+		self.assertEqual(set(student.overview()["ahead"]), {"lessons", "due", "papers"})

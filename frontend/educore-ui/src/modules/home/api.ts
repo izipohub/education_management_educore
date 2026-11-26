@@ -5,7 +5,30 @@ export interface Count {
   value: number;
 }
 
+/** something waiting for the signed-in person: how many, and where to act on it */
+export interface WorkItem {
+  label: string;
+  count: number;
+  to: { path: string; query?: Record<string, string> };
+}
+
+/** a lecturer's lesson today, with whether its register is taken */
+export interface TodayLesson {
+  group: string;
+  code: string;
+  course: string;
+  start_time: string;
+  end_time: string;
+  room_name: string;
+  kind: string;
+  taken: boolean;
+}
+
 export interface DashboardStats {
+  /** what is waiting for this person, from every queue their positions work on */
+  work: WorkItem[];
+  /** a lecturer's lessons today */
+  lessons: TodayLesson[];
   today: string;
   /** the campus shown; null: every campus the user may see */
   campus: string | null;

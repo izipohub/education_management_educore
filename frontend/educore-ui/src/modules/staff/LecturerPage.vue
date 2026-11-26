@@ -44,7 +44,10 @@ watch(
   { immediate: true },
 );
 
-const back = computed(() => ({ to: { name: "academic-staff", query: route.query }, label: "Academic staff" }));
+const back = computed(() => {
+  const { from, ...query } = route.query;
+  return from === "workload" ? { to: { name: "workload", query }, label: "Workload" } : { to: { name: "academic-staff", query }, label: "Academic staff" };
+});
 const subtitle = computed(() => [lecturer.value?.department_label, lecturer.value?.user].filter(Boolean).join(" · "));
 const outstanding = computed(() => {
   const l = lecturer.value;

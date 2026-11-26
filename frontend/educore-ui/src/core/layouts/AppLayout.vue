@@ -21,6 +21,18 @@ import {
   Settings,
   ShieldCheck,
   CalendarDays,
+  CalendarClock,
+  ClipboardList,
+  DoorOpen,
+  Gauge,
+  Inbox,
+  ListChecks,
+  NotebookPen,
+  PenLine,
+  ScrollText,
+  Shapes,
+  Stamp,
+  Wallet,
   BadgePercent,
   SlidersHorizontal,
   UserCheck,
@@ -35,7 +47,9 @@ import { useSession } from "@/core/auth/session";
 import { useBranding } from "@/core/branding";
 import { CURRICULUM_ROLES } from "@/modules/curriculum/api";
 import { FEE_SETTINGS_ROLES, FINANCE_ROLES, PAYMENT_ROLES } from "@/modules/finance/api";
-import { EXAMINATION_ROLES } from "@/modules/examinations/api";
+import { APPROVAL_ROLES, EXAMINATION_ROLES } from "@/modules/examinations/api";
+import { DECIDE_ROLES } from "@/modules/records/studiesRequests";
+import { ISSUE_ROLES } from "@/modules/records/transcripts";
 import { GRADUATION_ROLES } from "@/modules/graduation/api";
 import { ICT_ROLES } from "@/modules/integrations/api";
 import { ALLOCATION_ROLES } from "@/modules/teaching/allocation";
@@ -78,39 +92,78 @@ interface NavItem {
   to: string;
   /** shown to users with any of these roles; omitted: everyone */
   roles?: string[];
+  /** the menu's sections: headed when a person sees more than one */
+  section?: Section;
+  /** a record opened from this item's list keeps it marked (the record's address carries ?from=) */
+  from?: string;
 }
+type Section = "Studies" | "Teaching" | "Academic" | "Examinations" | "Finance" | "Setup";
 
 /** Everyone but students (whose home is My studies) */
 const STAFF_HOME = ["University Staff", "Sponsor", "Guardian", "External Examiner", "System Manager"];
+const LECTURER = ["Lecturer"];
+const STUDENT = ["Student"];
 
-/** Each module adds its entry here as it is built; the server still checks every request */
+/** Each module adds its entry here as it is built; the server still checks every request. An operation people do
+ * often has its own entry, rather than a tab of another screen. */
 const NAV: NavItem[] = [
   { label: "Home", icon: House, to: "/", roles: STAFF_HOME },
   { label: "My application", icon: FileText, to: "/application", roles: ["Applicant"] },
-  { label: "My studies", icon: BookOpen, to: "/my-studies", roles: ["Student"] },
-  { label: "Registration", icon: ClipboardCheck, to: "/registration", roles: ["Student"] },
-  { label: "My modules", icon: GraduationCap, to: "/my-modules", roles: ["Lecturer"] },
-  { label: "Admissions", icon: UserPlus, to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
-  { label: "Registration", icon: UserCheck, to: "/registrations", roles: REGISTRATION_ROLES },
-  { label: "Students", icon: Users, to: "/students", roles: RECORD_ROLES },
-  { label: "Curriculum", icon: LibraryBig, to: "/curriculum", roles: CURRICULUM_ROLES },
-  { label: "Teaching", icon: Presentation, to: "/teaching", roles: ALLOCATION_ROLES },
-  { label: "Timetable", icon: CalendarDays, to: "/timetable", roles: TIMETABLE_ROLES },
-  { label: "Academic staff", icon: Contact, to: "/academic-staff", roles: STAFF_ROLES },
-  { label: "Examinations", icon: FileCheck, to: "/examinations", roles: EXAMINATION_ROLES },
-  { label: "Graduation", icon: Award, to: "/graduation", roles: GRADUATION_ROLES },
-  { label: "Student payments", icon: Landmark, to: "/student-payments", roles: PAYMENT_ROLES },
-  { label: "Sponsors", icon: HandCoins, to: "/sponsors", roles: SPONSOR_ROLES },
-  { label: "Clearance", icon: ShieldCheck, to: "/clearance", roles: CLEARANCE_ROLES },
-  { label: "Fee waivers", icon: BadgePercent, to: "/waivers", roles: WAIVER_ROLES },
-  { label: "Application fees", icon: Banknote, to: "/application-fees", roles: FINANCE_ROLES },
-  { label: "Fee settings", icon: SlidersHorizontal, to: "/fee-settings", roles: FEE_SETTINGS_ROLES },
-  { label: "Admission setup", icon: Settings, to: "/admission-setup", roles: ["Registrar", "System Manager"] },
-  { label: "Registration setup", icon: CalendarCog, to: "/registration-setup", roles: ["Registrar", "System Manager"] },
-  { label: "Integrations", icon: Plug, to: "/integrations", roles: ICT_ROLES },
+  { label: "My studies", icon: BookOpen, to: "/my-studies", roles: STUDENT, section: "Studies" },
+  { label: "Assessments", icon: ListChecks, to: "/my-studies/assessments", roles: STUDENT, section: "Studies" },
+  { label: "Timetable", icon: CalendarDays, to: "/my-studies/timetable", roles: STUDENT, section: "Studies" },
+  { label: "Fees", icon: Wallet, to: "/my-studies/fees", roles: STUDENT, section: "Studies" },
+  { label: "Requests", icon: Inbox, to: "/my-studies/requests", roles: STUDENT, section: "Studies" },
+  { label: "Registration", icon: ClipboardCheck, to: "/registration", roles: STUDENT, section: "Studies" },
+  { label: "My modules", icon: GraduationCap, to: "/my-modules", roles: LECTURER, section: "Teaching" },
+  { label: "Attendance", icon: ClipboardList, to: "/attendance", roles: LECTURER, section: "Teaching", from: "my-attendance" },
+  { label: "Gradebook", icon: NotebookPen, to: "/gradebook", roles: LECTURER, section: "Teaching", from: "my-gradebook" },
+  { label: "Marks", icon: PenLine, to: "/marks", roles: LECTURER, section: "Teaching", from: "my-marks" },
+  { label: "My timetable", icon: CalendarClock, to: "/my-timetable", roles: LECTURER, section: "Teaching" },
+  { label: "Admissions", icon: UserPlus, to: "/admissions", roles: ["Admissions Officer", "Registrar"], section: "Academic" },
+  { label: "Registration", icon: UserCheck, to: "/registrations", roles: REGISTRATION_ROLES, section: "Academic" },
+  { label: "Students", icon: Users, to: "/students", roles: RECORD_ROLES, section: "Academic" },
+  { label: "Studies requests", icon: Inbox, to: "/studies-requests", roles: DECIDE_ROLES, section: "Academic" },
+  { label: "Transcripts", icon: ScrollText, to: "/transcripts", roles: ISSUE_ROLES, section: "Academic" },
+  { label: "Curriculum", icon: LibraryBig, to: "/curriculum", roles: CURRICULUM_ROLES, section: "Academic" },
+  { label: "Teaching", icon: Presentation, to: "/teaching", roles: ALLOCATION_ROLES, section: "Academic" },
+  { label: "Timetable", icon: CalendarDays, to: "/timetable", roles: TIMETABLE_ROLES, section: "Academic" },
+  { label: "Rooms", icon: DoorOpen, to: "/rooms", roles: ["Timetable Officer", "Facilities Manager", "System Manager"], section: "Academic" },
+  { label: "Academic staff", icon: Contact, to: "/academic-staff", roles: STAFF_ROLES, section: "Academic" },
+  { label: "Workload", icon: Gauge, to: "/workload", roles: ["Head of Department", "Dean", "System Manager"], section: "Academic", from: "workload" },
+  { label: "Approvals", icon: Stamp, to: "/approvals", roles: APPROVAL_ROLES, section: "Examinations", from: "approvals" },
+  { label: "Examinations", icon: FileCheck, to: "/examinations", roles: EXAMINATION_ROLES, section: "Examinations" },
+  { label: "Examination timetable", icon: CalendarClock, to: "/examination-timetable", roles: EXAMINATION_ROLES, section: "Examinations" },
+  { label: "Examination rules", icon: SlidersHorizontal, to: "/examination-rules", roles: ["Registrar", "Examinations Officer", "System Manager"], section: "Examinations" },
+  { label: "Assessment types", icon: Shapes, to: "/assessment-types", roles: ["Dean", "Head of Department", "Faculty Officer", "System Manager"], section: "Examinations" },
+  { label: "Graduation", icon: Award, to: "/graduation", roles: GRADUATION_ROLES, section: "Examinations" },
+  { label: "Student payments", icon: Landmark, to: "/student-payments", roles: PAYMENT_ROLES, section: "Finance" },
+  { label: "Sponsors", icon: HandCoins, to: "/sponsors", roles: SPONSOR_ROLES, section: "Finance" },
+  { label: "Clearance", icon: ShieldCheck, to: "/clearance", roles: CLEARANCE_ROLES, section: "Finance" },
+  { label: "Fee waivers", icon: BadgePercent, to: "/waivers", roles: WAIVER_ROLES, section: "Finance" },
+  { label: "Application fees", icon: Banknote, to: "/application-fees", roles: FINANCE_ROLES, section: "Finance" },
+  { label: "Fee settings", icon: SlidersHorizontal, to: "/fee-settings", roles: FEE_SETTINGS_ROLES, section: "Setup" },
+  { label: "Admission setup", icon: Settings, to: "/admission-setup", roles: ["Registrar", "System Manager"], section: "Setup" },
+  { label: "Registration setup", icon: CalendarCog, to: "/registration-setup", roles: ["Registrar", "System Manager"], section: "Setup" },
+  { label: "Integrations", icon: Plug, to: "/integrations", roles: ICT_ROLES, section: "Setup" },
 ];
 
 const nav = computed(() => NAV.filter((item) => !item.roles || session.hasRole(...item.roles)));
+/** headings only when the menu holds more than one section */
+const headed = computed(() => new Set(nav.value.map((i) => i.section).filter(Boolean)).size > 1);
+const startsSection = (i: number) => headed.value && nav.value[i]!.section && nav.value[i]!.section !== nav.value[i - 1]?.section;
+/** the item for where you are: the list a record was opened from, else the longest address that contains this one */
+const active = computed(() => {
+  const from = route.query.from;
+  const opened = typeof from === "string" ? nav.value.find((i) => i.from === from) : undefined;
+  if (opened) return opened.to;
+  let best: string | null = null;
+  for (const item of nav.value) {
+    const here = item.to === "/" ? route.path === "/" : route.path === item.to || route.path.startsWith(`${item.to}/`);
+    if (here && (!best || item.to.length > best.length)) best = item.to;
+  }
+  return best;
+});
 const initials = computed(() =>
   (session.me?.full_name ?? "")
     .split(/\s+/)
@@ -149,18 +202,21 @@ async function signOut() {
     <div class="body" :class="{ collapsed }">
       <nav class="sidebar" aria-label="Main">
         <!-- a list stays marked while one of its records is open; Home only on itself -->
-        <RouterLink
-          v-for="item in nav"
-          :key="item.to"
-          :to="item.to"
-          class="nav-item"
-          :active-class="item.to === '/' ? '' : 'active'"
-          exact-active-class="active"
-          :title="collapsed ? item.label : undefined"
-        >
-          <component :is="item.icon" :size="18" :stroke-width="1.75" aria-hidden="true" />
-          <span class="label">{{ item.label }}</span>
-        </RouterLink>
+        <template v-for="(item, i) in nav" :key="item.to">
+          <span v-if="startsSection(i)" class="section" :class="{ first: i === 0 }">{{ item.section }}</span>
+          <RouterLink
+            :to="item.to"
+            class="nav-item"
+            :class="{ active: active === item.to }"
+            active-class=""
+            exact-active-class=""
+            :aria-current="active === item.to ? 'page' : undefined"
+            :title="collapsed ? item.label : undefined"
+          >
+            <component :is="item.icon" :size="18" :stroke-width="1.75" aria-hidden="true" />
+            <span class="label">{{ item.label }}</span>
+          </RouterLink>
+        </template>
         <button
           type="button"
           class="nav-item fold"
@@ -174,7 +230,8 @@ async function signOut() {
         </button>
       </nav>
       <main class="content" :class="{ fill }">
-        <RouterView />
+        <!-- keyed by the page: two menu items showing the same screen (e.g. Examinations and its rules) each start fresh -->
+        <RouterView :key="String(route.name)" />
       </main>
     </div>
   </div>
@@ -267,6 +324,30 @@ async function signOut() {
 
 .label {
   min-width: 0;
+}
+
+/* a section's heading: quiet, so the items stay the thing to read */
+.section {
+  margin: 0.9rem 0.75rem 0.25rem;
+  color: var(--ec-on-second-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.section.first {
+  margin-top: 0.25rem;
+}
+
+/* folded: a line between sections */
+.collapsed .section {
+  height: 0;
+  margin: 0.4rem 0.5rem;
+  overflow: hidden;
+  border-top: 1px solid var(--ec-second-line);
+  font-size: 0;
 }
 
 .collapsed .label {
@@ -369,6 +450,11 @@ async function signOut() {
     overflow-y: hidden;
     border-right: 0;
     border-bottom: 1px solid var(--ec-second-line);
+  }
+
+  /* a phone's menu is one row: no section headings */
+  .section {
+    display: none;
   }
 
   /* a phone's menu is a row of tabs: always labelled, no fold button */

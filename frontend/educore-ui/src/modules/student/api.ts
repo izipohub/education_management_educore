@@ -68,6 +68,12 @@ export interface StudentOverview {
   attendance: ClassAttendance[];
   /** Finance's holds: they block registration until lifted */
   holds: { reason: string; placed_on: string }[];
+  /** the overview: today's classes, assessments due in the next three weeks, examinations ahead */
+  ahead: {
+    lessons: { code: string | null; course: string; start_time: string; end_time: string; room_name: string; kind: string }[];
+    due: { code: string | null; course: string; title: string; due_date: string; moodle_url: string | null }[];
+    papers: { code: string; course_name: string; exam_date: string; start_time: string; end_time: string; rooms: { room_name: string }[] }[];
+  };
   student: {
     number: string;
     name: string;

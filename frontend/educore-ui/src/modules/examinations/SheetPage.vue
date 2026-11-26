@@ -40,7 +40,10 @@ async function load() {
 }
 watch(() => props.group, load, { immediate: true });
 
-const back = computed(() => ({ to: { name: "examinations", query: route.query }, label: "Examinations" }));
+// Back: to Approvals when opened from there, else to Examinations with its tab and year
+const back = computed(() =>
+  route.query.from === "approvals" ? { to: { name: "approvals" }, label: "Approvals" } : { to: { name: "examinations", query: route.query }, label: "Examinations" },
+);
 const adjusting = computed(() => Boolean(sheet.value?.can_moderate));
 const input = (e: Entry) => ({ student: e.student, ca_mark: e.ca_mark, exam_mark: e.exam_mark, absent: e.absent });
 const changed = computed(() => JSON.stringify(rows.value.map(input)) !== JSON.stringify((sheet.value?.entries ?? []).map(input)));

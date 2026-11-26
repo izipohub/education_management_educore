@@ -22,9 +22,16 @@ titles (`h1`, `h2`). Both are served by `educore_theme` (`/assets/educore_theme/
 
 ## Screens
 
-- **Dashboard**: a campus picker (all campuses, or one; in the address), headline numbers (`StatTile`, each linking
-  to where to act), the year in charts (applications over time, how they arrived, pathways, offer responses, by
-  programme), then the work waiting as short tables (oldest first, each row opens its record).
+- **Home** (every member of staff): first "Waiting for you", a list of what is waiting from every queue the person's
+  positions work on (how many, what, a link to act; nothing waiting is not listed), beside "Today" for a lecturer
+  (their lessons and registers); then, for the offices that need them, a campus picker (in the address), headline
+  numbers (`StatTile`, each linking to where to act), the year in charts and the work waiting as short tables. A
+  student's My studies opens on "Coming up" (today's classes, assessments due, examinations ahead).
+- **Menu**: an operation people do often has its own menu item, not a tab of another screen (a lecturer's
+  Attendance, Gradebook and Marks; Approvals; Workload; Studies requests; Transcripts; Rooms; Examination timetable
+  and rules; a student's Assessments, Timetable, Fees and Requests). Items sit in sections (Teaching, Academic,
+  Examinations, Finance, Setup), headed when a person sees more than one. A record opened from a list keeps that
+  list's item marked (`?from=` in its address).
 - **List page**: `PageHeader` with tabs and the year, then a `DataTable` (search in its toolbar). A row opens the
   record's own page; the tab and year stay in the address, so going back returns to the same list.
 - **Record page**: `RecordPage`: a link back to the list, the title with its status, the decisions top right, the
@@ -52,7 +59,7 @@ titles (`h1`, `h2`). Both are served by `educore_theme` (`/assets/educore_theme/
 | `EcButton` | Every button. `primary` (the loud accent; one per view or pane), `secondary`, `ghost` (Edit, Cancel, Add), `danger` (refuse, remove), `quiet-danger` (a refusal inside a row); `sm` inside sections; `loading` shows a small spinner in the button |
 | `EcModal` | A small modal that asks one thing (a reason, a choice, a date) and closes; records never go in a modal |
 | `EcField` | A form field: label, control, then a hint or the error |
-| `EcTabs` | The views of one screen (a queue's statuses, a setup's sections), with counts; ← → move between tabs |
+| `EcTabs` | Filters of one list (a queue's statuses, active or left) and a setup's sections, with counts set as quiet numbers, never as badges; a separate operation is its own menu item instead; ← → move between tabs |
 | `EcSkeleton` | Loading: grey shapes where the content will be (`list`, `pane`, `tiles`, `card`, `lines`), never a spinner in the page |
 | `.card` / `.ec-card`, `.ec-muted` | A card; secondary text |
 | `.ec-facts`, `.ec-table` | Label and value pairs (`stacked` in a side column); a plain table inside a panel |

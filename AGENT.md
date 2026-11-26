@@ -1128,7 +1128,7 @@ teaching allocation and class lists; timetables (each class's weekly times per s
 publication, supplementary and special examinations, academic standing;
 graduation list, academic record, award certificate, QR verification; official transcript requests (the student asks for copies collected, emailed or posted; the fee per copy invoiced; the Registry issues once paid and, where required, financially cleared, emailing the academic record PDF itself);
 student fees with EFT matching by student number; instalment plans (each year's due dates and shares on every invoice of the year); fee waivers (requested by Finance with the reason, approved or rejected by the Bursar, never their own; a percent of the year's fees, an amount or the late registration fee, taken off the year's invoice by credit note, after sponsors; the registration deposit on what is left); financial holds and clearance (Finance's holds block registration; graduation and the award certificate need clearance); sponsor accounts (sponsors invoiced for their share of a student's year by credit note and sponsor invoice, paid by EFT with the sponsor number, statement PDF; the registration deposit on the student's own share); Moodle course and
-enrolment sync; registrar dashboard; email to applicants and students.
+enrolment sync; registrar dashboard; each person's home (what is waiting for them from every queue their positions work on, a lecturer's lessons today, a student's classes, assessments due and examinations ahead); a menu with an item for each frequent operation (a lecturer's attendance, gradebook and marks; the department's approvals and workload), in sections; email to applicants and students.
 
 **Committed, not yet built:**
 

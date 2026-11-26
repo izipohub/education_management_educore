@@ -6,26 +6,31 @@ import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import Select from "primevue/select";
 import { computed, onMounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import StatusTag from "@/core/ui/StatusTag.vue";
 import DataTable, { type Column } from "@/core/ui/DataTable.vue";
-import EcTabs from "@/core/ui/EcTabs.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
 import { type CourseClass, type MyClasses, getMyClasses } from "./api";
 import MyWeek from "./MyWeek.vue";
 import MyExams from "@/modules/examinations/MyExams.vue";
 
 /** The lecturer's modules: a row per module (however many students), opening the module's page; and their
- * timetable on its own tab */
+ * timetable. From the menu it also opens on one piece of the daily work (focus): the modules to take
+ * a register for, keep a gradebook or enter marks in, each row opening that tab of the module; or the timetable. */
+type Focus = "attendance" | "gradebook" | "marks" | "timetable";
+const props = defineProps<{ focus?: Focus }>();
+const FOCUS: Record<Exclude<Focus, "timetable">, { title: string; route: string; from: string }> = {
+  attendance: { title: "Attendance", route: "class-attendance", from: "my-attendance" },
+  gradebook: { title: "Gradebook", route: "class-gradebook", from: "my-gradebook" },
+  marks: { title: "Marks", route: "class-marks", from: "my-marks" },
+};
+const focused = computed(() => (props.focus && props.focus !== "timetable" ? FOCUS[props.focus] : null));
 const data = ref<MyClasses | null>(null);
 const error = ref("");
 const loading = ref(false);
 const academicYear = ref<string | undefined>();
 const search = ref("");
-const route = useRoute();
-const router = useRouter();
 type Tab = "modules" | "timetable";
-const tab = ref<Tab>(route.query.tab === "timetable" ? "timetable" : "modules");
-watch(tab, (t) => void router.replace({ query: t === "timetable" ? { tab: t } : {} }));
+const tab = computed<Tab>(() => (props.focus === "timetable" ? "timetable" : "modules"));
 let adoptingYear = false;
 
 async function load() {
@@ -64,25 +69,30 @@ const rows = computed(() => {
   return (data.value?.classes ?? []).filter((c) => !q || `${c.code} ${c.course} ${c.campus}`.toLowerCase().includes(q)) as unknown as Record<string, unknown>[];
 });
 const row = (r: Record<string, unknown>) => r as unknown as CourseClass;
-const tabs = computed(() => [
-  { value: "modules" as Tab, label: "Modules", count: data.value?.classes.length },
-  { value: "timetable" as Tab, label: "Timetable" },
-]);
-const columns: Column[] = [
+const columns = computed<Column[]>(() => [
   { key: "course", label: "Module" },
   { key: "campus", label: "Campus", wide: true },
   { key: "students", label: "Students", align: "right" },
-  { key: "links", label: "", align: "right" },
-];
+  props.focus === "gradebook"
+    ? { key: "plan", label: "Assessment plan" }
+    : props.focus === "marks"
+      ? { key: "marks", label: "Marks" }
+      : { key: "links", label: "", align: "right" },
+]);
+const title = computed(() => (props.focus === "timetable" ? "My timetable" : focused.value?.title ?? "My modules"));
+/** a row opens the module, or the tab the menu item is for (and Back returns to that list) */
+const rowLink = (r: Record<string, unknown>) =>
+  focused.value
+    ? { name: focused.value.route, params: { group: String(r.name) }, query: { from: focused.value.from } }
+    : { name: "my-class", params: { group: String(r.name) } };
 </script>
 
 <template>
   <section class="teaching">
-    <PageHeader title="My modules" :subtitle="subtitle">
+    <PageHeader :title="title" :subtitle="focus === 'timetable' ? undefined : subtitle">
       <template v-if="data?.linked && data.academic_years.length && tab === 'modules'" #actions>
         <Select v-model="academicYear" :options="data.academic_years" aria-label="Academic year" class="year" />
       </template>
-      <EcTabs v-if="data?.linked" v-model="tab" :tabs="tabs" label="My modules" class="tabs" />
     </PageHeader>
 
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
@@ -102,7 +112,7 @@ const columns: Column[] = [
         :columns="columns"
         :rows="rows"
         row-key="name"
-        :to="(r) => ({ name: 'my-class', params: { group: String(r.name) } })"
+        :to="rowLink"
         :loading="loading"
         noun="modules"
         :empty-title="search ? 'No module matches' : `You are not assigned to any module in ${academicYear ?? 'this year'}`"
@@ -121,6 +131,11 @@ const columns: Column[] = [
         </template>
         <template #cell-campus="{ row: r }">{{ row(r).campus?.replace(" Campus", "") }}</template>
         <template #cell-students="{ row: r }">{{ row(r).students.length }}</template>
+        <template #cell-plan="{ row: r }">
+          <StatusTag v-if="row(r).plan_status" kind="plan" :value="row(r).plan_status === 'Draft' ? null : row(r).plan_status" />
+          <span v-else-if="row(r).students.length" class="sub">Not set up</span>
+        </template>
+        <template #cell-marks="{ row: r }"><StatusTag kind="marks" :value="row(r).marks_status" /></template>
         <template #cell-links="{ row: r }">
           <span v-if="row(r).students.length" class="links">
             <RouterLink :to="{ name: 'class-attendance', params: { group: row(r).name } }">Attendance</RouterLink>

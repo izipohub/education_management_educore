@@ -53,8 +53,7 @@ test("admissions downloads the offer letter as a PDF", async ({ page }) => {
 
 test("the registry decides requests to interrupt or cancel studies; the faculty does not", async ({ page, browser }) => {
   await signIn(page, "registry-officer.osh");
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Students" }).click();
-  await page.getByRole("tab", { name: /^Requests/ }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Studies requests", exact: true }).click();
   await expect(page.getByText("No requests here")).toBeVisible();
 
   // the faculty officer in a separate browser session
@@ -62,5 +61,5 @@ test("the registry decides requests to interrupt or cancel studies; the faculty 
   await signIn(faculty, "faculty-officer.fst.osh");
   await faculty.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Students" }).click();
   await expect(faculty.getByRole("heading", { name: "Students", exact: true })).toBeVisible();
-  await expect(faculty.getByRole("tab", { name: /^Requests/ })).toHaveCount(0);
+  await expect(faculty.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Studies requests" })).toHaveCount(0);
 });

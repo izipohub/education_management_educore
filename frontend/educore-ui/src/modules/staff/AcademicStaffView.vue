@@ -18,10 +18,12 @@ import WorkloadTab from "./WorkloadTab.vue";
  * missing from their setup (department, campus, HR staff record), and each lecturer's workload in a semester. A row
  * opens the lecturer.
  */
-type Tab = "active" | "Incomplete" | "Left" | "workload";
+type Tab = "active" | "Incomplete" | "Left";
+/** the lecturers, or (from the menu) their workload */
+const props = withDefaults(defineProps<{ view?: "staff" | "workload" }>(), { view: "staff" });
 const route = useRoute();
 const router = useRouter();
-const tab = ref<Tab>((route.query.tab as Tab) || "active");
+const tab = ref<Tab>(["Incomplete", "Left"].includes(route.query.tab as string) ? (route.query.tab as Tab) : "active");
 const search = ref("");
 const rows = ref<LecturerRow[]>([]);
 const year = ref<string | null>(null);
@@ -51,7 +53,6 @@ const tabs = computed(() => [
   { label: "Active", value: "active" as Tab, count: matching.value.filter((r) => inTab(r, "active")).length },
   { label: "Incomplete", value: "Incomplete" as Tab, count: matching.value.filter((r) => inTab(r, "Incomplete")).length },
   { label: "Left", value: "Left" as Tab, count: matching.value.filter((r) => inTab(r, "Left")).length },
-  { label: "Workload", value: "workload" as Tab },
 ]);
 const shown = computed(() => matching.value.filter((r) => inTab(r, tab.value)) as unknown as Record<string, unknown>[]);
 const row = (r: Record<string, unknown>) => r as unknown as LecturerRow;
@@ -66,13 +67,14 @@ const columns = computed<Column[]>(() => [
 
 <template>
   <section class="list-page">
-    <PageHeader title="Academic staff" subtitle="Lecturers, the classes they teach and what their setup still needs">
+    <PageHeader v-if="view === 'workload'" title="Workload" subtitle="Each lecturer's modules, students and hours in a semester, against the university's rule" />
+    <PageHeader v-else title="Academic staff" subtitle="Lecturers, the classes they teach and what their setup still needs">
       <EcTabs v-model="tab" :tabs="tabs" label="Lecturers" class="tabs" />
     </PageHeader>
 
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
 
-    <WorkloadTab v-if="tab === 'workload'" />
+    <WorkloadTab v-if="view === 'workload'" />
 
     <DataTable
       v-else

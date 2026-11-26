@@ -2,11 +2,13 @@ import { createRouter, createWebHistory } from "vue-router";
 import { useSession } from "@/core/auth/session";
 import { CURRICULUM_ROLES } from "@/modules/curriculum/api";
 import { FEE_SETTINGS_ROLES, FINANCE_ROLES, PAYMENT_ROLES } from "@/modules/finance/api";
-import { EXAMINATION_ROLES } from "@/modules/examinations/api";
+import { APPROVAL_ROLES, ASSESSMENT_TYPE_ROLES, EXAMINATION_ROLES } from "@/modules/examinations/api";
 import { GRADUATION_ROLES } from "@/modules/graduation/api";
 import { ICT_ROLES } from "@/modules/integrations/api";
 import { ALLOCATION_ROLES } from "@/modules/teaching/allocation";
 import { RECORD_ROLES } from "@/modules/records/api";
+import { DECIDE_ROLES } from "@/modules/records/studiesRequests";
+import { ISSUE_ROLES } from "@/modules/records/transcripts";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
 import { STAFF_ROLES } from "@/modules/staff/api";
 import { SPONSOR_ROLES } from "@/modules/finance/sponsors";
@@ -72,6 +74,35 @@ export const router = createRouter({
           component: () => import("@/modules/student/MyStudiesView.vue"),
           meta: { title: "My studies", roles: ["Student"] },
         },
+        // the student's other pages, each a menu item
+        {
+          path: "my-studies/assessments",
+          name: "my-assessments",
+          component: () => import("@/modules/student/MyStudiesView.vue"),
+          props: { view: "assessments" },
+          meta: { title: "Assessments", roles: ["Student"] },
+        },
+        {
+          path: "my-studies/timetable",
+          name: "my-study-timetable",
+          component: () => import("@/modules/student/MyStudiesView.vue"),
+          props: { view: "timetable" },
+          meta: { title: "Timetable", roles: ["Student"] },
+        },
+        {
+          path: "my-studies/fees",
+          name: "my-fees",
+          component: () => import("@/modules/student/MyStudiesView.vue"),
+          props: { view: "fees" },
+          meta: { title: "Fees", roles: ["Student"] },
+        },
+        {
+          path: "my-studies/requests",
+          name: "my-requests",
+          component: () => import("@/modules/student/MyStudiesView.vue"),
+          props: { view: "requests" },
+          meta: { title: "Requests", roles: ["Student"] },
+        },
         {
           path: "my-modules",
           name: "my-teaching",
@@ -80,6 +111,36 @@ export const router = createRouter({
         },
         // the page was "My teaching" before: old links still work
         { path: "my-teaching/:rest(.*)*", redirect: (to) => `/my-modules/${[to.params.rest].flat().join("/")}`.replace(/\/$/, "") },
+        // the lecturer's daily work, each from the menu: the modules to take a register for, keep a gradebook or
+        // enter marks in (a row opens that tab of the module), and their week
+        {
+          path: "attendance",
+          name: "my-attendance",
+          component: () => import("@/modules/teaching/MyTeachingView.vue"),
+          props: { focus: "attendance" },
+          meta: { title: "Attendance", roles: ["Lecturer"] },
+        },
+        {
+          path: "gradebook",
+          name: "my-gradebook",
+          component: () => import("@/modules/teaching/MyTeachingView.vue"),
+          props: { focus: "gradebook" },
+          meta: { title: "Gradebook", roles: ["Lecturer"] },
+        },
+        {
+          path: "marks",
+          name: "my-marks",
+          component: () => import("@/modules/teaching/MyTeachingView.vue"),
+          props: { focus: "marks" },
+          meta: { title: "Marks", roles: ["Lecturer"] },
+        },
+        {
+          path: "my-timetable",
+          name: "my-timetable",
+          component: () => import("@/modules/teaching/MyTeachingView.vue"),
+          props: { focus: "timetable" },
+          meta: { title: "My timetable", roles: ["Lecturer"] },
+        },
         {
           path: "my-modules/:group",
           name: "my-class",
@@ -134,6 +195,18 @@ export const router = createRouter({
           meta: { title: "Students", roles: RECORD_ROLES },
         },
         {
+          path: "studies-requests",
+          name: "studies-requests",
+          component: () => import("@/modules/records/StudiesRequestsView.vue"),
+          meta: { title: "Studies requests", roles: DECIDE_ROLES },
+        },
+        {
+          path: "transcripts",
+          name: "transcripts",
+          component: () => import("@/modules/records/TranscriptsView.vue"),
+          meta: { title: "Transcripts", roles: ISSUE_ROLES },
+        },
+        {
           path: "students/:name",
           name: "student-record",
           component: () => import("@/modules/records/StudentPage.vue"),
@@ -173,6 +246,13 @@ export const router = createRouter({
           meta: { title: "Academic staff", roles: STAFF_ROLES },
         },
         {
+          path: "workload",
+          name: "workload",
+          component: () => import("@/modules/staff/AcademicStaffView.vue"),
+          props: { view: "workload" },
+          meta: { title: "Workload", roles: STAFF_ROLES },
+        },
+        {
           path: "academic-staff/:name",
           name: "lecturer",
           component: () => import("@/modules/staff/LecturerPage.vue"),
@@ -184,6 +264,32 @@ export const router = createRouter({
           name: "examinations",
           component: () => import("@/modules/examinations/ExaminationsView.vue"),
           meta: { title: "Examinations", roles: EXAMINATION_ROLES },
+        },
+        {
+          path: "examination-timetable",
+          name: "examination-timetable",
+          component: () => import("@/modules/examinations/ExaminationsView.vue"),
+          props: { view: "timetable" },
+          meta: { title: "Examination timetable", roles: EXAMINATION_ROLES },
+        },
+        {
+          path: "examination-rules",
+          name: "examination-rules",
+          component: () => import("@/modules/examinations/ExaminationsView.vue"),
+          props: { view: "rules" },
+          meta: { title: "Examination rules", roles: EXAMINATION_ROLES },
+        },
+        {
+          path: "approvals",
+          name: "approvals",
+          component: () => import("@/modules/examinations/ApprovalsView.vue"),
+          meta: { title: "Approvals", roles: APPROVAL_ROLES },
+        },
+        {
+          path: "assessment-types",
+          name: "assessment-types",
+          component: () => import("@/modules/examinations/AssessmentTypesView.vue"),
+          meta: { title: "Assessment types", roles: ASSESSMENT_TYPE_ROLES },
         },
         {
           path: "examinations/:group",
@@ -249,6 +355,13 @@ export const router = createRouter({
           name: "timetable",
           component: () => import("@/modules/teaching/TimetableView.vue"),
           meta: { title: "Timetable", roles: TIMETABLE_ROLES },
+        },
+        {
+          path: "rooms",
+          name: "rooms",
+          component: () => import("@/modules/teaching/TimetableView.vue"),
+          props: { view: "rooms" },
+          meta: { title: "Rooms", roles: TIMETABLE_ROLES },
         },
         {
           path: "sponsors",

@@ -31,3 +31,24 @@ test("the bursar sees student fees collected per campus", async ({ page }) => {
   // nothing of admissions for finance
   await expect(page.getByText("To decide", { exact: true })).toHaveCount(0);
 });
+
+test("each person's home shows what is waiting for them, and opens it", async ({ page }) => {
+  await signIn(page, "dean.fst");
+  const waiting = page.locator("section").filter({ has: page.getByRole("heading", { name: "Waiting for you" }) }).last();
+  await expect(waiting.getByRole("link", { name: /Assessment plans to approve/ })).toBeVisible();
+  await page.screenshot({ path: "e2e/results/home-dean.png", fullPage: true });
+  await waiting.getByRole("link", { name: /Assessment plans to approve/ }).click();
+  await expect(page.getByRole("heading", { name: "Approvals", exact: true })).toBeVisible();
+});
+
+test("a lecturer's home shows today's lessons and their registers", async ({ page }) => {
+  await signIn(page, "lecturer.comp.whk");
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Waiting for you" })).toBeVisible();
+  await page.screenshot({ path: "e2e/results/home-lecturer.png", fullPage: true });
+});
+
+test("a student's studies open on what is coming up", async ({ page }) => {
+  await signIn(page, "student1.kmp");
+  await expect(page.getByRole("heading", { name: "Coming up" })).toBeVisible();
+});

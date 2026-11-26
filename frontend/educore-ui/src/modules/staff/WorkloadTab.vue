@@ -99,7 +99,7 @@ async function saveRule() {
     :columns="columns"
     :rows="rows"
     row-key="name"
-    :to="(r) => ({ name: 'lecturer', params: { name: String(r.name) }, query: route.query })"
+    :to="(r) => ({ name: 'lecturer', params: { name: String(r.name) }, query: { ...route.query, from: 'workload' } })"
     :loading="loading"
     noun="lecturers"
     empty-title="No lecturers"

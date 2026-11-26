@@ -36,7 +36,7 @@ test("HR links staff records; the lecturer's classes are listed", async ({ page 
 
 test("the head of department sees each lecturer's workload in a semester; the Registrar sets the rule", async ({ page }) => {
   await signIn(page, "head-of-department.accf");
-  await page.goto("/academic-staff?tab=workload&year=2026&semester=Semester%202");
+  await page.goto("/workload?year=2026&semester=Semester%202");
   await expect(page.getByRole("button", { name: "Semester 2" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("6 to 16 h a week")).toBeVisible();
   await expect(page.getByRole("button", { name: "Change" })).toHaveCount(0); // the Registrar's
@@ -54,7 +54,7 @@ test("the head of department sees each lecturer's workload in a semester; the Re
 
 test("the Registrar changes the workload rule", async ({ page }) => {
   await signIn(page, "registrar");
-  await page.goto("/academic-staff?tab=workload&year=2026&semester=Semester%201");
+  await page.goto("/workload?year=2026&semester=Semester%201");
   await page.getByRole("button", { name: "Change" }).click();
   await expect(page.getByLabel("At least")).toHaveValue("6 h");
   await expect(page.getByLabel("At most")).toHaveValue("16 h");

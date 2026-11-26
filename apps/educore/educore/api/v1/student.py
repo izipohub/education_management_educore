@@ -159,6 +159,8 @@ def overview() -> dict:
 		"attendance": _attendance(student.name),
 		# Finance's holds on the student, with the reason
 		"holds": _holds(student.name),
+		# the overview at the top: today's classes, assessments due soon, examinations ahead
+		"ahead": _ahead(student.name),
 	}
 
 
@@ -169,6 +171,33 @@ def assessments() -> dict:
 	from educore.academics import gradebook
 
 	return gradebook.of_student(_current_student().name)
+
+
+def _ahead(student: str) -> dict:
+	from frappe.utils import add_days
+
+	from educore.academics import attendance, gradebook
+	from educore.academics.exam_timetable import of_student as papers_of
+
+	today = nowdate()
+	mine = gradebook.of_student(student)
+	lessons = []
+	for m in mine["modules"]:
+		for lesson in attendance.lessons(m["group"], today):
+			lessons.append({"code": m["code"], "course": m["course"], **{k: lesson[k] for k in ("start_time", "end_time", "room_name", "kind")}})
+	until = str(add_days(today, 21))
+	due = [
+		{"code": m["code"], "course": m["course"], "title": a["title"], "due_date": a["due_date"], "moodle_url": a["moodle_url"]}
+		for m in mine["modules"]
+		for a in m["assessments"]
+		if a["due_date"] and today <= a["due_date"] <= until and a["score"] is None
+	]
+	papers = [p for p in papers_of(student) if str(p.get("exam_date")) >= today]
+	return {
+		"lessons": sorted(lessons, key=lambda l: l["start_time"]),
+		"due": sorted(due, key=lambda d: d["due_date"]),
+		"papers": sorted(papers, key=lambda p: (str(p.get("exam_date")), str(p.get("start_time"))))[:3],
+	}
 
 
 def _attendance(student: str) -> list[dict]:

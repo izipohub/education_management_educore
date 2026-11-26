@@ -6,9 +6,7 @@ import DataTable from "primevue/datatable";
 import Message from "primevue/message";
 import ProgressSpinner from "primevue/progressspinner";
 import Tag from "primevue/tag";
-import { computed, onMounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import EcTabs from "@/core/ui/EcTabs.vue";
+import { computed, onMounted, ref } from "vue";
 import { formatDate, formatMoney } from "@/core/format";
 import StatusTag from "@/core/ui/StatusTag.vue";
 import { myResults } from "@/modules/examinations/api";
@@ -20,17 +18,11 @@ import MyExams from "@/modules/examinations/MyExams.vue";
 import MyAssessments from "./MyAssessments.vue";
 
 const data = ref<StudentOverview | null>(null);
-// the timetable and the assessments on their own tabs, kept in the address
-type Tab = "studies" | "assessments" | "timetable";
-const route = useRoute();
-const router = useRouter();
-const tab = ref<Tab>(route.query.tab === "timetable" || route.query.tab === "assessments" ? (route.query.tab as Tab) : "studies");
-watch(tab, (t) => void router.replace({ query: t === "studies" ? {} : { tab: t } }));
-const tabs = [
-  { value: "studies" as Tab, label: "My studies" },
-  { value: "assessments" as Tab, label: "Assessments" },
-  { value: "timetable" as Tab, label: "Timetable" },
-];
+/** the student's pages, each its own menu item: their studies (programme, results, courses, attendance), their
+ * assessments, timetable, fees and requests (transcripts, interrupting or cancelling studies, moving campus) */
+type View = "studies" | "assessments" | "timetable" | "fees" | "requests";
+const props = withDefaults(defineProps<{ view?: View }>(), { view: "studies" });
+const TITLES: Record<Exclude<View, "studies">, string> = { assessments: "Assessments", timetable: "Timetable", fees: "Fees", requests: "Requests" };
 const error = ref("");
 
 /** the student's published results, by year */
@@ -49,6 +41,22 @@ onMounted(async () => {
 });
 
 const current = computed(() => data.value?.enrolments[0] ?? null);
+/** today's classes, then assessments due and examinations, soonest first */
+const comingUp = computed(() => {
+  const a = data.value?.ahead;
+  if (!a) return [];
+  return [
+    ...a.lessons.map((l, i) => ({ key: `l${i}`, when: `Today ${l.start_time}`, what: `${l.code ?? ""} ${l.course}`, detail: `${l.kind} · ${l.room_name}`, to: { name: "my-study-timetable" } })),
+    ...a.due.map((d, i) => ({ key: `d${i}`, when: formatDate(d.due_date), what: `${d.title} due`, detail: `${d.code ?? ""} ${d.course}`, to: { name: "my-assessments" } })),
+    ...a.papers.map((p, i) => ({
+      key: `p${i}`,
+      when: `${formatDate(p.exam_date)} ${p.start_time}`,
+      what: `${p.code} examination`,
+      detail: [p.course_name, p.rooms.map((r) => r.room_name).join(", ")].filter(Boolean).join(" · "),
+      to: { name: "my-study-timetable" },
+    })),
+  ];
+});
 const totalCredits = computed(() => current.value?.courses.reduce((sum, c) => sum + (c.credits ?? 0), 0) ?? 0);
 
 const feeStatus = computed(() => {
@@ -66,19 +74,42 @@ const feeStatus = computed(() => {
     <div v-else-if="!data" class="loading"><ProgressSpinner style="width: 2.5rem; height: 2.5rem" aria-label="Loading" /></div>
 
     <template v-else>
-      <PageHeader :title="data.student.name" :subtitle="[`Student number ${data.student.number}`, data.student.campus].filter(Boolean).join(' · ')">
-        <EcTabs v-model="tab" :tabs="tabs" label="My studies" class="tabs" />
-      </PageHeader>
+      <PageHeader
+        :title="view === 'studies' ? data.student.name : TITLES[view]"
+        :subtitle="[view === 'studies' ? null : data.student.name, `Student number ${data.student.number}`, view === 'studies' ? data.student.campus : null].filter(Boolean).join(' · ')"
+      />
 
-      <div v-if="tab === 'assessments'" class="assessments"><MyAssessments /></div>
+      <div v-if="view === 'assessments'" class="assessments"><MyAssessments /></div>
 
-      <template v-else-if="tab === 'timetable'">
+      <template v-else-if="view === 'timetable'">
         <MyWeek />
         <MyExams />
       </template>
 
+      <template v-else-if="view === 'requests'">
+        <TranscriptCard />
+        <StudiesRequestCard />
+      </template>
+
       <template v-else>
-      <div class="cards">
+      <!-- the overview: what is coming up -->
+      <section v-if="view === 'studies'" class="ec-card ahead" aria-labelledby="ahead-title">
+        <h2 id="ahead-title">Coming up</h2>
+        <ul v-if="comingUp.length" class="ahead-list">
+          <li v-for="c in comingUp" :key="c.key">
+            <span class="when">{{ c.when }}</span>
+            <span class="what">
+              <RouterLink v-if="c.to" :to="c.to" class="what-link">{{ c.what }}</RouterLink>
+              <template v-else>{{ c.what }}</template>
+              <span class="sub">{{ c.detail }}</span>
+            </span>
+          </li>
+        </ul>
+        <p v-else class="sub">Nothing today, and nothing due in the next three weeks.</p>
+      </section>
+
+      <div class="cards" :class="{ single: view === 'fees' }">
+        <template v-if="view === 'studies'">
         <article v-if="current" class="card programme">
           <h2>Programme</h2>
           <p class="big">{{ current.program }}</p>
@@ -98,6 +129,7 @@ const feeStatus = computed(() => {
           <h2>Programme</h2>
           <p class="sub">You are not enrolled on a programme yet.</p>
         </article>
+        </template>
 
         <article class="card fees">
           <h2>Fees</h2>
@@ -114,9 +146,11 @@ const feeStatus = computed(() => {
             <div><dt>Account number</dt><dd>{{ data.fees.how_to_pay.bank.account_number }}<template v-if="data.fees.how_to_pay.bank.branch_code"> · branch {{ data.fees.how_to_pay.bank.branch_code }}</template></dd></div>
             <div><dt>Reference</dt><dd class="reference">{{ data.fees.how_to_pay.reference }}</dd></div>
           </dl>
+          <RouterLink v-if="view === 'studies'" :to="{ name: 'my-fees' }" class="pdf">Fee statement</RouterLink>
         </article>
       </div>
 
+      <template v-if="view === 'studies'">
       <section v-for="year in resultYears" :key="year" class="block">
         <h2>Results {{ year }}</h2>
         <table class="results">
@@ -169,7 +203,9 @@ const feeStatus = computed(() => {
         </table>
       </section>
 
-      <section class="block">
+      </template>
+
+      <section v-if="view === 'fees'" class="block">
         <h2>Fee statement</h2>
         <DataTable :value="data.fees.entries" data-key="reference" class="table" size="small">
           <template #empty><p class="empty">No fees charged yet.</p></template>
@@ -198,8 +234,6 @@ const feeStatus = computed(() => {
         </DataTable>
       </section>
 
-      <TranscriptCard />
-      <StudiesRequestCard />
       </template>
     </template>
   </section>
@@ -234,6 +268,55 @@ const feeStatus = computed(() => {
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: 1rem;
   margin: 1.5rem 0;
+}
+
+.ahead {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+}
+
+.ahead h2 {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.ahead-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ahead-list li {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.when {
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.what {
+  display: grid;
+}
+
+.what-link {
+  color: var(--ec-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cards.single {
+  grid-template-columns: minmax(0, 32rem);
+  margin-top: 0;
 }
 
 

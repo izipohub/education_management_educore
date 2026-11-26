@@ -17,9 +17,10 @@ test("a student lands on their own studies: programme, courses and fees", async 
   await expect(page.getByText("NQF level 7")).toBeVisible();
   await expect(page.getByText("ACC1511").first()).toBeVisible();
   await expect(page.getByText("N$ 10,150.00 overdue")).toBeVisible();
-  // the statement runs from the fees charged, through the payment, to what is owed
-  await expect(page.getByRole("row").filter({ hasText: "Payment EFT-DEMO" })).toContainText("N$ 10,150.00");
   await page.screenshot({ path: "e2e/results/student-my-studies.png", fullPage: true });
+  // the statement, on Fees: from the fees charged, through the payment, to what is owed
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Fees", exact: true }).click();
+  await expect(page.getByRole("row").filter({ hasText: "Payment EFT-DEMO" })).toContainText("N$ 10,150.00");
 });
 
 test("a student who has paid sees that they are paid up", async ({ page }) => {
@@ -38,6 +39,7 @@ test("staff have no student page", async ({ page }) => {
 
 test("a student asks the Registry to interrupt their studies", async ({ page }) => {
   await signIn(page, "student1.whk");
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Requests", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Interrupting, cancelling or moving campus" })).toBeVisible();
   await page.getByRole("button", { name: "Ask the Registry" }).click();
   const dialog = page.getByRole("dialog");

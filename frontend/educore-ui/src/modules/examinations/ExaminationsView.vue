@@ -14,7 +14,6 @@ import DataTable, { type Column } from "@/core/ui/DataTable.vue";
 import EcButton from "@/core/ui/EcButton.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import EcTabs from "@/core/ui/EcTabs.vue";
-import AssessmentTypesPanel from "./AssessmentTypesPanel.vue";
 import ExamTimetableTab from "./ExamTimetableTab.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
 import SettingRow from "@/core/ui/SettingRow.vue";
@@ -26,11 +25,20 @@ import { type Rules, type SheetRow, type SheetStatus, type SheetsPage, getRules,
  * approved, published); a row opens the class's marks. The examinations officer publishes approved results; the
  * Registrar sets the rules.
  */
-type Tab = "all" | "plans" | "Draft" | "Submitted" | "Moderated" | "Approved" | "Published" | "supplementary" | "timetable" | "rules";
+type Tab = "all" | "Draft" | "Submitted" | "Moderated" | "Approved" | "Published" | "supplementary" | "timetable" | "rules";
+/** the page the menu opened: the classes' marks (filtered by the tabs), the examination timetable, or the rules */
+type View = "sheets" | "timetable" | "rules";
+const props = withDefaults(defineProps<{ view?: View }>(), { view: "sheets" });
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-const tab = ref<Tab>((route.query.tab as Tab) || "all");
+const LISTS: Tab[] = ["all", "Draft", "Submitted", "Moderated", "Approved", "Published", "supplementary"];
+const tab = ref<Tab>(props.view !== "sheets" ? props.view : LISTS.includes(route.query.tab as Tab) ? (route.query.tab as Tab) : "all");
+const TITLES: Record<View, [string, string]> = {
+  sheets: ["Examinations", "Marks from the lecturers, moderated by the department, approved by the examination board"],
+  timetable: ["Examination timetable", "Each class's paper: date, hours, rooms and invigilators"],
+  rules: ["Examination rules", "How course results are worked out, set by the Registrar"],
+};
 const year = ref<string | undefined>((route.query.year as string) || undefined);
 const search = ref("");
 const page = ref<SheetsPage | null>(null);
@@ -61,7 +69,10 @@ watch(year, () => {
   }
   void load();
 });
-watch([tab, year], () => void router.replace({ query: { ...(tab.value !== "all" ? { tab: tab.value } : {}), ...(year.value ? { year: year.value } : {}) } }));
+watch([tab, year], () => {
+  if (props.view === "rules") return;
+  void router.replace({ query: { ...(props.view === "sheets" && tab.value !== "all" ? { tab: tab.value } : {}), ...(year.value ? { year: year.value } : {}) } });
+});
 
 const matching = computed(() => {
   const q = search.value.trim().toLowerCase();
@@ -70,24 +81,19 @@ const matching = computed(() => {
 const count = (s: SheetStatus | "Draft") => matching.value.filter((r) => (s === "Draft" ? r.status === "Draft" || r.status === "Not started" : r.status === s)).length;
 const tabs = computed(() => [
   { label: "All", value: "all" as Tab, count: matching.value.length },
-  { label: "Plans to approve", value: "plans" as Tab, count: matching.value.filter(planToApprove).length },
   { label: "With lecturer", value: "Draft" as Tab, count: count("Draft") },
   { label: "To moderate", value: "Submitted" as Tab, count: count("Submitted") },
   { label: "To approve", value: "Moderated" as Tab, count: count("Moderated") },
   { label: "Approved", value: "Approved" as Tab, count: count("Approved") },
   { label: "Published", value: "Published" as Tab, count: count("Published") },
   { label: "Supplementary", value: "supplementary" as Tab, count: matching.value.filter((r) => r.supp_status === "Open" || r.supp_status === "Submitted").length },
-  { label: "Timetable", value: "timetable" as Tab },
-  { label: "Rules", value: "rules" as Tab },
 ]);
 const rows = computed(
   () =>
     matching.value.filter((r) =>
       tab.value === "all"
         ? true
-        : tab.value === "plans"
-          ? planToApprove(r)
-          : tab.value === "supplementary"
+        : tab.value === "supplementary"
           ? r.supp_status === "Open" || r.supp_status === "Submitted"
           : tab.value === "Draft"
             ? r.status === "Draft" || r.status === "Not started"
@@ -154,12 +160,12 @@ async function saveTheRules() {
 
 <template>
   <section class="list-page">
-    <PageHeader title="Examinations" subtitle="Marks from the lecturers, moderated by the department, approved by the examination board">
-      <template #actions>
-        <EcButton v-if="page?.can_publish && approved.length" :label="`Publish ${approved.length} approved`" variant="primary" :loading="publishing" @click="publishAll" />
+    <PageHeader :title="TITLES[view][0]" :subtitle="TITLES[view][1]">
+      <template v-if="view !== 'rules'" #actions>
+        <EcButton v-if="view === 'sheets' && page?.can_publish && approved.length" :label="`Publish ${approved.length} approved`" variant="primary" :loading="publishing" @click="publishAll" />
         <Select v-model="year" :options="page?.academic_years ?? []" placeholder="Year" aria-label="Academic year" size="small" class="year" />
       </template>
-      <EcTabs v-model="tab" :tabs="tabs" label="Status" class="tabs" />
+      <EcTabs v-if="view === 'sheets'" v-model="tab" :tabs="tabs" label="Status" class="tabs" />
     </PageHeader>
 
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
@@ -213,7 +219,7 @@ async function saveTheRules() {
           <EcButton label="Save" variant="primary" :loading="savingRules" @click="saveTheRules" />
         </div>
       </template>
-      <AssessmentTypesPanel />
+      <p class="ec-muted types-link">Each faculty's assessment types are on <RouterLink :to="{ name: 'assessment-types' }">Assessment types</RouterLink>.</p>
     </div>
 
     <DataTable
@@ -283,6 +289,16 @@ async function saveTheRules() {
   display: grid;
   gap: 1rem;
   max-width: 52rem;
+}
+
+.types-link {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.types-link a {
+  color: var(--ec-accent);
+  font-weight: 600;
 }
 
 .bands {
