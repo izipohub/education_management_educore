@@ -1,0 +1,46 @@
+{
+ "name": "Discipline Settings",
+ "doctype": "DocType",
+ "module": "Academics",
+ "engine": "InnoDB",
+ "creation": "2026-11-26 18:00:00.000000",
+ "modified": "2026-11-26 18:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "actions": [],
+ "links": [],
+ "states": [],
+ "fields": [
+  {
+   "fieldname": "appeal_days",
+   "fieldtype": "Int",
+   "label": "Days to Appeal a Decision",
+   "default": "10",
+   "non_negative": 1,
+   "description": "From the day the student is told of the decision."
+  }
+ ],
+ "field_order": [
+  "appeal_days"
+ ],
+ "issingle": 1,
+ "track_changes": 1,
+ "description": "The university's disciplinary rules, set by the Registrar.",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "write": 1,
+   "create": 1
+  }
+ ]
+}

@@ -217,6 +217,9 @@ def create():
 	from educore.setup import demo_service_requests
 
 	print(f"{demo_service_requests.create()} service requests made")
+	from educore.setup import demo_discipline
+
+	print(f"{demo_discipline.create()} disciplinary cases made")
 
 	from educore.setup.demo_online import create as create_online_application
 

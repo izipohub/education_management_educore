@@ -12,6 +12,7 @@ import StatusTag from "@/core/ui/StatusTag.vue";
 import { myResults } from "@/modules/examinations/api";
 import { type StudentOverview, getOverview } from "./api";
 import StudiesRequestCard from "./StudiesRequestCard.vue";
+import DisciplineCard from "./DisciplineCard.vue";
 import ServiceRequestsCard from "./ServiceRequestsCard.vue";
 import TranscriptCard from "./TranscriptCard.vue";
 import MyWeek from "@/modules/teaching/MyWeek.vue";
@@ -94,6 +95,7 @@ const feeStatus = computed(() => {
       </template>
 
       <template v-else>
+      <DisciplineCard v-if="view === 'studies'" />
       <!-- the overview: what is coming up -->
       <section v-if="view === 'studies'" class="ec-card ahead" aria-labelledby="ahead-title">
         <h2 id="ahead-title">Coming up</h2>
@@ -403,7 +405,8 @@ const feeStatus = computed(() => {
 }
 
 .pdf {
-  justify-self: start;
+  display: inline-block;
+  margin: 0.5rem 1.25rem 0 0;
   color: var(--ec-accent);
   font-size: 0.875rem;
   font-weight: 600;

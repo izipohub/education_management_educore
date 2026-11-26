@@ -5,7 +5,7 @@
  */
 
 export type Severity = "success" | "info" | "warn" | "danger" | "secondary" | "contrast";
-export type StatusKind = "application" | "offer" | "eligibility" | "registration" | "document" | "fee" | "standing" | "period" | "class" | "marks" | "result" | "completion" | "change" | "request" | "lecturer" | "sponsorship" | "waiver" | "transcript" | "exam" | "workload" | "plan" | "service";
+export type StatusKind = "application" | "offer" | "eligibility" | "registration" | "document" | "fee" | "standing" | "period" | "class" | "marks" | "result" | "completion" | "change" | "request" | "lecturer" | "sponsorship" | "waiver" | "transcript" | "exam" | "workload" | "plan" | "service" | "discipline";
 
 type Entry = [label: string, severity: Severity];
 
@@ -108,6 +108,15 @@ const TAGS: Record<StatusKind, Record<string, Entry>> = {
     Recorded: ["Recorded", "info"],
     Invoiced: ["Invoiced", "success"],
     Withdrawn: ["Withdrawn", "secondary"],
+  },
+  discipline: {
+    Reported: ["Reported", "info"],
+    Investigating: ["Investigating", "warn"],
+    Hearing: ["Hearing", "warn"],
+    Decided: ["Decided", "success"],
+    Appealed: ["Appealed", "warn"],
+    Closed: ["Closed", "secondary"],
+    Dismissed: ["Dismissed", "secondary"],
   },
   service: {
     Submitted: ["Submitted", "info"],

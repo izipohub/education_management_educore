@@ -11,6 +11,7 @@ import { RECORD_ROLES } from "@/modules/records/api";
 import { DECIDE_ROLES } from "@/modules/records/studiesRequests";
 import { ISSUE_ROLES } from "@/modules/records/transcripts";
 import { CATEGORY_ROLES, SERVICE_ROLES } from "@/modules/records/serviceRequests";
+import { DISCIPLINE_ROLES } from "@/modules/records/discipline";
 import { REGISTRATION_ROLES } from "@/modules/registration/groups";
 import { STAFF_ROLES } from "@/modules/staff/api";
 import { SPONSOR_ROLES } from "@/modules/finance/sponsors";
@@ -233,6 +234,19 @@ export const router = createRouter({
           name: "service-request-categories",
           component: () => import("@/modules/setup/ServiceCategoriesView.vue"),
           meta: { title: "Service request categories", roles: CATEGORY_ROLES },
+        },
+        {
+          path: "discipline",
+          name: "discipline",
+          component: () => import("@/modules/records/DisciplineView.vue"),
+          meta: { title: "Discipline", roles: DISCIPLINE_ROLES },
+        },
+        {
+          path: "discipline/:name",
+          name: "disciplinary-case",
+          component: () => import("@/modules/records/DisciplinaryCasePage.vue"),
+          props: true,
+          meta: { title: "Disciplinary case", roles: DISCIPLINE_ROLES },
         },
         {
           path: "students/:name",

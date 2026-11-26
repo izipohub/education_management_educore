@@ -282,6 +282,10 @@ def blockers(student: str, offering: str, period) -> list[str]:
 	if standing in BLOCKING_STANDING:
 		found.append(_("Academic standing: {0}{1}").format(standing, f". {note}" if note else ""))
 
+	from educore.academics.discipline import barring
+
+	found += barring(student)
+
 	from educore.finance.clearance import active_holds
 
 	for hold in active_holds(student):

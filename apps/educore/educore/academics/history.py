@@ -2,7 +2,7 @@
 
 Read from the records that hold each event, so it cannot disagree with them: the admission, every approved
 registration, approved interruptions, cancellations and campus transfers (and an interruption lifted early), financial
-holds placed and lifted, and the completion the Senate approved.
+holds placed and lifted, disciplinary decisions and appeals, and the completion the Senate approved.
 """
 
 import frappe
@@ -57,6 +57,18 @@ def of_student(student: str) -> list[dict]:
 	):
 		events.append(_event(c.creation, _("Returned early from an interruption"), None, "registration"))
 
+	from educore.academics import discipline
+
+	for c in frappe.get_all(
+		"Disciplinary Case",
+		filters={"student": student, "status": ("in", (discipline.DECIDED, discipline.APPEALED, discipline.CLOSED))},
+		fields=["name", "finding", "sanction", "fine", "suspended_from", "suspended_until", "decided_on", "appeal_outcome", "appeal_decided_on"],
+	):
+		if c.finding == discipline.RESPONSIBLE or c.appeal_outcome:
+			kind = "hold" if c.sanction in (discipline.SUSPENSION, discipline.EXPULSION) else "info"
+			events.append(_event(c.decided_on, _("Disciplinary decision"), discipline.describe(frappe._dict(c)) if not c.appeal_outcome else None, kind))
+		if c.appeal_outcome:
+			events.append(_event(c.appeal_decided_on, _("Disciplinary appeal {0}").format(_(c.appeal_outcome).lower()), discipline.describe(frappe._dict(c)), "info"))
 	for h in frappe.get_all("Student Hold", filters={"student": student}, fields=["reason", "placed_on", "status", "lifted_on", "lift_note"]):
 		events.append(_event(h.placed_on, _("Financial hold placed"), h.reason, "hold"))
 		if h.status == "Lifted":

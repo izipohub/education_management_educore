@@ -11,6 +11,7 @@ import { DECIDE_ROLES, resumeStudies } from "./studiesRequests";
 import { formatDate, formatMoney } from "@/core/format";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
+import ReportMisconductModal from "./ReportMisconductModal.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
 import { type StudentRecord, getStudent } from "./api";
 
@@ -20,6 +21,8 @@ const session = useSession();
 const props = defineProps<{ name: string }>();
 const route = useRoute();
 const record = ref<StudentRecord | null>(null);
+/** reporting the student's misconduct to Student Affairs */
+const reporting = ref(false);
 const error = ref("");
 
 watch(
@@ -85,6 +88,7 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
       <a v-if="registered" class="pdf" :href="proofOfRegistrationUrl(registered.name)" target="_blank" rel="noopener">
         <FileText :size="16" aria-hidden="true" /> Proof of registration {{ registered.academic_year }}
       </a>
+      <EcButton label="Report misconduct" variant="ghost" size="sm" @click="reporting = true" />
     </template>
 
     <template v-if="record">
@@ -240,6 +244,7 @@ const identity = computed(() => p.value.educore_national_id || p.value.educore_p
       </EcPanel>
     </template>
   </RecordPage>
+  <ReportMisconductModal v-if="record" v-model:open="reporting" :students="[{ student: record.name, student_name: record.student_name }]" />
 </template>
 
 <style scoped>

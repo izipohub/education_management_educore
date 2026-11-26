@@ -6,7 +6,9 @@ import InputText from "primevue/inputtext";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import DataTable, { type Column } from "@/core/ui/DataTable.vue";
+import EcButton from "@/core/ui/EcButton.vue";
 import EcTabs from "@/core/ui/EcTabs.vue";
+import ReportMisconductModal from "@/modules/records/ReportMisconductModal.vue";
 import RecordPage from "@/core/ui/RecordPage.vue";
 import GradebookTab from "@/modules/examinations/GradebookTab.vue";
 import MarksTab from "@/modules/examinations/MarksTab.vue";
@@ -22,6 +24,8 @@ const router = useRouter();
 const cls = ref<CourseClass | null>(null);
 const error = ref("");
 const search = ref("");
+/** reporting a student's misconduct to Student Affairs */
+const reporting = ref(false);
 
 onMounted(async () => {
   try {
@@ -84,6 +88,8 @@ const columns: Column[] = [
             <InputIcon><Search :size="15" /></InputIcon>
             <InputText v-model="search" placeholder="Name or student number" aria-label="Search students" fluid size="small" />
           </IconField>
+          <span class="spacer" />
+          <EcButton label="Report misconduct" variant="ghost" size="sm" @click="reporting = true" />
         </template>
         <template #cell-student_name="{ row: r }">
           <span class="who">{{ row(r).student_name }}</span>
@@ -99,9 +105,14 @@ const columns: Column[] = [
       <MarksTab v-else-if="tab === 'marks'" :group="group" />
     </div>
   </RecordPage>
+  <ReportMisconductModal v-if="cls" v-model:open="reporting" :students="cls.students.map((x) => ({ student: x.student, student_name: x.student_name }))" />
 </template>
 
 <style scoped>
+.spacer {
+  flex: 1;
+}
+
 .module {
   display: grid;
   gap: 1rem;

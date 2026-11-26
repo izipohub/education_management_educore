@@ -96,6 +96,29 @@ TEMPLATES = {
 		"my-studies",
 		"Office of the Registrar",
 	),
+	"disciplinary_hearing": (
+		"Disciplinary hearing",
+		[
+			"Dear {first_name},",
+			"You are called to a disciplinary hearing on {when}, at {venue}.",
+			"You are charged with: {charge}",
+			"You may bring a witness and anything that supports your account. Contact Student Affairs with any question.",
+		],
+		"my-studies",
+		"Student Affairs",
+	),
+	"disciplinary_decided": (
+		"Disciplinary decision",
+		["Dear {first_name},", "The decision in your disciplinary case: {outcome}.", "Reasons: {reasons}", "{appeal}"],
+		"my-studies",
+		"Student Affairs",
+	),
+	"disciplinary_appeal_decided": (
+		"Your disciplinary appeal",
+		["Dear {first_name},", "Your appeal is {outcome}. The decision now stands as: {now}.", "Reasons: {reasons}"],
+		"my-studies",
+		"Office of the Registrar",
+	),
 	"service_request_message": (
 		"Your request: {category}",
 		["Dear {first_name},", "The {office} office wrote about your request for {category}:", "{message}", "Reply on Requests in EduCore."],

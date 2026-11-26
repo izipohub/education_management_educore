@@ -242,6 +242,8 @@ def _work() -> list[dict]:
 		items += _safely(_finance_work)
 	if _has(("HR Manager", "HR User")):
 		items += _safely(_hr_work)
+	if _has(("Student Affairs Officer", "Registrar")):
+		items += _safely(_discipline_work)
 	from educore.academics.service_requests import offices_of
 
 	if offices_of():
@@ -397,3 +399,19 @@ def _service_work() -> list:
 		_item(_("Service requests overdue"), sum(1 for r in rows if r["overdue"]), "/service-requests", {"tab": "overdue"}),
 		_item(_("Service requests to answer"), len(rows), "/service-requests"),
 	]
+
+
+def _discipline_work() -> list:
+	from educore.api.v1 import discipline
+
+	rows = discipline.cases()["rows"]
+	items = []
+	if _has(("Student Affairs Officer",)):
+		week_end = str(frappe.utils.add_days(nowdate(), 7))
+		items += [
+			_item(_("Misconduct reports to look into"), sum(1 for r in rows if r["status"] == "Reported"), "/discipline"),
+			_item(_("Disciplinary hearings this week"), sum(1 for r in rows if r["status"] == "Hearing" and r["hearing_on"] and r["hearing_on"][:10] <= week_end), "/discipline", {"tab": "Hearing"}),
+		]
+	if _has(("Registrar",)):
+		items.append(_item(_("Disciplinary appeals to decide"), sum(1 for r in rows if r["status"] == "Appealed"), "/discipline", {"tab": "Appealed"}))
+	return items

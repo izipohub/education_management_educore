@@ -25,6 +25,7 @@ import {
   ClipboardList,
   DoorOpen,
   Gauge,
+  Gavel,
   Inbox,
   ListChecks,
   ListTree,
@@ -53,6 +54,7 @@ import { APPROVAL_ROLES, EXAMINATION_ROLES } from "@/modules/examinations/api";
 import { DECIDE_ROLES } from "@/modules/records/studiesRequests";
 import { ISSUE_ROLES } from "@/modules/records/transcripts";
 import { CATEGORY_ROLES, SERVICE_ROLES } from "@/modules/records/serviceRequests";
+import { DISCIPLINE_ROLES } from "@/modules/records/discipline";
 import { GRADUATION_ROLES } from "@/modules/graduation/api";
 import { ICT_ROLES } from "@/modules/integrations/api";
 import { ALLOCATION_ROLES } from "@/modules/teaching/allocation";
@@ -129,6 +131,7 @@ const NAV: NavItem[] = [
   { label: "Studies requests", icon: Inbox, to: "/studies-requests", roles: DECIDE_ROLES, section: "Academic" },
   { label: "Transcripts", icon: ScrollText, to: "/transcripts", roles: ISSUE_ROLES, section: "Academic" },
   { label: "Service requests", icon: MessagesSquare, to: "/service-requests", roles: SERVICE_ROLES, section: "Academic" },
+  { label: "Discipline", icon: Gavel, to: "/discipline", roles: DISCIPLINE_ROLES, section: "Academic" },
   { label: "Curriculum", icon: LibraryBig, to: "/curriculum", roles: CURRICULUM_ROLES, section: "Academic" },
   { label: "Teaching", icon: Presentation, to: "/teaching", roles: ALLOCATION_ROLES, section: "Academic" },
   { label: "Timetable", icon: CalendarDays, to: "/timetable", roles: TIMETABLE_ROLES, section: "Academic" },
