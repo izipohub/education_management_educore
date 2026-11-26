@@ -25,5 +25,5 @@ const API = "educore.api.v1.integrations";
 export const getIntegrations = () => get<Integrations>(`${API}.settings`);
 export const saveIntegrations = (data: Partial<MoodleSettings> & { moodle_token?: string }) => post<Integrations>(`${API}.save`, { data });
 export const testMoodle = (url?: string, token?: string) =>
-  post<{ ok: boolean; site?: string; release?: string; user?: string; error?: string }>(`${API}.test`, { url, token });
+  post<{ ok: boolean; site?: string; release?: string; user?: string; error?: string; missing?: string[] }>(`${API}.test`, { url, token });
 export const syncMoodleNow = () => post<{ queued: boolean }>(`${API}.sync_now`, {});

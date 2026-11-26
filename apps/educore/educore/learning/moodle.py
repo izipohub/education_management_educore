@@ -20,6 +20,23 @@ from frappe import _
 from frappe.utils import now_datetime
 
 TIMEOUT = 30
+#: the Moodle web service functions EduCore calls: the token's service must allow each one
+#: (docs/integrations/moodle.md; set up with docs/integrations/moodle-setup.php)
+FUNCTIONS = (
+	"core_webservice_get_site_info",
+	"core_user_get_users_by_field",
+	"core_user_create_users",
+	"core_course_get_categories",
+	"core_course_create_categories",
+	"core_course_get_courses_by_field",
+	"core_course_create_courses",
+	"core_enrol_get_enrolled_users",
+	"enrol_manual_enrol_users",
+	"enrol_manual_unenrol_users",
+	# online assessments: the class's activities, and their grades (educore.learning.moodle_grades)
+	"core_course_get_contents",
+	"gradereport_user_get_grade_items",
+)
 
 
 class MoodleError(Exception):
@@ -222,4 +239,11 @@ def test_connection(url: str | None = None, token: str | None = None) -> dict:
 	"""Moodle's site information, to confirm the address and token work"""
 	client = MoodleClient(url, token) if url and token else MoodleClient.from_settings()
 	info = client.call("core_webservice_get_site_info")
-	return {"site": info.get("sitename"), "release": info.get("release"), "user": info.get("username")}
+	allowed = {f.get("name") for f in info.get("functions") or []}
+	return {
+		"site": info.get("sitename"),
+		"release": info.get("release"),
+		"user": info.get("username"),
+		# functions the token's service does not allow: the sync or the grades would fail on them
+		"missing": [f for f in FUNCTIONS if f not in allowed],
+	}

@@ -248,7 +248,8 @@ async function fromMoodle(a: Assessment) {
                     <button v-if="scoring && a.moodle_cmid" type="button" class="head-action" :disabled="fetching !== null" @click="fromMoodle(a)">
                       {{ fetching === a.assessment_key ? "Bringing in" : "From Moodle" }}
                     </button>
-                    <button v-else-if="!a.moodle_cmid" type="button" class="head-action" :disabled="Boolean(moodleNote)" :title="moodleNote" @click="openLink(a)">Link</button>
+                    <button v-if="a.moodle_cmid" type="button" class="head-action" :disabled="Boolean(moodleNote)" :title="moodleNote || 'Link another activity'" :aria-label="`Change the Moodle activity of ${a.title}`" @click="openLink(a)">Change</button>
+                    <button v-else type="button" class="head-action" :disabled="Boolean(moodleNote)" :title="moodleNote" @click="openLink(a)">Link</button>
                   </template>
                 </span>
               </th>

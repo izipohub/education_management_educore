@@ -57,7 +57,7 @@ class FakeMoodle:
 				self.enrolments = {x for x in self.enrolments if not (x[0] == e["userid"] and x[1] == e["courseid"])}
 			return None
 		if function == "core_webservice_get_site_info":
-			return {"sitename": "Test Moodle", "release": "4.5", "username": "educore"}
+			return {"sitename": "Test Moodle", "release": "4.5", "username": "educore", "functions": [{"name": f} for f in moodle.FUNCTIONS[:-1]]}
 		raise AssertionError(f"unexpected {function}")
 
 
@@ -120,3 +120,11 @@ class TestIntegrationsScreen(IntegrationTestCase):
 		frappe.set_user("registrar@educore.localhost")
 		self.assertRaises(frappe.PermissionError, integrations.settings)
 		frappe.set_user("Administrator")
+
+
+class TestConnectionCheck(IntegrationTestCase):
+	def test_the_check_names_the_functions_the_token_lacks(self):
+		with __import__("unittest.mock").mock.patch.object(moodle, "MoodleClient", return_value=FakeMoodle()):
+			result = moodle.test_connection("https://moodle.example.edu.na", "token")
+		self.assertEqual(result["site"], "Test Moodle")
+		self.assertEqual(result["missing"], ["gradereport_user_get_grade_items"])

@@ -83,7 +83,14 @@ async function test() {
   testing.value = true;
   try {
     const r = await testMoodle(form.moodle_url.trim() || undefined, form.moodle_token || undefined);
-    if (r.ok) toast.add({ severity: "success", summary: `Connected to ${r.site}`, detail: `Moodle ${r.release}, as ${r.user}`, life: 5000 });
+    if (r.ok && r.missing?.length)
+      toast.add({
+        severity: "warn",
+        summary: `Connected to ${r.site}, but the token's service lacks ${r.missing.length} functions`,
+        detail: `Add them in Moodle (Site administration, Server, Web services, External services): ${r.missing.join(", ")}`,
+        life: 15000,
+      });
+    else if (r.ok) toast.add({ severity: "success", summary: `Connected to ${r.site}`, detail: `Moodle ${r.release}, as ${r.user}`, life: 5000 });
     else toast.add({ severity: "error", summary: "Could not connect", detail: r.error, life: 8000 });
   } finally {
     testing.value = false;
