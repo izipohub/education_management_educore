@@ -173,13 +173,31 @@
    "fieldtype": "Datetime",
    "label": "Supplementary Published On",
    "read_only": 1
+  },
+  {
+   "fieldname": "gradebook_section",
+   "fieldtype": "Section Break",
+   "label": "Gradebook",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "assessments",
+   "fieldtype": "Table",
+   "label": "Assessments",
+   "options": "Mark Sheet Assessment"
+  },
+  {
+   "fieldname": "scores",
+   "fieldtype": "Table",
+   "label": "Scores",
+   "options": "Mark Sheet Score"
   }
  ],
  "actions": [],
  "links": [],
  "states": [],
  "creation": "2026-11-24 09:00:00.000000",
- "modified": "2026-11-24 09:00:00.000000",
+ "modified": "2026-11-27 12:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "doctype": "DocType",
@@ -212,6 +230,9 @@
   "supp_status",
   "supp_submitted_on",
   "supp_board_reference",
-  "supp_published_on"
+  "supp_published_on",
+  "gradebook_section",
+  "assessments",
+  "scores"
  ]
 }

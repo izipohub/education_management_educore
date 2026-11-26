@@ -5,7 +5,7 @@ import Dialog from "primevue/dialog";
  * A small modal for one decision that needs a reason or a choice. Records and editing belong in the docked side
  * window (SplitView / SidePanel); a modal only asks, then closes. Focus is kept inside while open; Escape closes.
  */
-withDefaults(defineProps<{ title: string; description?: string; size?: "sm" | "md" }>(), { description: undefined, size: "sm" });
+withDefaults(defineProps<{ title: string; description?: string; size?: "sm" | "md" | "lg" }>(), { description: undefined, size: "sm" });
 const open = defineModel<boolean>("open", { required: true });
 </script>
 
@@ -16,7 +16,7 @@ const open = defineModel<boolean>("open", { required: true });
     :header="title"
     :draggable="false"
     :dismissable-mask="true"
-    :style="{ width: size === 'sm' ? 'min(28rem, calc(100vw - 32px))' : 'min(36rem, calc(100vw - 32px))' }"
+    :style="{ width: `min(${size === 'sm' ? 28 : size === 'md' ? 36 : 46}rem, calc(100vw - 32px))` }"
     :pt="{
       root: { class: 'ec-modal' },
       header: { class: 'ec-modal-header' },

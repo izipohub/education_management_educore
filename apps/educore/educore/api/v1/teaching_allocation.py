@@ -5,7 +5,7 @@ A class is Education's Student Group (group_based_on Course) with EduCore's camp
 code> <year>"; its term is the course's semester from the curriculum (none for a full-year course). The head of
 department or the dean allocates lecturers (Education Instructors, who are HR Employees); class lists are built
 from the students whose registration for the year is approved (Course Enrollments of submitted Program
-Enrollments). Lecturers see their classes in My teaching (educore.api.v1.teaching).
+Enrollments). Lecturers see their classes in My modules (educore.api.v1.teaching).
 
 Courses are read through frappe.get_list, so each person sees their own department's or faculty's courses only.
 """

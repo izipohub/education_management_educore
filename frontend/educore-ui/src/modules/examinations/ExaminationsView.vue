@@ -13,6 +13,7 @@ import DataTable, { type Column } from "@/core/ui/DataTable.vue";
 import EcButton from "@/core/ui/EcButton.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
 import EcTabs from "@/core/ui/EcTabs.vue";
+import ExamTimetableTab from "./ExamTimetableTab.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
 import SettingRow from "@/core/ui/SettingRow.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
@@ -23,7 +24,7 @@ import { type Rules, type SheetRow, type SheetStatus, type SheetsPage, getRules,
  * approved, published); a row opens the class's marks. The examinations officer publishes approved results; the
  * Registrar sets the rules.
  */
-type Tab = "all" | "Draft" | "Submitted" | "Moderated" | "Approved" | "Published" | "supplementary" | "rules";
+type Tab = "all" | "Draft" | "Submitted" | "Moderated" | "Approved" | "Published" | "supplementary" | "timetable" | "rules";
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
@@ -73,6 +74,7 @@ const tabs = computed(() => [
   { label: "Approved", value: "Approved" as Tab, count: count("Approved") },
   { label: "Published", value: "Published" as Tab, count: count("Published") },
   { label: "Supplementary", value: "supplementary" as Tab, count: matching.value.filter((r) => r.supp_status === "Open" || r.supp_status === "Submitted").length },
+  { label: "Timetable", value: "timetable" as Tab },
   { label: "Rules", value: "rules" as Tab },
 ]);
 const rows = computed(
@@ -153,7 +155,9 @@ async function saveTheRules() {
 
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
 
-    <div v-if="tab === 'rules'" class="rules">
+    <ExamTimetableTab v-if="tab === 'timetable'" :year="year" />
+
+    <div v-else-if="tab === 'rules'" class="rules">
       <template v-if="rules">
         <EcPanel title="Final mark" :note="rules.can_edit ? undefined : 'Set by the Registrar'">
           <SettingRow label="Continuous assessment weight" help="The rest is the examination" for="caw">

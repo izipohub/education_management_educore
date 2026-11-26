@@ -32,12 +32,16 @@ test("the registrar reads the timetable only", async ({ page }) => {
 test("a student sees their week on My studies", async ({ page }) => {
   await signIn(page, "student1.whk");
   await page.getByRole("link", { name: "My studies", exact: true }).click();
-  await expect(page.getByRole("heading", { name: /^Timetable \(Semester/ })).toBeVisible();
+  await page.getByRole("tab", { name: "Timetable" }).click();
+  await expect(page.getByRole("heading", { name: /^Semester \d \d{4}/ })).toBeVisible();
+  await expect(page.locator(".week .slot").first()).toBeVisible();
+  await page.screenshot({ path: "e2e/results/student-timetable.png", fullPage: true });
 });
 
-test("a lecturer sees their week on My teaching", async ({ page }) => {
+test("a lecturer sees their week on My modules", async ({ page }) => {
   await signIn(page, "lecturer.comp.whk");
-  await page.getByRole("link", { name: "My teaching", exact: true }).click();
-  await expect(page.getByRole("heading", { name: /^This week/ })).toBeVisible();
-  await expect(page.getByRole("row").filter({ hasText: "Monday" }).first()).toContainText("Lecture Room 1");
+  await page.getByRole("link", { name: "My modules", exact: true }).click();
+  await page.getByRole("tab", { name: "Timetable" }).click();
+  await expect(page.locator(".week .slot").filter({ hasText: "Lecture Room 1" }).first()).toBeVisible();
+  await page.screenshot({ path: "e2e/results/lecturer-timetable.png", fullPage: true });
 });

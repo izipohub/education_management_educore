@@ -1,5 +1,10 @@
-"""Class attendance: the lecturer's register for a class (Student Group) on a date, kept as Education's Student
-Attendance (Present, Absent, Leave: shown as Excused), so Education's own reports count it too.
+"""Class attendance: the lecturer's register for each lesson of a module (Student Group), kept as Education's
+Student Attendance (Present, Absent, Leave: shown as Excused), so Education's own reports count it too.
+
+- A lesson is one meeting of the module: on a day, at the times of one of its timetable slots
+  (educore.academics.timetable), kept as Education's Course Schedule (made when its register is first taken), which
+  each attendance record links to. A module meeting twice on a day has two registers. A module with no timetable has
+  one register a day.
 
 - A lecturer takes the register of the classes they teach, for a day that has come and falls in the class's academic
   year and is not a holiday; taking it again for the same day changes it (the earlier record is cancelled).
@@ -35,11 +40,119 @@ def minimum() -> float:
 	return flt(frappe.db.get_single_value("Examination Settings", "min_attendance"))
 
 
-def _records(group: str, date=None) -> list:
+def _records(group: str, date=None, schedule: str | None = None, by_day: bool = False) -> list:
+	"""Attendance records of the module: all, a day's, one lesson's (schedule), or a day's register without a lesson"""
 	filters = {"student_group": group, "docstatus": 1}
 	if date:
 		filters["date"] = getdate(date)
-	return frappe.get_all("Student Attendance", filters=filters, fields=["name", "student", "date", "status"], order_by="date asc")
+	if schedule:
+		filters["course_schedule"] = schedule
+	elif by_day:
+		filters["course_schedule"] = ("is", "not set")
+	return frappe.get_all(
+		"Student Attendance", filters=filters, fields=["name", "student", "date", "status", "course_schedule"], order_by="date asc"
+	)
+
+
+# --- lessons ---------------------------------------------------------------------------------------------
+
+
+def _semester_on(date) -> str | None:
+	return frappe.db.get_value("Academic Term", {"term_start_date": ("<=", date), "term_end_date": (">=", date)}, "term_name")
+
+
+def lessons(group: str, date) -> list[dict]:
+	"""The module's lessons on a day: its timetable slots for that weekday in that day's semester"""
+	from educore.academics.timetable import _t, room_name
+
+	date = getdate(date)
+	semester = _semester_on(date)
+	if not semester:
+		return []
+	slots = frappe.get_all(
+		"Timetable Slot",
+		filters={"student_group": group, "semester": semester, "day": date.strftime("%A")},
+		fields=["name", "start_time", "end_time", "room", "kind"],
+		order_by="start_time asc",
+	)
+	out = []
+	for s in slots:
+		schedule = frappe.db.get_value("Course Schedule", {"student_group": group, "schedule_date": date, "from_time": s.start_time})
+		out.append(
+			{
+				"key": s.name,
+				"start_time": _t(s.start_time),
+				"end_time": _t(s.end_time),
+				"room_name": room_name(s.room),
+				"kind": s.kind,
+				"schedule": schedule,
+				"taken": bool(schedule and frappe.db.exists("Student Attendance", {"course_schedule": schedule, "docstatus": 1})),
+			}
+		)
+	return out
+
+
+def lesson_days(group: str, date) -> list[str]:
+	"""The weekdays the module meets in that day's semester (none: no timetable)"""
+	from educore.academics.timetable import DAYS
+
+	semester = _semester_on(getdate(date))
+	days = set(frappe.get_all("Timetable Slot", filters={"student_group": group, "semester": semester}, pluck="day")) if semester else set()
+	return [d for d in DAYS if d in days]
+
+
+def timetabled(group: str) -> bool:
+	"""The module has a timetable: its registers are per lesson (otherwise a register a day)"""
+	return bool(frappe.db.exists("Timetable Slot", {"student_group": group}))
+
+
+def latest_lesson_day(group: str, until=None):
+	"""The latest day up to today (or until) with a lesson of the module, within the semesters it is timetabled in"""
+	until = getdate(until or nowdate())
+	year = frappe.db.get_value("Student Group", group, "academic_year")
+	semesters = set(frappe.get_all("Timetable Slot", filters={"student_group": group}, pluck="semester"))
+	best = None
+	for term in frappe.get_all("Academic Term", filters={"academic_year": year, "term_name": ("in", list(semesters) or [""])}, fields=["term_start_date", "term_end_date"]):
+		day = min(until, getdate(term.term_end_date))
+		for _ in range(7):
+			if day < getdate(term.term_start_date):
+				break
+			if lessons(group, day):
+				best = max(best, day) if best else day
+				break
+			day = frappe.utils.add_days(day, -1)
+	return best
+
+
+def lesson_schedule(group: str, date, slot: str) -> str:
+	"""The lesson's Course Schedule, made the first time its register is taken"""
+	date = getdate(date)
+	s = frappe.db.get_value("Timetable Slot", slot, ["student_group", "start_time", "end_time", "room", "day"], as_dict=True)
+	if not s or s.student_group != group or s.day != date.strftime("%A"):
+		frappe.throw(_("This module has no lesson then"))
+	existing = frappe.db.get_value("Course Schedule", {"student_group": group, "schedule_date": date, "from_time": s.start_time})
+	if existing:
+		return existing
+	instructor = (frappe.get_all("Student Group Instructor", filters={"parent": group}, pluck="instructor") or [None])[0]
+	if not instructor:
+		frappe.throw(_("The module has no lecturer: the head of department allocates one first"))
+	doc = frappe.get_doc(
+		{
+			"doctype": "Course Schedule",
+			"student_group": group,
+			"course": frappe.db.get_value("Student Group", group, "course"),
+			"instructor": instructor,
+			"schedule_date": date,
+			"from_time": s.start_time,
+			"to_time": s.end_time,
+			"room": s.room,
+		}
+	)
+	# the timetable already keeps rooms, lecturers and students from clashing (educore.academics.timetable)
+	doc.validate_overlap = lambda: None
+	doc.flags.ignore_permissions = True
+	doc.insert()
+	return doc.name
 
 
 def students(group: str) -> list:
@@ -59,11 +172,22 @@ def check_date(group: str, date) -> object:
 	return date
 
 
-def take(group: str, date, entries: list[dict]) -> int:
-	"""The register for the day: each student's status; a status already recorded and changed is replaced"""
+def take(group: str, date, entries: list[dict], lesson: str | None = None) -> int:
+	"""The register for a lesson (a timetable slot on the day), or for the day when the module has no timetable:
+	each student's status; a status already recorded and changed is replaced"""
 	date = check_date(group, date)
+	if not lesson and lessons(group, date):
+		frappe.throw(_("Choose the lesson"))
+	if not lesson and timetabled(group):
+		days = lesson_days(group, date)
+		frappe.throw(
+			_("The module has no lesson on {0}: it meets on {1}").format(formatdate(date), ", ".join(days))
+			if days
+			else _("The module has no lessons in the semester of {0}").format(formatdate(date))
+		)
+	schedule = lesson_schedule(group, date, lesson) if lesson else None
 	members = {s.student: s.student_name for s in students(group)}
-	recorded = {r.student: r for r in _records(group, date)}
+	recorded = {r.student: r for r in _records(group, date, schedule=schedule, by_day=not schedule)}
 	changed = 0
 	for entry in entries:
 		student, status = entry.get("student"), entry.get("status")
@@ -79,7 +203,7 @@ def take(group: str, date, entries: list[dict]) -> int:
 			old.flags.ignore_permissions = True
 			old.cancel()
 		doc = frappe.get_doc(
-			{"doctype": "Student Attendance", "student": student, "student_group": group, "date": date, "status": status}
+			{"doctype": "Student Attendance", "student": student, "student_group": group, "date": date, "status": status, "course_schedule": schedule}
 		)
 		doc.flags.ignore_permissions = True
 		doc.insert()
@@ -89,13 +213,24 @@ def take(group: str, date, entries: list[dict]) -> int:
 
 
 def summary(group: str) -> dict:
-	"""Each student's attendance in the class so far, and the sessions held"""
+	"""Each student's attendance in the module so far, and the lessons held (a register a day where there was no
+	timetable)"""
+	from educore.academics.timetable import _t
+
 	records = _records(group)
+	times = {
+		c.name: _t(c.from_time)
+		for c in frappe.get_all(
+			"Course Schedule", filters={"name": ("in", list({r.course_schedule for r in records if r.course_schedule}) or [""])}, fields=["name", "from_time"]
+		)
+	}
 	by_student: dict[str, dict] = {}
 	sessions: dict[str, dict] = {}
 	for r in records:
 		day = str(r.date)
-		sessions.setdefault(day, {"date": day, PRESENT: 0, ABSENT: 0, EXCUSED: 0})[r.status] += 1
+		start = times.get(r.course_schedule) if r.course_schedule else None
+		key = f"{day} {start or ''}"
+		sessions.setdefault(key, {"date": day, "start_time": start, PRESENT: 0, ABSENT: 0, EXCUSED: 0})[r.status] += 1
 		by_student.setdefault(r.student, {PRESENT: 0, ABSENT: 0, EXCUSED: 0})[r.status] += 1
 	least = minimum()
 	rows = []
@@ -117,8 +252,8 @@ def summary(group: str) -> dict:
 	return {
 		"minimum": least,
 		"sessions": [
-			{"date": d["date"], "present": d[PRESENT], "absent": d[ABSENT], "excused": d[EXCUSED]}
-			for d in sorted(sessions.values(), key=lambda d: d["date"], reverse=True)
+			{"date": d["date"], "start_time": d["start_time"], "present": d[PRESENT], "absent": d[ABSENT], "excused": d[EXCUSED]}
+			for d in sorted(sessions.values(), key=lambda d: (d["date"], d["start_time"] or ""), reverse=True)
 		],
 		"students": rows,
 	}

@@ -6,7 +6,9 @@ import DataTable from "primevue/datatable";
 import Message from "primevue/message";
 import ProgressSpinner from "primevue/progressspinner";
 import Tag from "primevue/tag";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import EcTabs from "@/core/ui/EcTabs.vue";
 import { formatDate, formatMoney } from "@/core/format";
 import StatusTag from "@/core/ui/StatusTag.vue";
 import { myResults } from "@/modules/examinations/api";
@@ -14,8 +16,19 @@ import { type StudentOverview, getOverview } from "./api";
 import StudiesRequestCard from "./StudiesRequestCard.vue";
 import TranscriptCard from "./TranscriptCard.vue";
 import MyWeek from "@/modules/teaching/MyWeek.vue";
+import MyExams from "@/modules/examinations/MyExams.vue";
 
 const data = ref<StudentOverview | null>(null);
+// the timetable on its own tab, kept in the address
+type Tab = "studies" | "timetable";
+const route = useRoute();
+const router = useRouter();
+const tab = ref<Tab>(route.query.tab === "timetable" ? "timetable" : "studies");
+watch(tab, (t) => void router.replace({ query: t === "timetable" ? { tab: t } : {} }));
+const tabs = [
+  { value: "studies" as Tab, label: "My studies" },
+  { value: "timetable" as Tab, label: "Timetable" },
+];
 const error = ref("");
 
 /** the student's published results, by year */
@@ -51,8 +64,16 @@ const feeStatus = computed(() => {
     <div v-else-if="!data" class="loading"><ProgressSpinner style="width: 2.5rem; height: 2.5rem" aria-label="Loading" /></div>
 
     <template v-else>
-      <PageHeader :title="data.student.name" :subtitle="[`Student number ${data.student.number}`, data.student.campus].filter(Boolean).join(' · ')" />
+      <PageHeader :title="data.student.name" :subtitle="[`Student number ${data.student.number}`, data.student.campus].filter(Boolean).join(' · ')">
+        <EcTabs v-model="tab" :tabs="tabs" label="My studies" class="tabs" />
+      </PageHeader>
 
+      <template v-if="tab === 'timetable'">
+        <MyWeek />
+        <MyExams />
+      </template>
+
+      <template v-else>
       <div class="cards">
         <article v-if="current" class="card programme">
           <h2>Programme</h2>
@@ -110,8 +131,6 @@ const feeStatus = computed(() => {
           </tbody>
         </table>
       </section>
-
-      <MyWeek />
 
       <section v-if="current" class="block">
         <h2>Courses this year <span class="sub">({{ current.courses.length }} courses, {{ totalCredits }} credits)</span></h2>
@@ -177,6 +196,7 @@ const feeStatus = computed(() => {
 
       <TranscriptCard />
       <StudiesRequestCard />
+      </template>
     </template>
   </section>
 </template>
@@ -344,5 +364,8 @@ const feeStatus = computed(() => {
 .results .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+.tabs {
+  flex: 1;
 }
 </style>

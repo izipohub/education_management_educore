@@ -5,7 +5,7 @@
  */
 
 export type Severity = "success" | "info" | "warn" | "danger" | "secondary" | "contrast";
-export type StatusKind = "application" | "offer" | "eligibility" | "registration" | "document" | "fee" | "standing" | "period" | "class" | "marks" | "result" | "completion" | "change" | "request" | "lecturer" | "sponsorship" | "waiver" | "transcript";
+export type StatusKind = "application" | "offer" | "eligibility" | "registration" | "document" | "fee" | "standing" | "period" | "class" | "marks" | "result" | "completion" | "change" | "request" | "lecturer" | "sponsorship" | "waiver" | "transcript" | "exam";
 
 type Entry = [label: string, severity: Severity];
 
@@ -88,6 +88,10 @@ const TAGS: Record<StatusKind, Record<string, Entry>> = {
     "no-lecturer": ["No lecturer", "warn"],
     "to-update": ["List out of date", "warn"],
     "no-class": ["No class yet", "secondary"],
+  },
+  exam: {
+    Draft: ["Draft", "secondary"],
+    Published: ["Published", "success"],
   },
   transcript: {
     Requested: ["Requested", "info"],

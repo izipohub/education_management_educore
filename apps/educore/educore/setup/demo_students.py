@@ -208,6 +208,12 @@ def create():
 	from educore.setup import demo_results
 
 	print(f"{demo_results.create()} mark sheets created")
+	from educore.setup import demo_gradebook
+
+	print(f"{demo_gradebook.create()} gradebook set up")
+	from educore.setup import demo_exam_timetable
+
+	print(f"{demo_exam_timetable.create()} examination papers scheduled")
 
 	from educore.setup.demo_online import create as create_online_application
 

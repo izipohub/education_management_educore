@@ -1,7 +1,7 @@
 """Lecturers: every login holding the Lecturer position has an Education Instructor record, made automatically.
 
 Classes, marks and Moodle all work through the Instructor (Student Group Instructor), so a lecturer without one
-sees nothing in My teaching and cannot be allocated to a class. The Instructor is made as soon as a login holds
+sees nothing in My modules and cannot be allocated to a class. The Instructor is made as soon as a login holds
 the Lecturer position, linked to that login (educore_user), with its department and campuses taken from the
 login's User Permissions (the teaching department, the campuses). The HR staff record (Employee) is HR's: it needs
 personal details EduCore does not invent, so HR adds it and it is linked to the Instructor when its login matches.

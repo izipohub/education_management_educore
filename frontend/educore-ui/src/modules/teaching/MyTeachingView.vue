@@ -1,22 +1,36 @@
 <script setup lang="ts">
-import PageHeader from "@/core/ui/PageHeader.vue";
-import Column from "primevue/column";
-import DataTable from "primevue/datatable";
+import { Search } from "@lucide/vue";
+import IconField from "primevue/iconfield";
+import InputIcon from "primevue/inputicon";
+import InputText from "primevue/inputtext";
 import Message from "primevue/message";
-import ProgressSpinner from "primevue/progressspinner";
 import Select from "primevue/select";
-import Tag from "primevue/tag";
 import { computed, onMounted, ref, watch } from "vue";
-import { type MyClasses, getMyClasses } from "./api";
+import { useRoute, useRouter } from "vue-router";
+import DataTable, { type Column } from "@/core/ui/DataTable.vue";
+import EcTabs from "@/core/ui/EcTabs.vue";
+import PageHeader from "@/core/ui/PageHeader.vue";
+import { type CourseClass, type MyClasses, getMyClasses } from "./api";
 import MyWeek from "./MyWeek.vue";
+import MyExams from "@/modules/examinations/MyExams.vue";
 
+/** The lecturer's modules: a row per module (however many students), opening the module's page; and their
+ * timetable on its own tab */
 const data = ref<MyClasses | null>(null);
 const error = ref("");
+const loading = ref(false);
 const academicYear = ref<string | undefined>();
+const search = ref("");
+const route = useRoute();
+const router = useRouter();
+type Tab = "modules" | "timetable";
+const tab = ref<Tab>(route.query.tab === "timetable" ? "timetable" : "modules");
+watch(tab, (t) => void router.replace({ query: t === "timetable" ? { tab: t } : {} }));
 let adoptingYear = false;
 
 async function load() {
   error.value = "";
+  loading.value = true;
   try {
     data.value = await getMyClasses(academicYear.value);
     if (!academicYear.value && data.value.academic_year) {
@@ -25,6 +39,8 @@ async function load() {
     }
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e);
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -39,146 +55,133 @@ onMounted(load);
 
 /** different people: a student in three of your classes counts once */
 const totalStudents = computed(() => new Set(data.value?.classes.flatMap((c) => c.students.map((s) => s.student))).size);
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const subtitle = computed(() =>
+  data.value?.linked ? `${plural(data.value.classes.length, "module", "modules")} · ${plural(totalStudents.value, "student", "students")}` : undefined,
+);
+const rows = computed(() => {
+  const q = search.value.trim().toLowerCase();
+  return (data.value?.classes ?? []).filter((c) => !q || `${c.code} ${c.course} ${c.campus}`.toLowerCase().includes(q)) as unknown as Record<string, unknown>[];
+});
+const row = (r: Record<string, unknown>) => r as unknown as CourseClass;
+const tabs = computed(() => [
+  { value: "modules" as Tab, label: "Modules", count: data.value?.classes.length },
+  { value: "timetable" as Tab, label: "Timetable" },
+]);
+const columns: Column[] = [
+  { key: "course", label: "Module" },
+  { key: "campus", label: "Campus", wide: true },
+  { key: "students", label: "Students", align: "right" },
+  { key: "links", label: "", align: "right" },
+];
 </script>
 
 <template>
   <section class="teaching">
-    <PageHeader title="My teaching" :subtitle="data?.linked ? `${data.classes.length} ${data.classes.length === 1 ? 'class' : 'classes'} · ${totalStudents} ${totalStudents === 1 ? 'student' : 'students'}` : undefined">
-      <template v-if="data?.linked && data.academic_years.length" #actions>
+    <PageHeader title="My modules" :subtitle="subtitle">
+      <template v-if="data?.linked && data.academic_years.length && tab === 'modules'" #actions>
         <Select v-model="academicYear" :options="data.academic_years" aria-label="Academic year" class="year" />
       </template>
+      <EcTabs v-if="data?.linked" v-model="tab" :tabs="tabs" label="My modules" class="tabs" />
     </PageHeader>
 
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
-    <div v-else-if="!data" class="loading"><ProgressSpinner style="width: 2.5rem; height: 2.5rem" aria-label="Loading" /></div>
 
-    <Message v-else-if="!data.linked" severity="info" :closable="false">
+    <Message v-else-if="data && !data.linked" severity="info" :closable="false">
       You are not on record as a lecturer. Ask your head of department.
     </Message>
 
-    <p v-else-if="!data.classes.length" class="empty">You are not assigned to any course in {{ academicYear }}.</p>
+    <template v-else>
+      <template v-if="data?.linked && tab === 'timetable'">
+        <MyWeek :lecturers="false" />
+        <MyExams duties />
+      </template>
 
-    <MyWeek v-if="data?.linked" card :lecturers="false" />
-
-    <article v-for="cls in data?.classes ?? []" :key="cls.name" class="class">
-      <header class="class-head">
-        <div>
-          <h2>
-            <span class="code">{{ cls.code }}</span> {{ cls.course }}
-          </h2>
-          <p class="sub">
-            {{ cls.campus }} · {{ cls.academic_year }}
-            <template v-if="cls.credits"> · {{ cls.credits }} credits</template>
-            <template v-if="cls.nqf_level"> · NQF level {{ cls.nqf_level }}</template>
-          </p>
-          <p v-if="cls.co_lecturers.length" class="sub">With {{ cls.co_lecturers.join(", ") }}</p>
-        </div>
-        <div class="class-actions">
-          <Tag :value="`${cls.students.length} ${cls.students.length === 1 ? 'student' : 'students'}`" severity="secondary" />
-          <RouterLink v-if="cls.students.length" :to="{ name: 'class-attendance', params: { group: cls.name } }" class="marks-link">Attendance</RouterLink>
-          <RouterLink v-if="cls.students.length" :to="{ name: 'class-marks', params: { group: cls.name } }" class="marks-link">Marks</RouterLink>
-        </div>
-      </header>
-      <DataTable :value="cls.students" data-key="student" size="small" class="table">
-        <template #empty><p class="empty">No students in this class.</p></template>
-        <Column field="student_name" header="Student" />
-        <Column field="student" header="Student number" />
-        <Column header="Programme">
-          <template #body="{ data: s }">
-            {{ s.programme }}
-            <div class="sub">{{ s.offering }} · {{ s.mode_of_study }}</div>
-          </template>
-        </Column>
+      <DataTable
+        v-if="tab === 'modules'"
+        :columns="columns"
+        :rows="rows"
+        row-key="name"
+        :to="(r) => ({ name: 'my-class', params: { group: String(r.name) } })"
+        :loading="loading"
+        noun="modules"
+        :empty-title="search ? 'No module matches' : `You are not assigned to any module in ${academicYear ?? 'this year'}`"
+      >
+        <template #toolbar>
+          <IconField class="search">
+            <InputIcon><Search :size="15" /></InputIcon>
+            <InputText v-model="search" placeholder="Module code or name" aria-label="Search modules" fluid size="small" />
+          </IconField>
+        </template>
+        <template #cell-course="{ row: r }">
+          <span class="who"><span class="code">{{ row(r).code }}</span> {{ row(r).course }}</span>
+          <span class="sub">
+            {{ row(r).academic_year }}<template v-if="row(r).credits"> · {{ row(r).credits }} credits</template><template v-if="row(r).co_lecturers.length"> · with {{ row(r).co_lecturers.join(", ") }}</template>
+          </span>
+        </template>
+        <template #cell-campus="{ row: r }">{{ row(r).campus?.replace(" Campus", "") }}</template>
+        <template #cell-students="{ row: r }">{{ row(r).students.length }}</template>
+        <template #cell-links="{ row: r }">
+          <span v-if="row(r).students.length" class="links">
+            <RouterLink :to="{ name: 'class-attendance', params: { group: row(r).name } }">Attendance</RouterLink>
+            <RouterLink :to="{ name: 'class-marks', params: { group: row(r).name } }">Marks</RouterLink>
+          </span>
+        </template>
       </DataTable>
-    </article>
+    </template>
   </section>
 </template>
 
 <style scoped>
-.class-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.marks-link {
-  color: var(--ec-accent);
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.marks-link:hover {
-  text-decoration: underline;
-}
-
-.head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
+.teaching {
+  display: grid;
   gap: 1rem;
-  margin-bottom: 1.25rem;
 }
 
-h1 {
-  margin: 0 0 0.25rem;
-  font-size: 1.6rem;
-}
-
-.intro,
-.sub {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #6b7280;
+.tabs {
+  flex: 1;
 }
 
 .year {
   min-width: 9rem;
 }
 
-.loading {
-  display: flex;
-  justify-content: center;
-  padding: 3rem;
+.search {
+  flex: 1;
+  max-width: 22rem;
 }
 
-.class {
-  margin-bottom: 1rem;
-  padding: 1.25rem;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-}
-
-.class-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-}
-
-.class-head h2 {
-  margin: 0 0 0.25rem;
-  font-size: 1.1rem;
+.who {
+  display: block;
 }
 
 .code {
   color: var(--color-brand-navy);
+  font-weight: 600;
 }
 
-.table {
-  width: 100%;
+.sub {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--ec-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
 }
 
-.table :deep(table) {
-  width: 100%;
+.links {
+  display: inline-flex;
+  gap: 0.9rem;
 }
 
-.empty {
-  margin: 1rem 0;
-  text-align: center;
-  color: #6b7280;
+.links a {
+  color: var(--ec-accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.links a:hover {
+  text-decoration: underline;
 }
 </style>

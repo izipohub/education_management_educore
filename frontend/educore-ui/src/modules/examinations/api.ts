@@ -77,6 +77,33 @@ export interface Sheet {
   can_moderate?: boolean;
   can_approve?: boolean;
   can_publish?: boolean;
+  /** the lecturer's assessments and each student's scores (student: assessment key: score); the CA comes from them */
+  assessments: Assessment[];
+  scores: Record<string, Record<string, number | null>>;
+  ca_from_gradebook: boolean;
+}
+
+export const ASSESSMENT_KINDS = ["Test", "Assignment", "Quiz", "Project", "Practical", "Presentation", "Other"] as const;
+
+export interface Assessment {
+  assessment_key?: string;
+  title: string;
+  kind: string;
+  out_of: number;
+  weight: number;
+  due_date?: string | null;
+}
+
+/** a student's CA from the gradebook: the weighted sum of their scores, once every assessment is scored */
+export function caFrom(assessments: Assessment[], scores: Record<string, number | null | undefined> | undefined): number | null {
+  if (!assessments.length) return null;
+  let total = 0;
+  for (const a of assessments) {
+    const score = a.assessment_key ? scores?.[a.assessment_key] : undefined;
+    if (score === null || score === undefined) return null;
+    total += (score / a.out_of) * a.weight;
+  }
+  return Math.round(total * 10) / 10;
 }
 
 export interface SheetRow {
@@ -104,6 +131,8 @@ export type MarkInput = Pick<Entry, "student" | "ca_mark" | "exam_mark" | "absen
 const API = "educore.api.v1.examinations";
 export const mySheet = (group: string) => get<Sheet>(`${API}.my_sheet`, { group });
 export const saveMarks = (group: string, entries: MarkInput[]) => post<Sheet>(`${API}.save_marks`, { group, entries });
+export const saveGradebook = (group: string, assessments: Assessment[], scores: Record<string, Record<string, number | null>>) =>
+  post<Sheet>(`${API}.save_gradebook`, { group, assessments, scores });
 export const submitMarks = (group: string) => post<Sheet>(`${API}.submit`, { group });
 export const listSheets = (academicYear?: string) => get<SheetsPage>(`${API}.sheets`, academicYear ? { academic_year: academicYear } : {});
 export const getSheet = (group: string) => get<Sheet>(`${API}.sheet`, { group });

@@ -22,16 +22,32 @@ def _class(group: str) -> dict:
 
 
 @frappe.whitelist(methods=["GET"])
-def register(group: str, date: str | None = None) -> dict:
-	"""The class's register for a day (today by default): each student's status, if taken; the sessions so far"""
+def register(group: str, date: str | None = None, lesson: str | None = None) -> dict:
+	"""The module's register for a lesson on a day (today by default; the first lesson unless one is chosen), or for
+	the day when it has no timetable: each student's status, if taken; the lessons that day; the lessons so far"""
 	_require_teaches(group)
-	date = str(attendance.check_date(group, date or nowdate()))
-	taken = {r.student: r.status for r in frappe.get_all(
-		"Student Attendance", filters={"student_group": group, "date": date, "docstatus": 1}, fields=["student", "status"]
-	)}
+	if not date:
+		# the latest lesson up to today, else today
+		date = str(attendance.latest_lesson_day(group) or nowdate())
+	date = str(attendance.check_date(group, date))
+	that_day = attendance.lessons(group, date)
+	if that_day and lesson not in {x["key"] for x in that_day}:
+		lesson = that_day[0]["key"]
+	chosen = next((x for x in that_day if x["key"] == lesson), None)
+	filters = {"student_group": group, "date": date, "docstatus": 1}
+	if chosen:
+		filters["course_schedule"] = chosen["schedule"] or "-"
+	else:
+		filters["course_schedule"] = ("is", "not set")
+	taken = {r.student: r.status for r in frappe.get_all("Student Attendance", filters=filters, fields=["student", "status"])}
 	return {
 		"class": _class(group),
 		"date": date,
+		"lessons": that_day,
+		# the module meets on these days in that semester; another day has no register
+		"lesson_days": attendance.lesson_days(group, date),
+		"timetabled": attendance.timetabled(group),
+		"lesson": chosen["key"] if chosen else None,
 		"taken": bool(taken),
 		"entries": [{"student": s.student, "student_name": s.student_name, "status": taken.get(s.student)} for s in attendance.students(group)],
 		**attendance.summary(group),
@@ -39,11 +55,11 @@ def register(group: str, date: str | None = None) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-def take(group: str, date: str, entries: list | str) -> dict:
+def take(group: str, date: str, entries: list | str, lesson: str | None = None) -> dict:
 	_require_teaches(group)
 	entries = frappe.parse_json(entries) or []
 	missing = [e.get("student") for e in entries if not e.get("status")]
 	if missing or not entries:
 		frappe.throw(_("Mark every student present, absent or excused"))
-	attendance.take(group, date, entries)
-	return register(group, date)
+	attendance.take(group, date, entries, lesson)
+	return register(group, date, lesson)

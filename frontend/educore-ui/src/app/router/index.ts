@@ -73,10 +73,19 @@ export const router = createRouter({
           meta: { title: "My studies", roles: ["Student"] },
         },
         {
-          path: "my-teaching",
+          path: "my-modules",
           name: "my-teaching",
           component: () => import("@/modules/teaching/MyTeachingView.vue"),
-          meta: { title: "My teaching", roles: ["Lecturer"] },
+          meta: { title: "My modules", roles: ["Lecturer"] },
+        },
+        // the page was "My teaching" before: old links still work
+        { path: "my-teaching/:rest(.*)*", redirect: (to) => `/my-modules/${[to.params.rest].flat().join("/")}`.replace(/\/$/, "") },
+        {
+          path: "my-modules/:group",
+          name: "my-class",
+          component: () => import("@/modules/teaching/MyClassPage.vue"),
+          props: (route) => ({ group: route.params.group, tab: "students" }),
+          meta: { title: "Module", roles: ["Lecturer"] },
         },
         {
           path: "registration",
@@ -190,17 +199,24 @@ export const router = createRouter({
           meta: { title: "Graduation", roles: GRADUATION_ROLES },
         },
         {
-          path: "my-teaching/:group/attendance",
+          path: "my-modules/:group/attendance",
           name: "class-attendance",
-          component: () => import("@/modules/teaching/AttendancePage.vue"),
-          props: true,
+          component: () => import("@/modules/teaching/MyClassPage.vue"),
+          props: (route) => ({ group: route.params.group, tab: "attendance" }),
           meta: { title: "Attendance", roles: ["Lecturer"] },
         },
         {
-          path: "my-teaching/:group/marks",
+          path: "my-modules/:group/gradebook",
+          name: "class-gradebook",
+          component: () => import("@/modules/teaching/MyClassPage.vue"),
+          props: (route) => ({ group: route.params.group, tab: "gradebook" }),
+          meta: { title: "Gradebook", roles: ["Lecturer"] },
+        },
+        {
+          path: "my-modules/:group/marks",
           name: "class-marks",
-          component: () => import("@/modules/examinations/MarkEntryPage.vue"),
-          props: true,
+          component: () => import("@/modules/teaching/MyClassPage.vue"),
+          props: (route) => ({ group: route.params.group, tab: "marks" }),
           meta: { title: "Marks", roles: ["Lecturer"] },
         },
         {

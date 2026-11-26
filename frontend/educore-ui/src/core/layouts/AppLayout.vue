@@ -89,7 +89,7 @@ const NAV: NavItem[] = [
   { label: "My application", icon: FileText, to: "/application", roles: ["Applicant"] },
   { label: "My studies", icon: BookOpen, to: "/my-studies", roles: ["Student"] },
   { label: "Registration", icon: ClipboardCheck, to: "/registration", roles: ["Student"] },
-  { label: "My teaching", icon: GraduationCap, to: "/my-teaching", roles: ["Lecturer"] },
+  { label: "My modules", icon: GraduationCap, to: "/my-modules", roles: ["Lecturer"] },
   { label: "Admissions", icon: UserPlus, to: "/admissions", roles: ["Admissions Officer", "Registrar"] },
   { label: "Registration", icon: UserCheck, to: "/registrations", roles: REGISTRATION_ROLES },
   { label: "Students", icon: Users, to: "/students", roles: RECORD_ROLES },

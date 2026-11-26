@@ -3,7 +3,7 @@ import { computed } from "vue";
 import type { Slot } from "./timetable";
 
 /** A week of class times: a column per day, each time placed by its hours; a time opens on click */
-const props = defineProps<{ slots: Slot[]; days: string[]; clickable?: boolean }>();
+const props = defineProps<{ slots: Slot[]; days: string[]; clickable?: boolean; hideLecturers?: boolean }>();
 const emit = defineEmits<{ open: [Slot] }>();
 
 const minutes = (t: string) => {
@@ -63,9 +63,10 @@ function lanes(day: string) {
         @click="clickable && emit('open', p.slot)"
       >
         <span class="code">{{ p.slot.code }}</span>
+        <span v-if="hideLecturers" class="meta name">{{ p.slot.course_name }}</span>
         <span class="meta">{{ p.slot.start_time }}–{{ p.slot.end_time }} · {{ p.slot.room_name }}</span>
         <span v-if="p.slot.kind !== 'Lecture'" class="meta">{{ p.slot.kind }}</span>
-        <span v-if="p.slot.lecturers.length" class="meta">{{ p.slot.lecturers.join(", ") }}</span>
+        <span v-if="!hideLecturers && p.slot.lecturers.length" class="meta">{{ p.slot.lecturers.join(", ") }}</span>
       </component>
     </div>
   </div>

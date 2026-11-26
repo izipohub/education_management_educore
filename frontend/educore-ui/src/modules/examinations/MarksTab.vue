@@ -1,19 +1,25 @@
 <script setup lang="ts">
+import { Search } from "@lucide/vue";
 import Checkbox from "primevue/checkbox";
+import IconField from "primevue/iconfield";
+import InputIcon from "primevue/inputicon";
 import InputNumber from "primevue/inputnumber";
+import InputText from "primevue/inputtext";
+import Message from "primevue/message";
 import { useToast } from "primevue/usetoast";
 import { computed, ref, watch } from "vue";
 import EcButton from "@/core/ui/EcButton.vue";
 import EcModal from "@/core/ui/EcModal.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
-import RecordPage from "@/core/ui/RecordPage.vue";
+import EcSegmented from "@/core/ui/EcSegmented.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
 import { type Entry, type Sheet, mySheet, saveMarks, saveSupplementary, submitMarks, submitSupplementary, workOut, workOutSitting } from "./api";
 
 /**
  * A lecturer's marks for one class: continuous assessment and examination per student, the final mark, grade and
  * result worked out as they type (the university's rules). Saved as often as needed; submitted to the department
- * when complete, after which the department returns it if anything needs changing.
+ * when complete, after which the department returns it if anything needs changing. A tab of the module's page:
+ * for a class of any size, search and show only the students still without marks or not passing.
  */
 const props = defineProps<{ group: string }>();
 const toast = useToast();
@@ -46,6 +52,32 @@ const live = (e: Entry) => (sheet.value ? workOut(e, sheet.value.rules) : { fina
 const input = (e: Entry) => ({ student: e.student, ca_mark: e.ca_mark, exam_mark: e.exam_mark, absent: e.absent });
 const changed = computed(() => JSON.stringify(rows.value.map(input)) !== JSON.stringify((sheet.value?.entries ?? []).map(input)));
 const missing = computed(() => rows.value.filter((e) => !live(e).result).length);
+const search = ref("");
+type Filter = "all" | "missing" | "failing";
+const filter = ref<Filter>("all");
+const failing = computed(() => rows.value.filter((e) => live(e).result && live(e).result !== "Pass").length);
+const filters = computed(() => [
+  { value: "all" as Filter, label: `All ${rows.value.length}` },
+  { value: "missing" as Filter, label: `Without a result ${missing.value}` },
+  { value: "failing" as Filter, label: `Not passing ${failing.value}` },
+]);
+const shown = computed(() => {
+  const q = search.value.trim().toLowerCase();
+  return rows.value.filter((e) => {
+    if (q && !`${e.student_name} ${e.student}`.toLowerCase().includes(q)) return false;
+    if (filter.value === "missing") return !live(e).result;
+    if (filter.value === "failing") return Boolean(live(e).result) && live(e).result !== "Pass";
+    return true;
+  });
+});
+const summary = computed(() => {
+  const counts: Record<string, number> = {};
+  for (const e of rows.value) {
+    const r = live(e).result;
+    if (r) counts[r] = (counts[r] ?? 0) + 1;
+  }
+  return Object.entries(counts).map(([result, n]) => `${n} ${result.toLowerCase()}`).join(" · ");
+});
 
 async function save(quiet = false) {
   saving.value = true;
@@ -108,30 +140,35 @@ async function submitSupp() {
   }
 }
 
-const subtitle = computed(() => {
-  const s = sheet.value;
-  if (!s) return "";
-  const r = s.rules;
-  return `${s.course} · ${s.campus?.replace(" Campus", "") ?? ""} ${s.academic_year} · CA ${r.ca_weight}%, examination ${100 - r.ca_weight}% · pass ${r.pass_mark}`;
+const rulesNote = computed(() => {
+  const r = sheet.value?.rules;
+  return r ? `CA ${r.ca_weight}%, examination ${100 - r.ca_weight}% · pass ${r.pass_mark}` : "";
 });
 </script>
 
 <template>
-  <RecordPage
-    :back="{ to: { name: 'my-teaching' }, label: 'My teaching' }"
-    :title="sheet ? `Marks: ${sheet.code ?? sheet.course}` : undefined"
-    :subtitle="subtitle"
-    :error="error"
-    :outstanding="sheet?.return_note && editable ? [`Returned: ${sheet.return_note}`] : []"
-  >
-    <template v-if="sheet" #tags><StatusTag kind="marks" :value="sheet.status" /></template>
-    <template v-if="sheet && editable" #actions>
-      <EcButton label="Save" :loading="saving" :disabled="!changed" @click="save()" />
-      <EcButton label="Submit to the department" variant="primary" :disabled="saving || missing > 0" :title="missing ? `${missing} students still without a result` : undefined" @click="confirming = true" />
-    </template>
-
-    <EcPanel v-if="sheet" title="Students" :note="`${rows.length} ${rows.length === 1 ? 'student' : 'students'}`" flush>
-      <table class="ec-table marks">
+  <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
+  <template v-else-if="sheet">
+    <Message v-if="sheet.return_note && editable" severity="warn" :closable="false">Returned by the department: {{ sheet.return_note }}</Message>
+    <section class="ec-card tab">
+      <div class="bar">
+        <StatusTag kind="marks" :value="sheet.status" />
+        <span class="ec-muted small">{{ rulesNote }}<template v-if="sheet.ca_from_gradebook"> · CA from the gradebook</template><template v-if="summary"> · {{ summary }}</template></span>
+        <span class="spacer" />
+        <template v-if="editable">
+          <EcButton label="Save" size="sm" :loading="saving" :disabled="!changed" @click="save()" />
+          <EcButton label="Submit to the department" size="sm" variant="primary" :disabled="saving || missing > 0" :title="missing ? `${missing} students still without a result` : undefined" @click="confirming = true" />
+        </template>
+      </div>
+      <div class="bar">
+        <IconField class="search">
+          <InputIcon><Search :size="15" /></InputIcon>
+          <InputText v-model="search" placeholder="Name or student number" aria-label="Search students" fluid size="small" />
+        </IconField>
+        <EcSegmented v-model="filter" :options="filters" label="Show" />
+      </div>
+      <div class="scroll">
+      <table class="ec-table marks sticky">
         <colgroup>
           <col />
           <col class="c-mark" />
@@ -153,14 +190,14 @@ const subtitle = computed(() => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="e in rows" :key="e.student">
+          <tr v-for="e in shown" :key="e.student">
             <td>
               {{ e.student_name }}
               <div class="ec-muted">{{ e.student }}</div>
               <div v-if="e.moderation_note" class="ec-muted">Moderated: {{ e.moderation_note }}</div>
             </td>
             <td class="num">
-              <InputNumber v-if="editable" v-model="e.ca_mark" :min="0" :max="100" :max-fraction-digits="1" size="small" :aria-label="`CA, ${e.student_name}`" fluid />
+              <InputNumber v-if="editable && !sheet.ca_from_gradebook" v-model="e.ca_mark" :min="0" :max="100" :max-fraction-digits="1" size="small" :aria-label="`CA, ${e.student_name}`" fluid />
               <template v-else>{{ e.ca_mark ?? "" }}</template>
             </td>
             <td class="num">
@@ -177,9 +214,11 @@ const subtitle = computed(() => {
           </tr>
         </tbody>
       </table>
-    </EcPanel>
+      <p v-if="!shown.length" class="none ec-muted">No student here</p>
+      </div>
+    </section>
 
-    <EcPanel v-if="sheet && suppRows.length && sheet.status === 'Published'" title="Supplementary and special examinations" :note="sheet.supp_status === 'Open' ? 'At the supplementary sitting' : sheet.supp_status === 'Submitted' ? 'Submitted to the examinations office' : 'Published'" flush>
+    <EcPanel v-if="suppRows.length && sheet.status === 'Published'" title="Supplementary and special examinations" :note="sheet.supp_status === 'Open' ? 'At the supplementary sitting' : sheet.supp_status === 'Submitted' ? 'Submitted to the examinations office' : 'Published'" flush>
       <table class="ec-table marks">
         <colgroup>
           <col />
@@ -217,7 +256,7 @@ const subtitle = computed(() => {
         <EcButton label="Submit these marks" size="sm" variant="primary" :disabled="saving || suppMissing > 0" @click="submitSupp" />
       </template>
     </EcPanel>
-  </RecordPage>
+  </template>
 
   <EcModal :open="confirming" title="Submit the marks?" description="The department moderates them next; they are returned to you if anything needs changing." @update:open="(v: boolean) => (confirming = v)">
     <template #footer>
@@ -254,5 +293,49 @@ const subtitle = computed(() => {
 
 .final {
   font-weight: 600;
+}
+
+.tab {
+  overflow: hidden;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--ec-border);
+}
+
+.small {
+  font-size: 0.8125rem;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.search {
+  flex: 1;
+  max-width: 20rem;
+}
+
+.scroll {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.sticky thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--ec-surface, #fff);
+}
+
+.none {
+  margin: 0;
+  padding: 2rem 1rem;
+  text-align: center;
 }
 </style>

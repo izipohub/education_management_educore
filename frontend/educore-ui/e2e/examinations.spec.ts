@@ -3,10 +3,10 @@ import { record, signIn, tableRow } from "./support";
 
 test("a lecturer enters a class's marks and sees the results worked out", async ({ page }) => {
   await signIn(page, "lecturer.comp.whk");
-  await page.getByRole("link", { name: "My teaching" }).click();
-  const databases = page.getByRole("article").filter({ hasText: "CMP2521" });
-  await databases.getByRole("link", { name: "Marks" }).click();
-  await expect(page.getByRole("heading", { name: /^Marks: CMP2521/ })).toBeVisible();
+  await page.getByRole("link", { name: "My modules" }).click();
+  await tableRow(page, "CMP2521").getByRole("link", { name: "Marks" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: /^CMP2521/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^Marks/ })).toHaveAttribute("aria-selected", "true");
   const ca = page.getByRole("spinbutton", { name: /^CA, / }).first();
   await ca.fill("70");
   await page.getByRole("spinbutton", { name: /^Examination, / }).first().fill("60");
@@ -47,8 +47,8 @@ test("a student sees their published results", async ({ page }) => {
 
 test("a lecturer enters a supplementary mark; the examinations office sees it waiting", async ({ page }) => {
   await signIn(page, "lecturer.comp.osh");
-  await page.getByRole("link", { name: "My teaching" }).click();
-  await page.getByRole("article").filter({ hasText: "CMP1521" }).getByRole("link", { name: "Marks" }).click();
+  await page.getByRole("link", { name: "My modules" }).click();
+  await tableRow(page, "CMP1521").getByRole("link", { name: "Marks" }).click();
   await expect(page.getByRole("heading", { name: "Supplementary and special examinations" })).toBeVisible();
   await page.getByRole("spinbutton", { name: /^Supplementary, / }).fill("70");
   await page.getByRole("spinbutton", { name: /^Supplementary, / }).blur();

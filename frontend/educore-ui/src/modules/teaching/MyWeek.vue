@@ -1,125 +1,84 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
+import WeekGrid from "./WeekGrid.vue";
 import { type Slot, myWeek } from "./timetable";
 
-/** The signed-in lecturer's or student's classes this semester: a row per class time, the day named once.
- * card: a card like the class cards on My teaching; lecturers: show who teaches (for students). */
-withDefaults(defineProps<{ card?: boolean; lecturers?: boolean }>(), { card: false, lecturers: true });
+/** The signed-in lecturer's or student's week this semester, as a week grid (its own tab on My modules and My
+ * studies); lecturers: show who teaches each class (for students) */
+const props = withDefaults(defineProps<{ lecturers?: boolean }>(), { lecturers: true });
 const week = ref<{ academic_year: string | null; semester: string; slots: Slot[] } | null>(null);
+const loaded = ref(false);
 onMounted(async () => {
   week.value = await myWeek().catch(() => null);
+  loaded.value = true;
 });
-const firstOfDay = (i: number) => i === 0 || week.value!.slots[i - 1].day !== week.value!.slots[i].day;
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const hours = computed(() =>
+  (week.value?.slots ?? []).reduce((sum, s) => {
+    const [h1, m1] = s.start_time.split(":").map(Number);
+    const [h2, m2] = s.end_time.split(":").map(Number);
+    return sum + (h2 * 60 + m2 - h1 * 60 - m1) / 60;
+  }, 0),
+);
+const modules = computed(() => new Set((week.value?.slots ?? []).map((s) => s.course)).size);
 </script>
 
 <template>
-  <section v-if="week && week.slots.length" :class="card ? 'week-card' : 'block'">
-    <h2 v-if="card" class="card-title">This week <span class="when">{{ week.semester }} {{ week.academic_year }}</span></h2>
-    <h2 v-else class="block-title">Timetable <span class="when">({{ week.semester }} {{ week.academic_year }})</span></h2>
-    <div :class="{ box: !card }">
-    <table class="ec-table week">
-      <thead>
-        <tr>
-          <th>Day</th>
-          <th>Time</th>
-          <th>Course</th>
-          <th>Room</th>
-          <th v-if="lecturers" class="wide">Lecturer</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(s, i) in week.slots" :key="s.name" :class="{ 'new-day': firstOfDay(i) && i > 0 }">
-          <td class="day">{{ firstOfDay(i) ? s.day : "" }}</td>
-          <td class="ec-nowrap">{{ s.start_time }}–{{ s.end_time }}</td>
-          <td>
-            <span class="code">{{ s.code }}</span> {{ s.course_name }}
-            <span v-if="s.kind !== 'Lecture'" class="kind">{{ s.kind }}</span>
-          </td>
-          <td>{{ s.room_name }}</td>
-          <td v-if="lecturers" class="wide ec-muted">{{ s.lecturers.join(", ") }}</td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
+  <section class="my-week ec-card">
+    <header v-if="week" class="head">
+      <h2>{{ week.semester }} {{ week.academic_year }}</h2>
+      <span v-if="week.slots.length" class="ec-muted">{{ modules }} {{ modules === 1 ? "module" : "modules" }} · {{ hours }} hours a week</span>
+      <span class="legend">
+        <span class="key lecture">Lecture</span><span class="key practical">Practical</span><span class="key tutorial">Tutorial</span>
+      </span>
+    </header>
+    <WeekGrid v-if="week?.slots.length" :slots="week.slots" :days="DAYS" :hide-lecturers="!props.lecturers" />
+    <p v-else-if="loaded" class="none ec-muted">No class times this semester yet. The timetable office publishes them before classes start.</p>
   </section>
 </template>
 
 <style scoped>
-.week-card {
-  margin-bottom: 1rem;
-  padding: 1.25rem;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
+.my-week {
+  overflow: hidden;
+  padding: 0 0.75rem 0.75rem 0;
 }
 
-.card-title {
-  margin: 0 0 0.75rem;
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  padding: 1rem 0 0.75rem 1.25rem;
+}
+
+h2 {
+  margin: 0;
   font-size: 1.1rem;
 }
 
-.block {
-  margin-bottom: 1.5rem;
+.legend {
+  display: inline-flex;
+  gap: 0.75rem;
+  margin-left: auto;
+  font-size: 0.75rem;
 }
 
-/* as the other sections of My studies */
-.block-title {
-  margin: 0 0 0.75rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #6b7280;
+.key {
+  padding-left: 0.6rem;
+  border-left: 3px solid var(--ec-primary, #1e3a8a);
 }
 
-.box {
-  overflow: hidden;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
+.key.practical {
+  border-left-color: #b45309;
 }
 
-.when {
-  margin-left: 0.25rem;
-  color: var(--ec-muted);
-  font-family: inherit;
-  font-size: 0.875rem;
-  font-weight: 400;
-  letter-spacing: normal;
-  text-transform: none;
+.key.tutorial {
+  border-left-color: #047857;
 }
 
-.week {
-  width: 100%;
-}
-
-.day {
-  width: 7rem;
-  font-weight: 600;
-}
-
-.new-day td {
-  border-top: 2px solid var(--ec-border);
-}
-
-.code {
-  color: var(--color-brand-navy);
-  font-weight: 600;
-}
-
-.kind {
-  margin-left: 0.35rem;
-  padding: 0.05rem 0.4rem;
-  border-radius: 999px;
-  background: #fef3c7;
-  color: #92400e;
-  font-size: 0.7rem;
-  white-space: nowrap;
-}
-
-@media (max-width: 760px) {
-  .wide {
-    display: none;
-  }
+.none {
+  margin: 0;
+  padding: 2rem 1rem;
+  text-align: center;
 }
 </style>

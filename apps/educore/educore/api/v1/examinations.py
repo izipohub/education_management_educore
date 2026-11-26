@@ -14,7 +14,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, now_datetime
 
-from educore.academics import notify, results
+from educore.academics import gradebook, notify, results
 from educore.api.v1.teaching import _instructors
 from educore.api.v1.teaching_allocation import _courses
 
@@ -118,6 +118,8 @@ def _out(doc, group: str) -> dict:
 		"trail": {f: (str(doc.get(f)) if doc and doc.get(f) else None) for f in (
 			"submitted_by", "submitted_on", "moderated_by", "moderated_on", "approved_by", "approved_on", "board_reference", "published_on")},
 		"rules": _rules(),
+		# the lecturer's assessments and scores, from which the CA is worked out (educore.academics.gradebook)
+		**(gradebook.out(doc) if doc else {"assessments": [], "scores": {}, "ca_from_gradebook": False}),
 	}
 
 
@@ -151,12 +153,27 @@ def _apply(doc, entries, note: str | None = None):
 			continue
 		e = given[entry.student]
 		before = (entry.ca_mark, entry.exam_mark, entry.absent)
-		entry.ca_mark = results.store(e.get("ca_mark"))
+		# with a gradebook the CA comes from its scores; the department may still adjust it when moderating
+		if note or not gradebook.uses_gradebook(doc):
+			entry.ca_mark = results.store(e.get("ca_mark"))
 		entry.exam_mark = results.store(e.get("exam_mark"))
 		entry.absent = 1 if e.get("absent") else 0
 		if note and before != (entry.ca_mark, entry.exam_mark, entry.absent):
 			entry.moderation_note = note
 	results.work_out_sheet(doc)
+
+
+@frappe.whitelist(methods=["POST"])
+def save_gradebook(group: str, assessments: list | str, scores: dict | str | None = None) -> dict:
+	"""The lecturer's assessments for the module and the students' scores; the CA worked out from them"""
+	if not _teaches(group):
+		frappe.throw(_("You do not teach this class"), frappe.PermissionError)
+	doc = _sheet(group, create=True)
+	if doc.status != "Draft":
+		frappe.throw(_("The marks are submitted; the department returns them if they need changing"))
+	gradebook.save(doc, frappe.parse_json(assessments) or [], frappe.parse_json(scores) or {})
+	doc.save(ignore_permissions=True)
+	return {**_out(doc, group), "can_edit": True}
 
 
 @frappe.whitelist(methods=["POST"])

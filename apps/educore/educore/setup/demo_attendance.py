@@ -1,5 +1,6 @@
 """Demo class attendance (development only): Namibia's 2026 public holidays as the university's holiday list, an 80%
-minimum attendance, and a few weeks of registers for two classes, one student below the minimum.
+minimum attendance, and the first lessons' registers for two classes (on their timetable's days), one student below the
+minimum.
 
 Called from demo_students.create, after the classes exist. Re-running adds whatever is missing.
 """
@@ -23,7 +24,7 @@ HOLIDAYS_2026 = (
 	("2026-12-25", "Christmas Day"),
 	("2026-12-26", "Family Day"),
 )
-#: class: (first session, weeks, student name absent on these session numbers)
+#: class: (first day, lessons, student name absent at these lesson numbers)
 REGISTERS = {
 	"ACC1511 KMP 2026": ("2026-02-09", 8, {"Petrus Kooper": (2, 4, 5, 7)}),
 	"CMP1511 WHK 2026": ("2026-02-10", 8, {"Ndapewa Amukoto": (3,)}),
@@ -50,26 +51,48 @@ def create_holidays() -> str | None:
 	return name
 
 
-def create() -> int:
+def _sessions(group: str, start, count: int) -> list[tuple]:
+	"""The module's first lessons from the start (a register each); weekly from the start without a timetable"""
 	from educore.academics import attendance
 
-	create_holidays()
+	out = []
+	day = getdate(start)
+	for _ in range(200):
+		if len(out) >= count:
+			break
+		that_day = attendance.lessons(group, day)
+		if that_day:
+			out += [(day, lesson["key"]) for lesson in that_day]
+		day = add_days(day, 1)
+	if not out and not frappe.db.exists("Timetable Slot", {"student_group": group}):
+		out = [(add_days(getdate(start), 7 * w), None) for w in range(count)]
+	return out[:count]
+
+
+def create() -> int:
+	from erpnext.setup.doctype.holiday_list.holiday_list import is_holiday
+
+	from educore.academics import attendance
+
+	holidays = create_holidays()
 	if not frappe.db.get_single_value("Examination Settings", "min_attendance"):
 		frappe.db.set_single_value("Examination Settings", "min_attendance", 80)
 	taken = 0
-	for group, (start, weeks, absences) in REGISTERS.items():
+	for group, (start, sessions, absences) in REGISTERS.items():
 		if not frappe.db.exists("Student Group", group) or frappe.db.exists("Student Attendance", {"student_group": group}):
 			continue
 		members = attendance.students(group)
-		for week in range(1, weeks + 1):
-			day = add_days(getdate(start), 7 * (week - 1))
+		number = 0
+		for day, lesson in _sessions(group, start, sessions + 4):
+			if number >= sessions:
+				break
+			if holidays and is_holiday(holidays, day):
+				continue
+			number += 1
 			entries = [
-				{
-					"student": s.student,
-					"status": attendance.ABSENT if week in absences.get(s.student_name, ()) else attendance.PRESENT,
-				}
+				{"student": s.student, "status": attendance.ABSENT if number in absences.get(s.student_name, ()) else attendance.PRESENT}
 				for s in members
 			]
-			attendance.take(group, day, entries)
+			attendance.take(group, day, entries, lesson)
 			taken += 1
 	return taken
