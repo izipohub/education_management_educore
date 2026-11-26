@@ -1127,7 +1127,7 @@ registration; course changes; interruption and cancellation of studies;
 teaching allocation and class lists; class attendance (the lecturer's register, the university's minimum flagged to lecturer, department and student); lecturers set up from the Lecturer position, with an Academic staff screen; marks, moderation, board approval,
 publication, supplementary and special examinations, academic standing;
 graduation list, academic record, award certificate, QR verification;
-student fees with EFT matching by student number; financial holds and clearance (Finance's holds block registration; graduation and the award certificate need clearance); sponsor accounts (sponsors invoiced for their share of a student's year by credit note and sponsor invoice, paid by EFT with the sponsor number, statement PDF; the registration deposit on the student's own share); Moodle course and
+student fees with EFT matching by student number; instalment plans (each year's due dates and shares on every invoice of the year); financial holds and clearance (Finance's holds block registration; graduation and the award certificate need clearance); sponsor accounts (sponsors invoiced for their share of a student's year by credit note and sponsor invoice, paid by EFT with the sponsor number, statement PDF; the registration deposit on the student's own share); Moodle course and
 enrolment sync; registrar dashboard; email to applicants and students.
 
 **Committed, not yet built:**
@@ -1140,7 +1140,7 @@ enrolment sync; registrar dashboard; email to applicants and students.
 | Teaching | Timetables with venues and laboratories, lecturer workload | M2, M3 |
 | Examinations | Examination sessions, venues and invigilation | M7 |
 | Graduation | Transcript requests | M7 |
-| Student fees | Instalment plans, waivers. Per-campus fees need nothing new: fees are set per programme offering (one campus each) and campus cost centres report per campus | M6 |
+| Student fees | Waivers. Per-campus fees need nothing new: fees are set per programme offering (one campus each) and campus cost centres report per campus | M6 |
 | HR | Vue staff self-service (leave, payslips, details); lecturer qualifications and appointments; payroll validated for Namibian statutory rules | M6 |
 | Procurement and assets | Purchase requests with budget-holder approval, stores per campus, asset custody per campus | M6 |
 | Campus facilities | Rooms and laboratories, booking, maintenance requests | M6 |

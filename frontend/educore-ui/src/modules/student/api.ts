@@ -37,6 +37,9 @@ export interface Fees {
   owing: number;
   overdue: number;
   next_due: string | null;
+  /** the next instalment still to pay (educore.finance.instalments) */
+  next_amount: number;
+  instalments: { invoice: string; due_date: string; amount: number; left: number }[];
   entries: StatementEntry[];
   /** paid and not yet set against an invoice */
   in_advance: number;

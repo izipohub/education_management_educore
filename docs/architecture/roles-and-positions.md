@@ -84,7 +84,7 @@ what each person sees.
 | Admission setup (rules, pathways, documents, funding routes and their documents, entry requirements, points) | Registrar | |
 | Registration setup (periods' dates, credit limit, faculty approval) | Registrar | |
 | Integrations (Moodle: address, token, sync) | ICT Administrator (System Manager) | The class page shows its Moodle course to the faculty |
-| Fee settings (application fees by nationality: home, regional, international; the funding routes that pay no application fee; ERPNext accounts, deposit, balance allowed, late fee) | Bursar | Finance Officer, Student Fees Officer; shown read only on the Registrar's setup screens |
+| Fee settings (instalments: each year's due dates and shares; application fees by nationality: home, regional, international; the funding routes that pay no application fee; ERPNext accounts, deposit, balance allowed, late fee) | Bursar | Finance Officer, Student Fees Officer; shown read only on the Registrar's setup screens |
 | Application fees (outstanding, paid, waived; waiving) | Bursar, Finance Officer, Student Fees Officer | |
 | Student payments (matched from the bank statement by student number; assigning deposits without one to a student or a sponsor) | Bursar, Finance Officer, Student Fees Officer, Cashier | |
 | Financial clearance (holds with a reason, placed and lifted; what each student owes; graduation and the award certificate need clearance, a setting) | Bursar, Finance Officer, Student Fees Officer (own campus) | Registry and the others who read Students see the hold on the record; the student sees it on My studies |

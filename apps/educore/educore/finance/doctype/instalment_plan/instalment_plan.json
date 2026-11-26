@@ -1,0 +1,70 @@
+{
+ "creation": "2026-11-26 09:00:00.000000",
+ "modified": "2026-11-26 09:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Finance",
+ "index_web_pages_for_search": 0,
+ "actions": [],
+ "links": [],
+ "states": [],
+ "name": "Instalment Plan",
+ "autoname": "field:academic_year",
+ "title_field": "academic_year",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1,
+ "description": "When a year's fees are due: the instalments (a due date and a share of the fees each) every invoice of the year carries as its payment schedule (educore.finance.instalments). Set by the Bursar.",
+ "fields": [
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "instalments",
+   "fieldtype": "Table",
+   "label": "Instalments",
+   "options": "Instalment",
+   "reqd": 1
+  }
+ ],
+ "field_order": [
+  "academic_year",
+  "instalments"
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1
+  },
+  {
+   "role": "Bursar",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1
+  },
+  {
+   "role": "Finance Officer",
+   "read": 1,
+   "report": 1
+  },
+  {
+   "role": "Student Fees Officer",
+   "read": 1,
+   "report": 1
+  }
+ ]
+}

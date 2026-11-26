@@ -48,6 +48,10 @@ export interface FeeSettings {
   bank_accounts: { name: string; label: string; bank: string | null; account_number: string | null; branch_code: string | null; holder: string | null }[];
   income_accounts: string[];
   deposit_types: string[];
+  /** each year's instalments: due date and share of the fees */
+  instalment_plans: Record<string, { due_date: string; share: number }[]>;
+  /** the years with fees */
+  academic_years: string[];
   /** who pays the regional fee */
   regional_countries: string[];
   /** which funding routes pay the application fee (educore.admissions.funding) */
@@ -59,7 +63,7 @@ export interface FeeSettings {
 export const FEE_SETTINGS_ROLES = ["Bursar", "Finance Officer", "Student Fees Officer", "System Manager"];
 export const getFeeSettings = () => get<FeeSettings>("educore.api.v1.fee_settings.settings");
 export const saveFeeSettings = (
-  data: Partial<Pick<FeeSettings, "application" | "registration" | "late_fees" | "regional_countries">> & { fee_free_routes?: string[] },
+  data: Partial<Pick<FeeSettings, "application" | "registration" | "late_fees" | "regional_countries" | "instalment_plans">> & { fee_free_routes?: string[] },
 ) =>
   post<FeeSettings>("educore.api.v1.fee_settings.save", { data });
 

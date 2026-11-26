@@ -2,10 +2,11 @@
 import InputNumber from "primevue/inputnumber";
 import MultiSelect from "primevue/multiselect";
 import Message from "primevue/message";
+import DatePicker from "primevue/datepicker";
 import Select from "primevue/select";
 import ToggleSwitch from "primevue/toggleswitch";
 import { useToast } from "primevue/usetoast";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { formatDate } from "@/core/format";
 import EcButton from "@/core/ui/EcButton.vue";
 import EcPanel from "@/core/ui/EcPanel.vue";
@@ -44,7 +45,7 @@ onMounted(async () => {
 const editable = computed(() => Boolean(saved.value?.can_edit));
 const changed = computed(() => {
   if (!saved.value || !form.value) return false;
-  const pick = (d: FeeSettings) => JSON.stringify([d.application, d.registration, d.late_fees, d.regional_countries]);
+  const pick = (d: FeeSettings) => JSON.stringify([d.application, d.registration, d.late_fees, d.regional_countries, d.instalment_plans]);
   return pick(saved.value) !== pick(form.value) || JSON.stringify([...feeFree.value].sort()) !== JSON.stringify(freeOf(saved.value).sort());
 });
 const bank = computed(() => form.value?.bank_accounts.find((b) => b.name === form.value?.application.fee_bank_account));
@@ -61,6 +62,8 @@ async function save() {
         registration: form.value.registration,
         late_fees: form.value.late_fees,
         regional_countries: form.value.regional_countries,
+        // every year shown, so a year whose instalments were all removed goes back to fees due in full
+        instalment_plans: Object.fromEntries(form.value.academic_years.map((y) => [y, form.value!.instalment_plans[y] ?? []])),
         fee_free_routes: feeFree.value,
       }),
     );
@@ -72,6 +75,28 @@ async function save() {
   }
 }
 const undo = () => saved.value && take(saved.value);
+// the year's instalments (each a due date and a share of the fees)
+const planYear = ref<string | null>(null);
+watch(
+  () => form.value?.academic_years,
+  (years) => {
+    if (years?.length && (!planYear.value || !years.includes(planYear.value))) planYear.value = years[0];
+  },
+  { immediate: true },
+);
+const plan = computed(() => (form.value && planYear.value ? (form.value.instalment_plans[planYear.value] ?? []) : []));
+const planTotal = computed(() => plan.value.reduce((sum, r) => sum + (Number(r.share) || 0), 0));
+const toDate = (s: string) => (s ? new Date(`${s}T00:00:00`) : null);
+const fromDate = (d: Date | null) =>
+  d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}` : "";
+function addInstalment() {
+  if (!form.value || !planYear.value) return;
+  const rows = (form.value.instalment_plans[planYear.value] ??= []);
+  rows.push({ due_date: "", share: Math.max(0, 100 - planTotal.value) });
+}
+function removeInstalment(index: number) {
+  if (form.value && planYear.value) form.value.instalment_plans[planYear.value].splice(index, 1);
+}
 /** stored as 0 or 1 */
 const needsClearance = computed({
   get: () => Boolean(form.value?.registration.graduation_needs_clearance),
@@ -146,6 +171,22 @@ const needsClearance = computed({
         </SettingRow>
       </EcPanel>
 
+      <EcPanel title="Instalments" :note="plan.length ? `${plan.length} instalments · ${planTotal}%` : 'Fees due in full a month after the invoice'">
+        <template v-if="form.academic_years.length">
+          <SettingRow label="Academic year" help="Invoices made from now on carry its instalments" for="plan-year">
+            <Select v-model="planYear" input-id="plan-year" :options="form.academic_years" fluid />
+          </SettingRow>
+          <div v-for="(row, index) in plan" :key="index" class="instalment">
+            <DatePicker :model-value="toDate(row.due_date)" date-format="dd-mm-yy" show-icon icon-display="input" :disabled="!editable" :aria-label="`Due date ${index + 1}`" @update:model-value="(d) => (row.due_date = fromDate(d as Date | null))" />
+            <InputNumber v-model="row.share" :min="0" :max="100" suffix=" %" :disabled="!editable" :aria-label="`Share ${index + 1}`" />
+            <EcButton v-if="editable" label="Remove" size="sm" variant="ghost" @click="removeInstalment(index)" />
+          </div>
+          <EcButton v-if="editable" label="Add an instalment" size="sm" variant="ghost" @click="addInstalment" />
+          <p v-if="plan.length && Math.abs(planTotal - 100) > 0.01" class="ec-muted none">The shares add up to {{ planTotal }}%; they must add up to 100%.</p>
+        </template>
+        <p v-else class="ec-muted none">No fees set for any year yet</p>
+      </EcPanel>
+
       <EcPanel title="Financial clearance">
         <SettingRow label="Owing allowed at clearance" help="A student owing more, or on hold, is not cleared" for="clear-owing">
           <InputNumber v-model="form.registration.clearance_max_owing" input-id="clear-owing" :min="0" :min-fraction-digits="2" prefix="N$ " :disabled="!editable" fluid />
@@ -182,6 +223,14 @@ const needsClearance = computed({
   display: grid;
   gap: 1rem;
   max-width: 52rem;
+}
+
+.instalment {
+  display: grid;
+  grid-template-columns: minmax(0, 12rem) minmax(0, 8rem) auto;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
 }
 
 .fees {

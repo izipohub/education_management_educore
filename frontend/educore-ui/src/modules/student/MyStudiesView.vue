@@ -38,7 +38,7 @@ const feeStatus = computed(() => {
   const fees = data.value?.fees;
   if (!fees) return null;
   if (fees.overdue > 0) return { severity: "danger", label: `${formatMoney(fees.overdue)} overdue` };
-  if (fees.owing > 0) return { severity: "warn", label: `Due ${formatDate(fees.next_due)}` };
+  if (fees.owing > 0 && fees.next_due) return { severity: "warn", label: `${formatMoney(fees.next_amount)} due ${formatDate(fees.next_due)}` };
   return { severity: "success", label: "Paid up" };
 });
 </script>
@@ -78,6 +78,9 @@ const feeStatus = computed(() => {
           <p class="sub">owing of {{ formatMoney(data.fees.billed) }} billed</p>
           <Tag v-if="feeStatus" :severity="feeStatus.severity" :value="feeStatus.label" />
           <p v-if="data.fees.in_advance" class="sub">{{ formatMoney(data.fees.in_advance) }} paid in advance</p>
+          <p v-if="data.fees.instalments.length > 1" class="sub">
+            Instalments: {{ data.fees.instalments.map((i) => `${formatMoney(i.left)} by ${formatDate(i.due_date)}`).join(" · ") }}
+          </p>
           <p v-for="h in data.holds" :key="h.reason" class="sub">Financial hold: {{ h.reason }}. Contact Finance.</p>
           <dl v-if="data.fees.how_to_pay.bank.account_number" class="pay">
             <div><dt>Pay by EFT to</dt><dd>{{ data.fees.how_to_pay.bank.bank_name }} · {{ data.fees.how_to_pay.bank.account_name }}</dd></div>

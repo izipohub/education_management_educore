@@ -39,3 +39,10 @@ test("financial aid sees students who named NSFAF on their application", async (
   await expect(page.getByRole("dialog").getByLabel("Student", { exact: true })).toHaveValue(/Ndapewa Amukoto/);
   await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
 });
+
+test("the bursar sees the year's instalments", async ({ page }) => {
+  await signIn(page, "bursar");
+  await page.getByRole("link", { name: "Fee settings", exact: true }).click();
+  await expect(page.getByText("3 instalments · 100%")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add an instalment" })).toBeVisible();
+});

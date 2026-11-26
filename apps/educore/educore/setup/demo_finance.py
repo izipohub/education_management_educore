@@ -26,6 +26,7 @@ def _round(amount):
 
 
 def create_fee_structures(years=("2026", "2027")) -> int:
+	create_instalment_plans()
 	created = 0
 	for offering in frappe.get_all("Programme Offering", fields=["name", "program", "mode_of_study"]):
 		code, qualification = frappe.db.get_value(
@@ -52,6 +53,22 @@ def create_fee_structures(years=("2026", "2027")) -> int:
 			structure.submit()
 			created += 1
 	return created
+
+
+#: academic year: (due date, share of the year's fees), as many universities split the year
+INSTALMENTS = {"2027": (("2027-02-15", 40), ("2027-05-14", 30), ("2027-08-16", 30))}
+
+
+def create_instalment_plans() -> int:
+	made = 0
+	for year, rows in INSTALMENTS.items():
+		if frappe.db.exists("Instalment Plan", year) or not frappe.db.exists("Academic Year", year):
+			continue
+		frappe.get_doc(
+			{"doctype": "Instalment Plan", "academic_year": year, "instalments": [{"due_date": d, "share": s} for d, s in rows]}
+		).insert(ignore_permissions=True)
+		made += 1
+	return made
 
 
 def invoice_and_pay() -> dict:

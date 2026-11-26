@@ -1,0 +1,37 @@
+{
+ "creation": "2026-11-26 09:00:00.000000",
+ "modified": "2026-11-26 09:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Finance",
+ "index_web_pages_for_search": 0,
+ "actions": [],
+ "links": [],
+ "states": [],
+ "name": "Instalment",
+ "istable": 1,
+ "editable_grid": 1,
+ "fields": [
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Due Date",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "share",
+   "fieldtype": "Percent",
+   "label": "Share of the Year's Fees",
+   "reqd": 1,
+   "in_list_view": 1
+  }
+ ],
+ "field_order": [
+  "due_date",
+  "share"
+ ],
+ "permissions": []
+}

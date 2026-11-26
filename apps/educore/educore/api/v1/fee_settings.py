@@ -59,6 +59,14 @@ def settings() -> dict:
 			"Account", filters={"root_type": "Income", "is_group": 0, "disabled": 0}, pluck="name", order_by="name asc"
 		),
 		"deposit_types": list(registration_setup.DEPOSIT_TYPES),
+		# when each year's fees are due (educore.finance.instalments)
+		"instalment_plans": {
+			p.name: [{"due_date": str(r.due_date), "share": flt(r.share)} for r in frappe.get_doc("Instalment Plan", p.name).instalments]
+			for p in frappe.get_all("Instalment Plan")
+		},
+		"academic_years": sorted(
+			{y for y in frappe.get_all("Fee Structure", filters={"docstatus": 1}, pluck="academic_year", distinct=True) if y}, reverse=True
+		),
 		"can_edit": can_edit(),
 	}
 
@@ -120,6 +128,19 @@ def save(data: dict | str) -> dict:
 			doc.graduation_needs_clearance = 1 if registration["graduation_needs_clearance"] else 0
 		if doc.deposit_value < 0 or (doc.deposit_type == "Percent of the year's fees" and doc.deposit_value > 100):
 			frappe.throw(_("The deposit must be between 0 and 100 percent of the year's fees"))
+		doc.save(ignore_permissions=True)
+
+	# a year's instalments: none (fees due in full), or due dates with their share
+	for year, rows in (data.get("instalment_plans") or {}).items():
+		rows = [r for r in rows or [] if r.get("due_date")]
+		exists = frappe.db.exists("Instalment Plan", year)
+		if not rows:
+			if exists:
+				frappe.delete_doc("Instalment Plan", year, ignore_permissions=True)
+			continue
+		doc = frappe.get_doc("Instalment Plan", year) if exists else frappe.new_doc("Instalment Plan")
+		doc.academic_year = year
+		doc.set("instalments", [{"due_date": r["due_date"], "share": flt(r.get("share"))} for r in rows])
 		doc.save(ignore_permissions=True)
 
 	for row in data.get("late_fees") or []:

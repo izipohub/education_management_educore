@@ -286,6 +286,11 @@ def _invoice_enrollment(enrollment, enrolled_by: str) -> str | None:
 			},
 		)
 	invoice.insert(ignore_permissions=True)
+	# the year's instalments, when the Bursar has set them (educore.finance.instalments)
+	from educore.finance import instalments
+
+	if instalments.apply(invoice, enrollment.academic_year):
+		invoice.save(ignore_permissions=True)
 	invoice.submit()
 	# sponsors recorded before the registration was approved: their share moves to them now
 	from educore.finance.sponsors import apply_for

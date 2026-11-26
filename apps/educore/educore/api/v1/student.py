@@ -105,14 +105,19 @@ def _fee_statement(student: str) -> dict:
 		balance += entry["amount"]
 		entry["balance"] = round(balance, 2)
 
-	today = getdate(nowdate())
 	unpaid = [i for i in invoices if flt(i.outstanding_amount) > 0]
+	# overdue and next due follow the instalments (educore.finance.instalments)
+	from educore.finance import instalments
+
+	schedule = instalments.due(student)
 	return {
 		"billed": round(sum(flt(i.grand_total) for i in invoices), 2),
 		"paid": round(sum(flt(p.amount) for p in payments), 2),
 		"owing": round(sum(flt(i.outstanding_amount) for i in unpaid), 2),
-		"overdue": round(sum(flt(i.outstanding_amount) for i in unpaid if getdate(i.due_date) < today), 2),
-		"next_due": str(min(getdate(i.due_date) for i in unpaid)) if unpaid else None,
+		"overdue": schedule["overdue"],
+		"next_due": schedule["next_due"],
+		"next_amount": schedule["next_amount"],
+		"instalments": schedule["instalments"],
 		"invoices": [
 			{**i, "posting_date": str(i.posting_date), "due_date": str(i.due_date), "remarks": None} for i in invoices
 		],
