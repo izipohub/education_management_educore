@@ -7,6 +7,7 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ApiError } from "@/core/api/client";
 import { useSession } from "@/core/auth/session";
+import { signInFor } from "@/core/auth/signInFor";
 import { useBranding } from "@/core/branding";
 
 const session = useSession();
@@ -41,6 +42,12 @@ async function signIn() {
   busy.value = true;
   try {
     await session.login(email.value.trim(), password.value);
+    // signing in for Moodle: back to EduCore's sign-in server, which sends them on
+    const onward = signInFor(route.query["redirect-to"], window.location.origin);
+    if (onward) {
+      window.location.assign(onward);
+      return;
+    }
     const redirect = typeof route.query.redirect === "string" && route.query.redirect.startsWith("/") ? route.query.redirect : "/";
     await router.replace(redirect);
   } catch (e) {

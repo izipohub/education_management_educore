@@ -97,6 +97,21 @@ async function test() {
   }
 }
 
+// single sign-on: the values for Moodle's side, and the setup script's command with them
+const showSecret = ref(false);
+const sso = computed(() => data.value?.sso ?? null);
+async function copyCommand() {
+  const s = sso.value;
+  if (!s) return;
+  const command = `sudo -u www-data php moodle-setup.php --password='…' --sso-url='${s.base_url}' --sso-client-id='${s.client_id}' --sso-client-secret='${s.client_secret}'`;
+  try {
+    await navigator.clipboard.writeText(command);
+    toast.add({ severity: "success", summary: "Command copied", detail: "Run it from Moodle's directory, with the educore user's password", life: 4000 });
+  } catch {
+    toast.add({ severity: "error", summary: "Could not copy", detail: command, life: 15000 });
+  }
+}
+
 async function syncNow() {
   try {
     await syncMoodleNow();
@@ -143,6 +158,28 @@ async function syncNow() {
         </template>
       </EcPanel>
 
+      <EcPanel v-if="sso && !changed" title="Single sign-on" note="For Moodle's side, once">
+        <p class="ec-muted lead">
+          People sign in to Moodle with their EduCore login. On the Moodle server, run the setup script again with these
+          values (docs/integrations/moodle.md); Moodle's login page then offers EduCore.
+        </p>
+        <dl class="ec-facts stacked sso">
+          <div><dt>EduCore address</dt><dd><code>{{ sso.base_url }}</code></dd></div>
+          <div><dt>Client ID</dt><dd><code>{{ sso.client_id }}</code></dd></div>
+          <div>
+            <dt>Client secret</dt>
+            <dd>
+              <code>{{ showSecret ? sso.client_secret : "••••••••••" }}</code>
+              <EcButton :label="showSecret ? 'Hide' : 'Show'" size="sm" variant="ghost" @click="showSecret = !showSecret" />
+            </dd>
+          </div>
+          <div><dt>Moodle returns people to</dt><dd><code>{{ sso.redirect_uri }}</code></dd></div>
+        </dl>
+        <template #footer>
+          <EcButton label="Copy the command" size="sm" variant="ghost" @click="copyCommand" />
+        </template>
+      </EcPanel>
+
       <EcPanel title="Classes in Moodle">
         <template #note>
           <EcButton v-if="data?.moodle.moodle_enabled" label="Sync now" size="sm" variant="ghost" @click="syncNow" />
@@ -169,6 +206,19 @@ async function syncNow() {
   display: grid;
   gap: 1rem;
   max-width: 52rem;
+}
+
+.lead {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+}
+
+.sso dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  word-break: break-all;
 }
 
 .roles {

@@ -26,6 +26,10 @@ class FakeMoodle:
 			raise moodle.MoodleError(f"{function}: refused")
 		if function == "core_user_get_users_by_field":
 			return [{"id": i, **u} for i, u in self.users.items() if u.get(p["field"]) in p["values"]]
+		if function == "core_user_update_users":
+			for u in p["users"]:
+				self.users[u["id"]].update({k: v for k, v in u.items() if k != "id"})
+			return None
 		if function == "core_user_create_users":
 			out = []
 			for u in p["users"]:
@@ -128,3 +132,65 @@ class TestConnectionCheck(IntegrationTestCase):
 			result = moodle.test_connection("https://moodle.example.edu.na", "token")
 		self.assertEqual(result["site"], "Test Moodle")
 		self.assertEqual(result["missing"], ["gradereport_user_get_grade_items"])
+
+
+class TestSingleSignOn(IntegrationTestCase):
+	"""Moodle signs people in with EduCore (educore.learning.moodle_sso)"""
+
+	def setUp(self):
+		frappe.set_user("Administrator")
+		frappe.db.savepoint("sso_test")
+
+	def tearDown(self):
+		frappe.set_user("Administrator")
+		frappe.db.rollback(save_point="sso_test")
+
+	def test_choosing_single_sign_on_makes_moodle_a_trusted_client(self):
+		from unittest.mock import patch
+
+		from educore.learning import moodle_sso
+
+		with patch.dict(frappe.local.conf, {"educore_app_url": "https://app.example.edu"}):
+			page = integrations.save({"moodle_url": "https://moodle.example.edu", "moodle_token": "t", "sign_in": "Single sign-on"})
+		sso = page["sso"]
+		self.assertEqual(sso["redirect_uri"], "https://moodle.example.edu/admin/oauth2callback.php")
+		self.assertEqual(sso["authorization_endpoint"], "https://app.example.edu/api/method/frappe.integrations.oauth2.authorize")
+		client = frappe.get_doc("OAuth Client", sso["client_id"])
+		self.assertTrue(client.skip_authorization)  # the university's own Moodle: no "allow access?" screen
+		self.assertIn("openid", client.scopes.split())
+		self.assertEqual(sso["client_secret"], client.client_secret)
+		# saving again keeps the same client (Moodle keeps its ID and secret)
+		again = integrations.save({"sign_in": "Single sign-on"})
+		self.assertEqual(again["sso"]["client_id"], sso["client_id"])
+		# Moodle passwords instead: Moodle may no longer sign people in with EduCore
+		self.assertIsNone(integrations.save({"sign_in": "Moodle password"})["sso"])
+		self.assertIsNone(moodle_sso.client_name())
+
+	def test_only_ict_sees_the_client_secret(self):
+		frappe.set_user("registrar@educore.localhost")
+		self.assertRaises(frappe.PermissionError, integrations.settings)
+
+
+class TestSingleSignOnAccounts(IntegrationTestCase):
+	def setUp(self):
+		if not frappe.db.exists("Student Group", CLASS):
+			self.skipTest("run the demo setup first")
+		frappe.set_user("Administrator")
+		frappe.db.savepoint("sso_accounts")
+
+	def tearDown(self):
+		frappe.db.rollback(save_point="sso_accounts")
+
+	def test_accounts_made_with_a_moodle_password_sign_in_with_educore_once_single_sign_on_is_chosen(self):
+		fake = FakeMoodle()
+		frappe.db.set_single_value("Learning Platform Settings", "sign_in", "Moodle password")
+		moodle.sync_class(CLASS, fake)
+		self.assertEqual({u["auth"] for u in fake.users.values()}, {"manual"})
+		frappe.db.set_single_value("Learning Platform Settings", "sign_in", "Single sign-on")
+		moodle.sync_class(CLASS, fake)
+		self.assertEqual({u["auth"] for u in fake.users.values()}, {"oauth2"})
+		self.assertTrue(all(u["preferences"][0]["value"] == 0 for u in fake.users.values()))
+		# and nothing more to change after that
+		calls = len(fake.calls)
+		moodle.sync_class(CLASS, fake)
+		self.assertNotIn("core_user_update_users", fake.calls[calls:])

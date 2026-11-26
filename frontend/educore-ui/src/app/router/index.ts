@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useSession } from "@/core/auth/session";
+import { signInFor } from "@/core/auth/signInFor";
 import { CURRICULUM_ROLES } from "@/modules/curriculum/api";
 import { FEE_SETTINGS_ROLES, FINANCE_ROLES, PAYMENT_ROLES } from "@/modules/finance/api";
 import { APPROVAL_ROLES, ASSESSMENT_TYPE_ROLES, EXAMINATION_ROLES } from "@/modules/examinations/api";
@@ -420,6 +421,12 @@ router.beforeEach(async (to) => {
   if (!session.loaded) await session.load();
 
   if (to.meta.public) {
+    // signed in already, and signing in for Moodle: straight on to it
+    const onward = to.name === "login" && session.isSignedIn ? signInFor(to.query["redirect-to"], window.location.origin) : null;
+    if (onward) {
+      window.location.assign(onward);
+      return false;
+    }
     // a signed-in user has no business on the login page
     return (to.name === "login" || to.name === "register") && session.isSignedIn ? { name: "home" } : true;
   }

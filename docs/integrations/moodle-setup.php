@@ -6,10 +6,18 @@
 //
 // Running it again changes nothing (it adds only what is missing) and prints the same token. Give the token, with
 // Moodle's address, to EduCore's Integrations screen. See docs/integrations/moodle.md.
+//
+// Single sign-on (people sign in to Moodle with EduCore): once "Single sign-on" is chosen on EduCore's Integrations
+// screen, run it again with the three values that screen shows:
+//
+//   ... --password='...' --sso-url='https://educore.example.edu' --sso-client-id='...' --sso-client-secret='...'
+//
+// It adds "EduCore" to Moodle's login page (OAuth 2, no email confirmation: EduCore is the university's own sign-in),
+// matching people to their accounts by email, and switches on Moodle's OAuth 2 authentication.
 define('CLI_SCRIPT', true);
 require(getcwd() . '/config.php');
 require_once($CFG->libdir . '/clilib.php');
-[$options] = cli_get_params(['password' => '']);
+[$options] = cli_get_params(['password' => '', 'sso-url' => '', 'sso-client-id' => '', 'sso-client-secret' => '']);
 if (!$options['password']) {
   cli_error("Give the educore user's password: --password='...'");
 }
@@ -20,13 +28,13 @@ set_config('enablewebservices', 1);
 set_config('webserviceprotocols', 'rest');
 
 $functions = [
-  'core_webservice_get_site_info', 'core_user_get_users_by_field', 'core_user_create_users',
+  'core_webservice_get_site_info', 'core_user_get_users_by_field', 'core_user_create_users', 'core_user_update_users',
   'core_course_get_categories', 'core_course_create_categories', 'core_course_get_courses_by_field',
   'core_course_create_courses', 'core_enrol_get_enrolled_users', 'enrol_manual_enrol_users',
   'enrol_manual_unenrol_users', 'core_course_get_contents', 'gradereport_user_get_grade_items',
 ];
 $caps = [
-  'webservice/rest:use', 'moodle/user:create', 'moodle/user:viewdetails', 'moodle/user:viewalldetails',
+  'webservice/rest:use', 'moodle/user:create', 'moodle/user:update', 'moodle/user:viewdetails', 'moodle/user:viewalldetails',
   'moodle/site:viewuseridentity', 'moodle/course:create', 'moodle/category:manage', 'moodle/course:view',
   'moodle/course:viewhiddencourses', 'moodle/course:viewparticipants', 'moodle/course:enrolreview',
   'enrol/manual:enrol', 'enrol/manual:unenrol', 'moodle/role:assign', 'moodle/grade:viewall', 'moodle/grade:viewhidden', 'gradereport/user:view',
@@ -84,3 +92,54 @@ if (!$token) {
   $token = \core_external\util::generate_token(EXTERNAL_TOKEN_PERMANENT, $service, $user->id, $context, 0, '');
 }
 echo "TOKEN=$token\n";
+
+// --- single sign-on with EduCore -----------------------------------------------------------------------------
+if ($options['sso-url']) {
+  if (!$options['sso-client-id'] || !$options['sso-client-secret']) {
+    cli_error('Give --sso-client-id and --sso-client-secret too, from EduCore\'s Integrations screen');
+  }
+  // Moodle's OAuth 2 settings are the site administrator's: act as them, as Moodle's own command-line tools do
+  \core\session\manager::set_user(get_admin());
+  $base = rtrim($options['sso-url'], '/');
+  $fields = [
+    'name' => 'EduCore', 'clientid' => $options['sso-client-id'], 'clientsecret' => $options['sso-client-secret'],
+    'baseurl' => '', 'loginscopes' => 'openid profile email', 'loginscopesoffline' => 'openid profile email',
+    'loginparams' => '', 'loginparamsoffline' => '', 'alloweddomains' => '', 'image' => '',
+    'showonloginpage' => \core\oauth2\issuer::LOGINONLY, 'requireconfirmation' => 0, 'basicauth' => 0, 'enabled' => 1,
+  ];
+  $issuer = \core\oauth2\issuer::get_record(['name' => 'EduCore']);
+  if ($issuer) {
+    foreach ($fields as $k => $v) { $issuer->set($k, $v); }
+    $issuer->update();
+  } else {
+    $issuer = \core\oauth2\api::create_issuer((object)$fields);
+  }
+  $endpoints = [
+    'authorization_endpoint' => '/api/method/frappe.integrations.oauth2.authorize',
+    'token_endpoint' => '/api/method/frappe.integrations.oauth2.get_token',
+    'userinfo_endpoint' => '/api/method/frappe.integrations.oauth2.openid_profile',
+  ];
+  foreach ($endpoints as $name => $path) {
+    $endpoint = \core\oauth2\endpoint::get_record(['issuerid' => $issuer->get('id'), 'name' => $name]);
+    if ($endpoint) {
+      $endpoint->set('url', $base . $path);
+      $endpoint->update();
+    } else {
+      \core\oauth2\api::create_endpoint((object)['issuerid' => $issuer->get('id'), 'name' => $name, 'url' => $base . $path]);
+    }
+  }
+  // what EduCore says about the person: its stable identifier keys the link, the email finds the account the sync made
+  $mapping = ['sub' => 'username', 'email' => 'email', 'given_name' => 'firstname', 'family_name' => 'lastname'];
+  foreach ($mapping as $external => $internal) {
+    if (!\core\oauth2\user_field_mapping::get_record(['issuerid' => $issuer->get('id'), 'externalfield' => $external])) {
+      \core\oauth2\api::create_user_field_mapping((object)['issuerid' => $issuer->get('id'), 'externalfield' => $external, 'internalfield' => $internal]);
+    }
+  }
+  $auths = array_filter(explode(',', $CFG->auth ?? ''));
+  if (!in_array('oauth2', $auths)) {
+    $auths[] = 'oauth2';
+    set_config('auth', implode(',', $auths));
+    \core_plugin_manager::reset_caches();
+  }
+  echo "SINGLE SIGN-ON: 'EduCore' is on Moodle's login page\n";
+}

@@ -1,11 +1,13 @@
-"""Integrations, for ICT: connecting Moodle (educore.learning.moodle). The token is written, never read back."""
+"""Integrations, for ICT: connecting Moodle (educore.learning.moodle) and, with single sign-on, letting people sign in to
+Moodle with EduCore (educore.learning.moodle_sso). The token is written, never read back."""
 
 import frappe
 from frappe import _
 
-from educore.learning import moodle
+from educore.learning import moodle, moodle_sso
 
 ICT_ROLES = ("System Manager",)
+SSO = "Single sign-on"
 FIELDS = ("moodle_enabled", "moodle_url", "sign_in", "campus_categories", "student_role_id", "teacher_role_id")
 
 
@@ -36,6 +38,8 @@ def settings() -> dict:
 			"failed": [{"name": c.name, "error": c.educore_moodle_error} for c in classes if c.educore_moodle_error],
 		},
 		"sign_in_options": ["Single sign-on", "Moodle password"],
+		# with single sign-on: what ICT gives Moodle (docs/integrations/moodle.md)
+		"sso": moodle_sso.details() if s.sign_in == SSO else None,
 	}
 
 
@@ -56,6 +60,11 @@ def save(data: dict | str) -> dict:
 	if s.moodle_enabled and not (s.moodle_url and (data.get("moodle_token") or s.get_password("moodle_token", raise_exception=False))):
 		frappe.throw(_("Give the Moodle address and web service token before connecting"))
 	s.save(ignore_permissions=True)
+	# single sign-on: Moodle a trusted client of EduCore's sign-in, sending people back to its address
+	if s.sign_in == SSO and s.moodle_url:
+		moodle_sso.ensure_client(s.moodle_url)
+	else:
+		moodle_sso.remove_client()
 	return settings()
 
 

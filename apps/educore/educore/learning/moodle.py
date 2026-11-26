@@ -26,6 +26,8 @@ FUNCTIONS = (
 	"core_webservice_get_site_info",
 	"core_user_get_users_by_field",
 	"core_user_create_users",
+	# with single sign-on: accounts made earlier with a Moodle password sign in with EduCore
+	"core_user_update_users",
 	"core_course_get_categories",
 	"core_course_create_categories",
 	"core_course_get_courses_by_field",
@@ -88,14 +90,25 @@ class MoodleClient:
 # --- users --------------------------------------------------------------------------------------------
 
 
+def _signs_in_with_educore(client: MoodleClient, user: dict) -> int:
+	"""With single sign-on, an account the sync found signs in with EduCore: made earlier with a Moodle password (before
+	single sign-on was chosen), it would otherwise ask the person to change a password they never use"""
+	if settings().sign_in == "Single sign-on" and user.get("auth") != "oauth2":
+		client.call(
+			"core_user_update_users",
+			users=[{"id": user["id"], "auth": "oauth2", "preferences": [{"type": "auth_forcepasswordchange", "value": 0}]}],
+		)
+	return user["id"]
+
+
 def _ensure_user(client: MoodleClient, idnumber: str, first: str, last: str, email: str) -> int:
 	found = client.call("core_user_get_users_by_field", field="idnumber", values=[idnumber])
 	if found:
-		return found[0]["id"]
+		return _signs_in_with_educore(client, found[0])
 	username = (email or idnumber).strip().lower()
 	found = client.call("core_user_get_users_by_field", field="username", values=[username])
 	if found:
-		return found[0]["id"]
+		return _signs_in_with_educore(client, found[0])
 	sso = settings().sign_in == "Single sign-on"
 	user = {
 		"username": username,

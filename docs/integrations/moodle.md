@@ -43,10 +43,45 @@ marks pass moderation and the examination board.
 3. Check the Student and Teacher role IDs on the same screen (5 and 3 on a standard Moodle), choose how people
    sign in to Moodle, and switch the connection on. The first sync runs within the hour, or press Sync now.
 
+## Single sign-on
+
+People sign in to Moodle with their EduCore login: Moodle's login page offers **EduCore**; someone already signed in
+to EduCore goes straight in, anyone else signs in on EduCore's own login page first and comes back to Moodle.
+
+1. In EduCore, Integrations: choose **Single sign-on** for "Sign-in on Moodle" and save. EduCore registers Moodle as
+   a trusted sign-in client (no "allow access?" screen) and shows a **Single sign-on** panel with EduCore's
+   address, a client ID and a client secret, and **Copy the command**.
+2. On the Moodle server, run the setup script again with them:
+
+   ```
+   cd /path/to/moodle
+   sudo -u www-data php /path/to/moodle-setup.php --password='...' \
+     --sso-url='https://educore.university.edu' --sso-client-id='...' --sso-client-secret='...'
+   ```
+
+   It adds EduCore as an OAuth 2 service on Moodle's login page, with no email confirmation (EduCore is the
+   university's own sign-in), maps EduCore's identifier, email and names to the Moodle account, and switches on
+   Moodle's OAuth 2 authentication.
+3. From the next sync, every account EduCore keeps in Moodle signs in with EduCore, including those made earlier with
+   a Moodle password: they are switched over, and no longer asked to change a password.
+
+Moodle matches a person to their account by email the first time, then by EduCore's own identifier for that login.
+
+Two things Moodle requires:
+- **https.** Moodle accepts a sign-in service only at an `https://` address; EduCore's address must be https.
+- **Reaching EduCore from the Moodle server.** Moodle's server exchanges the sign-in code with EduCore. If EduCore's
+  address resolves to a private address from the Moodle server (both on the university's network), Moodle blocks
+  it by default: remove that address from Site administration, General, Security, HTTP security, "cURL blocked
+  hosts list", and keep its port in "cURL allowed ports".
+
+Choosing **Moodle password** again removes EduCore's sign-in client and ends the sessions it opened; the EduCore
+button on Moodle's login page then stops working, so remove it there too (Site administration, Server, OAuth 2
+services).
+
 ## What the token needs
 
 **Functions** (the external service):
-`core_webservice_get_site_info`, `core_user_get_users_by_field`, `core_user_create_users`,
+`core_webservice_get_site_info`, `core_user_get_users_by_field`, `core_user_create_users`, `core_user_update_users`,
 `core_course_get_categories`, `core_course_create_categories`, `core_course_get_courses_by_field`,
 `core_course_create_courses`, `core_enrol_get_enrolled_users`, `enrol_manual_enrol_users`,
 `enrol_manual_unenrol_users`, `core_course_get_contents`, `gradereport_user_get_grade_items`.
@@ -57,6 +92,7 @@ marks pass moderation and the examination board.
 |---|---|
 | `webservice/rest:use` | To call Moodle at all |
 | `moodle/user:create`, `moodle/user:viewdetails`, `moodle/user:viewalldetails`, `moodle/site:viewuseridentity` | To find people by ID number and create those missing |
+| `moodle/user:update` | With single sign-on: to switch accounts made earlier with a Moodle password to EduCore's sign-in |
 | `moodle/course:create`, `moodle/category:manage`, `moodle/course:view`, `moodle/course:viewhiddencourses` | To find or create each class's course and its campus's category |
 | `moodle/course:viewparticipants`, `moodle/course:enrolreview`, `enrol/manual:enrol`, `enrol/manual:unenrol`, `moodle/role:assign` | To enrol and unenrol (with the Student and Teacher roles allowed to be assigned) |
 | `mod/assign:view`, `mod/quiz:view`, `mod/workshop:view`, `mod/lesson:view`, `mod/h5pactivity:view`, `mod/lti:view`, `mod/scorm:savetrack` | To see each type of graded activity; without one, activities of that type are silently missing from the list |
@@ -72,3 +108,5 @@ marks pass moderation and the examination board.
 | The lecturer's activity is not in the list | It is of a type the role cannot view (add its `mod/...:view` capability), or not graded (a page or a file has no grade) |
 | From Moodle brings in fewer scores than expected | Those students are not graded in Moodle yet, or their Moodle user has no ID number (it is set by the sync; users made by hand before it keep theirs empty). EduCore says how many are not graded |
 | A grade appears in Moodle but not in EduCore | The activity's marks are hidden and the role lacks `moodle/grade:viewhidden` |
+| "Could not upgrade OAuth 2 token" after signing in with EduCore | Moodle's server could not reach EduCore: check its address from the Moodle server, and Moodle's cURL blocked hosts and allowed ports (see Single sign-on) |
+| Moodle asks someone who signed in with EduCore to change a password | Their account was made before single sign-on and the sync has not run since: press Sync now |

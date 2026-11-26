@@ -16,6 +16,17 @@ export interface Integrations {
   moodle: MoodleSettings;
   classes: { total: number; in_moodle: number; failed: { name: string; error: string }[] };
   sign_in_options: string[];
+  /** with single sign-on: what ICT gives Moodle (the setup script's --sso flags; docs/integrations/moodle.md) */
+  sso: {
+    base_url: string;
+    client_id: string;
+    client_secret: string;
+    redirect_uri: string;
+    authorization_endpoint: string;
+    token_endpoint: string;
+    userinfo_endpoint: string;
+    scopes: string;
+  } | null;
 }
 
 /** ICT (educore.api.v1.integrations.ICT_ROLES) */
