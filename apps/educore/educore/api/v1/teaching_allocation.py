@@ -213,6 +213,7 @@ def class_detail(group: str) -> dict:
 		) or {}
 		students.append({"student": s.student, "student_name": s.student_name, "offering": enrolment.get("educore_programme_offering"), "year_of_study": enrolment.get("educore_year_of_study")})
 	instructors = frappe.get_all("Instructor", filters={"status": ("!=", "Left")}, fields=["name", "instructor_name", "department"], order_by="instructor_name asc")
+	hours = _hours_a_week(doc.academic_year, _semester_of(doc.course), [i.name for i in instructors])
 	return {
 		"name": doc.name,
 		"course": doc.course,
@@ -226,7 +227,7 @@ def class_detail(group: str) -> dict:
 		"lecturers": [{"instructor": i.instructor, "instructor_name": i.instructor_name} for i in doc.instructors],
 		# the course's own department first: most allocations are from it
 		"instructors": sorted(
-			({**i, "department": (i.department or "").rsplit(" - ", 1)[0]} for i in instructors),
+			({**i, "department": (i.department or "").rsplit(" - ", 1)[0], "hours": hours.get(i.name, 0)} for i in instructors),
 			key=lambda i: (i["department"] != ((course.department if course else "") or "").rsplit(" - ", 1)[0], i["instructor_name"]),
 		),
 		"can_edit": can_edit(),
@@ -265,3 +266,15 @@ def _attendance(group: str) -> dict:
 	from educore.academics import attendance
 
 	return attendance.summary(group)
+
+
+def _hours_a_week(academic_year: str, semester: str, instructors: list[str]) -> dict[str, float]:
+	"""Each lecturer's contact hours a week when the class runs (a full-year class: the busier semester), to weigh
+	their load when allocating (educore.academics.workload)"""
+	from educore.academics import timetable, workload
+
+	out: dict[str, float] = {}
+	for each in timetable.SEMESTERS if semester == "Year" else (semester,):
+		for name, load in workload.for_lecturers(academic_year, each, instructors).items():
+			out[name] = max(out.get(name, 0), load["hours"])
+	return out

@@ -11,7 +11,8 @@ their campus where they are limited to one, plus lecturers with no department ye
 import frappe
 from frappe import _
 
-from educore.academics import lecturers
+from educore.academics import lecturers, timetable
+from educore.academics import workload as lecturer_workload
 
 #: who sets a lecturer's department and campuses, and marks them left
 EDIT_ROLES = ("Head of Department", "Dean", "System Manager")
@@ -19,6 +20,9 @@ EDIT_ROLES = ("Head of Department", "Dean", "System Manager")
 HR_ROLES = ("HR Manager", "HR User", "System Manager")
 #: who reads the screen
 READ_ROLES = (*EDIT_ROLES, *HR_ROLES, "Faculty Officer", "Registrar", "Campus Director", "Timetable Officer", "Quality Assurance Officer", "Executive Management")
+
+#: who sets the workload rule (contact hours a week)
+RULE_ROLES = ("Registrar", "System Manager")
 
 READY, INCOMPLETE, LEFT = "Ready", "Incomplete", "Left"
 
@@ -162,6 +166,7 @@ def lecturer(name: str) -> dict:
 	)
 	can_edit = _has(EDIT_ROLES)
 	can_link = _has(HR_ROLES) and not row["employee"]
+	year, semester = _semester()
 	departments = _departments()
 	return {
 		**{k: row[k] for k in ("name", "instructor_name", "user", "campuses", "employee")},
@@ -173,6 +178,14 @@ def lecturer(name: str) -> dict:
 		"staff_record": employee,
 		"positions": sorted(p for p in positions if p in _ACADEMIC_POSITIONS),
 		"classes": groups,
+		"workload": {
+			"academic_year": year,
+			"semester": semester,
+			"rule": lecturer_workload.rule(),
+			**(lecturer_workload.for_lecturers(year, semester, [name])[name] if year else {}),
+		}
+		if row["status"] != "Left"
+		else None,
 		"can_edit": can_edit,
 		"can_link": can_link,
 		"choices": {
@@ -264,3 +277,61 @@ def link_staff_record(name: str, employee: str) -> dict:
 		if lecturers.is_academic_unit(department):
 			frappe.db.set_value("Instructor", name, "department", department)
 	return lecturer(name)
+
+
+# --- workload ----------------------------------------------------------------------------------------------
+
+
+def _semester(academic_year: str | None = None, semester: str | None = None) -> tuple[str | None, str]:
+	"""The year and semester asked for, else the current one (else the latest year's first semester)"""
+	from educore.api.v1.teaching_allocation import _years
+
+	years = _years()
+	current_year, current_semester = timetable.current_semester()
+	academic_year = academic_year if academic_year in years else (current_year if current_year in years else (years[0] if years else None))
+	return academic_year, semester if semester in timetable.SEMESTERS else current_semester
+
+
+@frappe.whitelist(methods=["GET"])
+def workload(academic_year: str | None = None, semester: str | None = None) -> dict:
+	"""Each active lecturer's modules, students, contact hours a week and invigilation in a semester, against the rule"""
+	_require(READ_ROLES)
+	from educore.api.v1.teaching_allocation import _years
+
+	academic_year, semester = _semester(academic_year, semester)
+	rows = [r for r in _all() if r["status"] != "Left"]
+	loads = lecturer_workload.for_lecturers(academic_year, semester, [r["name"] for r in rows]) if academic_year else {}
+	return {
+		"academic_year": academic_year,
+		"academic_years": _years(),
+		"semester": semester,
+		"semesters": timetable.SEMESTERS,
+		"rule": lecturer_workload.rule(),
+		"can_edit_rule": _has(RULE_ROLES),
+		"rows": [
+			{
+				"name": r["name"],
+				"instructor_name": r["instructor_name"],
+				"department": _short(r["department"]),
+				**{k: v for k, v in loads.get(r["name"], {}).items() if k != "modules"},
+				"modules": len(loads.get(r["name"], {}).get("modules", [])),
+			}
+			for r in rows
+		],
+	}
+
+
+@frappe.whitelist(methods=["POST"])
+def save_workload_rule(min_hours: float | str, max_hours: float | str) -> dict:
+	"""The university's rule: contact hours a week, at least and at most"""
+	if not _has(RULE_ROLES):
+		frappe.throw(_("The workload rule is the Registrar's"), frappe.PermissionError)
+	low, high = frappe.utils.flt(min_hours), frappe.utils.flt(max_hours)
+	if low < 0 or high <= 0 or high > 60:
+		frappe.throw(_("Contact hours a week are between 0 and 60"))
+	if low > high:
+		frappe.throw(_("The least is not above the most"))
+	s = frappe.get_single(lecturer_workload.SETTINGS)
+	s.min_hours, s.max_hours = low, high
+	s.save(ignore_permissions=True)
+	return lecturer_workload.rule()

@@ -55,6 +55,7 @@ const outstanding = computed(() => {
     !l.employee && "HR staff record to be linked by HR",
   ].filter(Boolean) as string[];
 });
+const hours = (n: number | undefined) => `${Number((n ?? 0).toFixed(1))} h`;
 const canOpenClass = computed(() => session.hasRole(...ALLOCATION_ROLES));
 
 async function act(run: () => Promise<Lecturer>, done: string) {
@@ -145,6 +146,37 @@ async function link() {
         </template>
       </EcPanel>
 
+      <EcPanel v-if="lecturer.workload?.academic_year" title="Workload" :note="`${lecturer.workload.semester} ${lecturer.workload.academic_year}`" class="workload">
+        <dl class="ec-facts">
+          <div>
+            <dt>Hours a week</dt>
+            <dd>
+              {{ hours(lecturer.workload.hours) }}
+              <StatusTag kind="workload" :value="lecturer.workload.status" />
+              <span class="ec-muted">of {{ lecturer.workload.rule.min_hours }} to {{ lecturer.workload.rule.max_hours }} h</span>
+            </dd>
+          </div>
+          <div><dt>Students</dt><dd>{{ lecturer.workload.students ?? 0 }}</dd></div>
+          <div><dt>Invigilation</dt><dd>{{ lecturer.workload.invigilation ? hours(lecturer.workload.invigilation) : "None" }}</dd></div>
+        </dl>
+        <table v-if="lecturer.workload.modules?.length" class="ec-table">
+          <thead>
+            <tr><th>Module</th><th>Campus</th><th class="num">Students</th><th class="num">Hours a week</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="m in lecturer.workload.modules" :key="m.group">
+              <td>
+                {{ m.course_name || m.course }}
+                <div class="ec-muted">{{ [m.code, m.with.length ? `with ${m.with.join(", ")}` : ""].filter(Boolean).join(" · ") }}</div>
+              </td>
+              <td>{{ m.campus?.replace(" Campus", "") }}</td>
+              <td class="num">{{ m.students }}</td>
+              <td class="num">{{ m.hours ? hours(m.hours) : "Not timetabled" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </EcPanel>
+
       <EcPanel title="Classes" :note="lecturer.classes.length ? `${lecturer.classes.length} classes` : undefined" :flush="lecturer.classes.length > 0">
         <table v-if="lecturer.classes.length" class="ec-table">
           <thead>
@@ -215,6 +247,17 @@ async function link() {
 .form {
   display: grid;
   gap: 0.75rem;
+}
+
+.workload .ec-table {
+  margin-top: 1rem;
+}
+
+.workload dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .link {

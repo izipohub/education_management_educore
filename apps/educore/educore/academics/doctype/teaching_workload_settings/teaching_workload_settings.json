@@ -1,0 +1,60 @@
+{
+ "name": "Teaching Workload Settings",
+ "issingle": 1,
+ "track_changes": 1,
+ "description": "A lecturer's expected teaching load: the university's own rule, set by the Registrar.",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "print": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "print": 1
+  }
+ ],
+ "fields": [
+  {
+   "fieldname": "min_hours",
+   "fieldtype": "Float",
+   "label": "Contact Hours a Week, at Least",
+   "default": "6",
+   "description": "Below it a lecturer's load is light."
+  },
+  {
+   "fieldname": "hours_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "max_hours",
+   "fieldtype": "Float",
+   "label": "Contact Hours a Week, at Most",
+   "default": "16",
+   "description": "Above it a lecturer is over the load."
+  }
+ ],
+ "actions": [],
+ "links": [],
+ "states": [],
+ "creation": "2026-11-26 15:00:00.000000",
+ "modified": "2026-11-26 15:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "module": "Academics",
+ "index_web_pages_for_search": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "field_order": [
+  "min_hours",
+  "hours_column",
+  "max_hours"
+ ]
+}

@@ -11,12 +11,14 @@ import EcTabs from "@/core/ui/EcTabs.vue";
 import PageHeader from "@/core/ui/PageHeader.vue";
 import StatusTag from "@/core/ui/StatusTag.vue";
 import { type LecturerRow, type LecturerState, listStaff } from "./api";
+import WorkloadTab from "./WorkloadTab.vue";
 
 /**
  * Academic staff: the lecturers of the department or faculty, the classes they teach this year, and what is still
- * missing from their setup (department, campus, HR staff record). A row opens the lecturer.
+ * missing from their setup (department, campus, HR staff record), and each lecturer's workload in a semester. A row
+ * opens the lecturer.
  */
-type Tab = "active" | "Incomplete" | "Left";
+type Tab = "active" | "Incomplete" | "Left" | "workload";
 const route = useRoute();
 const router = useRouter();
 const tab = ref<Tab>((route.query.tab as Tab) || "active");
@@ -49,6 +51,7 @@ const tabs = computed(() => [
   { label: "Active", value: "active" as Tab, count: matching.value.filter((r) => inTab(r, "active")).length },
   { label: "Incomplete", value: "Incomplete" as Tab, count: matching.value.filter((r) => inTab(r, "Incomplete")).length },
   { label: "Left", value: "Left" as Tab, count: matching.value.filter((r) => inTab(r, "Left")).length },
+  { label: "Workload", value: "workload" as Tab },
 ]);
 const shown = computed(() => matching.value.filter((r) => inTab(r, tab.value)) as unknown as Record<string, unknown>[]);
 const row = (r: Record<string, unknown>) => r as unknown as LecturerRow;
@@ -69,7 +72,10 @@ const columns = computed<Column[]>(() => [
 
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
 
+    <WorkloadTab v-if="tab === 'workload'" />
+
     <DataTable
+      v-else
       :columns="columns"
       :rows="shown"
       row-key="name"

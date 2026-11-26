@@ -46,7 +46,7 @@ const adding = ref<string | null>(null);
 const available = computed(() =>
   (data.value?.instructors ?? [])
     .filter((i) => !lecturers.value.includes(i.name))
-    .map((i) => ({ value: i.name, label: `${i.instructor_name}${i.department ? ` · ${i.department}` : ""}` })),
+    .map((i) => ({ value: i.name, label: [i.instructor_name, i.department, `${i.hours} h a week`].filter(Boolean).join(" · ") })),
 );
 function add() {
   if (adding.value) lecturers.value.push(adding.value);

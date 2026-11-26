@@ -55,7 +55,8 @@ export interface ClassDetail {
   semester: Semester;
   students: { student: string; student_name: string; offering: string | null; year_of_study: number | null }[];
   lecturers: { instructor: string; instructor_name: string }[];
-  instructors: { name: string; instructor_name: string; department: string }[];
+  /** hours a week: each lecturer's contact hours when the class runs */
+  instructors: { name: string; instructor_name: string; department: string; hours: number }[];
   can_edit: boolean;
   /** the class's course in Moodle, once ICT connects it */
   moodle: { connected: boolean; course_id: number | null; synced_on: string | null; error: string | null };
